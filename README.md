@@ -7,7 +7,7 @@ go-coin-sol
 ## Quick start
 
 ```go
-
+go get github.com/pefish/go-coin-sol
 ```
 
 ## Document
