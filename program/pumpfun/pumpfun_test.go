@@ -38,7 +38,7 @@ func TestParseTx(t *testing.T) {
 	client := rpc.New(endpoint)
 	getTransactionResult, err := client.GetTransaction(
 		context.TODO(),
-		solana.MustSignatureFromBase58("2miAV2YsZzToCzD5cuBGj2CF9MuZ1BoU3WMjd32vBpvD7Z92APb3hnkfY6iHSo8QUkHdjdEd9MkWaED2STNejkTS"),
+		solana.MustSignatureFromBase58("z2XK5sBMk599uKg19GjBJd2bo11QN8rNLzWVnmpwyytDKvrjFfgBp7Ym7Aa2PyDAjo7RURqsLUGV37F66tFD5me"),
 		&rpc.GetTransactionOpts{
 			Commitment:                     rpc.CommitmentConfirmed,
 			MaxSupportedTransactionVersion: constant.MaxSupportedTransactionVersion_0,

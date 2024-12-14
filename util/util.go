@@ -39,8 +39,8 @@ func GetFeeInfoFromTx(meta *rpc.TransactionMeta, transaction *solana.Transaction
 	priorityFee := "0"
 	computeUnitPrice := 0
 
-	var setComputeUnitLimitInstru *solana.CompiledInstruction
-	var setComputeUnitPriceInstru *solana.CompiledInstruction
+	var setComputeUnitLimitInstru solana.CompiledInstruction
+	var setComputeUnitPriceInstru solana.CompiledInstruction
 	for _, instruction := range transaction.Message.Instructions {
 		programPKey := accountKeys[instruction.ProgramIDIndex]
 		if !programPKey.Equals(constant.Compute_Budget) {
@@ -48,14 +48,14 @@ func GetFeeInfoFromTx(meta *rpc.TransactionMeta, transaction *solana.Transaction
 		}
 		methodId := hex.EncodeToString(instruction.Data)[:2]
 		if methodId == "02" {
-			setComputeUnitLimitInstru = &instruction
+			setComputeUnitLimitInstru = instruction
 		}
 		if methodId == "03" {
-			setComputeUnitPriceInstru = &instruction
+			setComputeUnitPriceInstru = instruction
 		}
 	}
 	computeUnitLimit := 200000
-	if setComputeUnitLimitInstru != nil {
+	if setComputeUnitLimitInstru.ProgramIDIndex != 0 {
 		var params struct {
 			Id    uint8  `json:"id"`
 			Units uint32 `json:"units"`
@@ -67,7 +67,7 @@ func GetFeeInfoFromTx(meta *rpc.TransactionMeta, transaction *solana.Transaction
 		computeUnitLimit = int(params.Units)
 	}
 
-	if setComputeUnitPriceInstru != nil {
+	if setComputeUnitPriceInstru.ProgramIDIndex != 0 {
 		var params struct {
 			Id            uint8  `json:"id"`
 			MicroLamports uint64 `json:"microLamports"`
