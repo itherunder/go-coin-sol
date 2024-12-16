@@ -41,6 +41,7 @@ type SwapDataType struct {
 type SwapTxDataType struct {
 	Swaps   []*SwapDataType
 	FeeInfo *util.FeeInfo
+	TxId    string
 }
 
 type ParseTxResult struct {
@@ -161,12 +162,14 @@ func ParseSwapTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*S
 	}
 
 	return &SwapTxDataType{
+		TxId:    transaction.Signatures[0].String(),
 		Swaps:   swaps,
 		FeeInfo: feeInfo,
 	}, nil
 }
 
 type CreateTxDataType struct {
+	TxId                string
 	Name                string
 	Symbol              string
 	URI                 string
@@ -207,6 +210,7 @@ func ParseCreateTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (
 			return nil, err
 		}
 		return &CreateTxDataType{
+			TxId:                transaction.Signatures[0].String(),
 			Name:                params.Name,
 			Symbol:              params.Symbol,
 			URI:                 params.URI,
@@ -222,6 +226,7 @@ func ParseCreateTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (
 }
 
 type RemoveLiqTxDataType struct {
+	TxId                string
 	BondingCurveAddress solana.PublicKey
 	TokenAddress        solana.PublicKey
 	FeeInfo             *util.FeeInfo
@@ -252,6 +257,7 @@ func ParseRemoveLiqTx(meta *rpc.TransactionMeta, transaction *solana.Transaction
 			return nil, err
 		}
 		return &RemoveLiqTxDataType{
+			TxId:                transaction.Signatures[0].String(),
 			BondingCurveAddress: accountKeys[instruction.Accounts[3]],
 			TokenAddress:        accountKeys[instruction.Accounts[2]],
 			FeeInfo:             feeInfo,
