@@ -27,7 +27,7 @@ func TestWallet_SendTx(t *testing.T) {
 	privObj, err := solana.PrivateKeyFromBase58(os.Getenv("PRIV"))
 	go_test_.Equal(t, nil, err)
 	tokenAddress := solana.MustPublicKeyFromBase58("ESxwAtD82mHgPDvQ2D1j1EEi5UFYXGRFB4MdWLq8pump")
-	data, err := pumpfun.GetBondingCurveData(WalletInstance.rpcClient, tokenAddress)
+	data, err := pumpfun.GetBondingCurveData(WalletInstance.rpcClient, &tokenAddress, nil)
 	go_test_.Equal(t, nil, err)
 
 	swapInstructions, err := pumpfun.GetSwapInstructions(

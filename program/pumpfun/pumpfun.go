@@ -150,7 +150,7 @@ func ParseSwapTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*S
 				}(),
 				UserAddress:          log.User,
 				UserTokenBalance:     userTokenBalance,
-				Timestamp:            uint64(log.Timestamp),
+				Timestamp:            uint64(log.Timestamp) * 1000,
 				VirtualSolReserves:   go_decimal.Decimal.MustStart(log.VirtualSolReserves).MustUnShiftedBy(constant.SOL_Decimals).EndForString(),
 				VirtualTokenReserves: go_decimal.Decimal.MustStart(log.VirtualTokenReserves).MustUnShiftedBy(pumpfun_constant.Pumpfun_Token_Decimals).EndForString(),
 			})
