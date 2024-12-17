@@ -42,7 +42,15 @@ func New(
 	}, nil
 }
 
-func (t *Wallet) GetNewAddress() (address_ string, priv_ string) {
+func (t *Wallet) RPCClient() *rpc.Client {
+	return t.rpcClient
+}
+
+func (t *Wallet) WSClient() *ws.Client {
+	return t.wsClient
+}
+
+func (t *Wallet) NewAddress() (address_ string, priv_ string) {
 	account := solana.NewWallet()
 	return account.PublicKey().String(), account.PrivateKey.String()
 }
