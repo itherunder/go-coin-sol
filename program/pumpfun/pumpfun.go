@@ -17,6 +17,7 @@ import (
 	go_decimal "github.com/pefish/go-decimal"
 	go_http "github.com/pefish/go-http"
 	i_logger "github.com/pefish/go-interface/i-logger"
+	"github.com/pkg/errors"
 )
 
 type SwapType string
@@ -295,6 +296,7 @@ func URIInfo(logger i_logger.ILogger, uri string) (*TokenMetadata, error) {
 }
 
 type BondingCurveDataType struct {
+	BondingCurveAddress  string
 	VirtualTokenReserves string
 	VirtualSolReserves   string
 	RealTokenReserves    string
@@ -305,15 +307,23 @@ type BondingCurveDataType struct {
 
 func GetBondingCurveData(
 	rpcClient *rpc.Client,
-	tokenAddress solana.PublicKey,
+	tokenAddress *solana.PublicKey,
+	bondingCurveAddress *solana.PublicKey,
 ) (*BondingCurveDataType, error) {
-	bondingCurveAddress, _, err := solana.FindProgramAddress([][]byte{
-		[]byte("bonding-curve"),
-		tokenAddress.Bytes(),
-	}, pumpfun_constant.Pumpfun_Program)
-	if err != nil {
-		return nil, err
+	if tokenAddress == nil && bondingCurveAddress == nil {
+		return nil, errors.New("Token address or bondingCurve address can not both be nil.")
 	}
+	if bondingCurveAddress == nil {
+		bondingCurveAddress_, _, err := solana.FindProgramAddress([][]byte{
+			[]byte("bonding-curve"),
+			tokenAddress.Bytes(),
+		}, pumpfun_constant.Pumpfun_Program)
+		if err != nil {
+			return nil, err
+		}
+		bondingCurveAddress = &bondingCurveAddress_
+	}
+
 	var data struct {
 		Id                   uint64
 		VirtualTokenReserves uint64
@@ -323,11 +333,12 @@ func GetBondingCurveData(
 		TokenTotalSupply     uint64
 		Complete             bool
 	}
-	err = rpcClient.GetAccountDataBorshInto(context.Background(), bondingCurveAddress, &data)
+	err := rpcClient.GetAccountDataBorshInto(context.Background(), *bondingCurveAddress, &data)
 	if err != nil {
 		return nil, err
 	}
 	return &BondingCurveDataType{
+		BondingCurveAddress:  bondingCurveAddress.String(),
 		VirtualTokenReserves: go_decimal.Decimal.MustStart(data.VirtualTokenReserves).MustUnShiftedBy(pumpfun_constant.Pumpfun_Token_Decimals).EndForString(),
 		VirtualSolReserves:   go_decimal.Decimal.MustStart(data.VirtualSolReserves).MustUnShiftedBy(constant.SOL_Decimals).EndForString(),
 		RealTokenReserves:    go_decimal.Decimal.MustStart(data.RealTokenReserves).MustUnShiftedBy(pumpfun_constant.Pumpfun_Token_Decimals).EndForString(),
