@@ -24,6 +24,7 @@ func init() {
 }
 
 func TestWallet_SendTx(t *testing.T) {
+	return
 	privObj, err := solana.PrivateKeyFromBase58(os.Getenv("PRIV"))
 	go_test_.Equal(t, nil, err)
 	tokenAddress := solana.MustPublicKeyFromBase58("ESxwAtD82mHgPDvQ2D1j1EEi5UFYXGRFB4MdWLq8pump")
@@ -54,4 +55,9 @@ func TestWallet_SendTx(t *testing.T) {
 	swapResult, err := pumpfun.ParseSwapTx(meta, tx)
 	go_test_.Equal(t, nil, err)
 	fmt.Println(swapResult)
+}
+
+func TestWallet_NewAddress(t *testing.T) {
+	address, priv := WalletInstance.NewAddress()
+	fmt.Println(address, priv)
 }

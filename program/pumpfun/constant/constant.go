@@ -1,4 +1,4 @@
-package pumpfun
+package constant
 
 import solana "github.com/gagliardetto/solana-go"
 

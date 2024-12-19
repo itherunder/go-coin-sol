@@ -1,4 +1,4 @@
-package go_coin_sol
+package constant
 
 import "github.com/gagliardetto/solana-go"
 
