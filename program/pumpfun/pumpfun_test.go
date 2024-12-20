@@ -33,12 +33,12 @@ func TestParseSwapTx(t *testing.T) {
 }
 
 func TestParseTx(t *testing.T) {
-	return
+	// return
 	endpoint := rpc.MainNetBeta_RPC
 	client := rpc.New(endpoint)
 	getTransactionResult, err := client.GetTransaction(
 		context.TODO(),
-		solana.MustSignatureFromBase58("z2XK5sBMk599uKg19GjBJd2bo11QN8rNLzWVnmpwyytDKvrjFfgBp7Ym7Aa2PyDAjo7RURqsLUGV37F66tFD5me"),
+		solana.MustSignatureFromBase58("4NCCT3vSriju4zQwwrukrhLA3b3iuriBN4ANFCkEEvDT554PTTnCZxLpwypBzkZCGUST85MRVwiVjbDwpLT21Xvw"),
 		&rpc.GetTransactionOpts{
 			Commitment:                     rpc.CommitmentConfirmed,
 			MaxSupportedTransactionVersion: constant.MaxSupportedTransactionVersion_0,
@@ -54,7 +54,11 @@ func TestParseTx(t *testing.T) {
 	}
 
 	if r.RemoveLiqTxData != nil {
-		fmt.Printf("[RemoveLiq] <%s>\n", r.RemoveLiqTxData.TokenAddress)
+		fmt.Printf("[RemoveLiq] %+v\n", r.RemoveLiqTxData)
+	}
+
+	if r.AddLiqTxData != nil {
+		fmt.Printf("[AddLiq] %+v\n", r.AddLiqTxData)
 	}
 
 	if r.SwapTxData != nil {

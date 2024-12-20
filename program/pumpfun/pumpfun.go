@@ -13,6 +13,8 @@ import (
 	associated_token_account_instruction "github.com/pefish/go-coin-sol/program/associated-token-account/instruction"
 	pumpfun_constant "github.com/pefish/go-coin-sol/program/pumpfun/constant"
 	pumpfun_instruction "github.com/pefish/go-coin-sol/program/pumpfun/instruction"
+	raydium_constant "github.com/pefish/go-coin-sol/program/raydium/constant"
+	type_ "github.com/pefish/go-coin-sol/type"
 	util "github.com/pefish/go-coin-sol/util"
 	go_decimal "github.com/pefish/go-decimal"
 	go_http "github.com/pefish/go-http"
@@ -20,18 +22,11 @@ import (
 	"github.com/pkg/errors"
 )
 
-type SwapType string
-
-const (
-	SwapType_Buy  SwapType = "buy"
-	SwapType_Sell SwapType = "sell"
-)
-
 type SwapDataType struct {
 	TokenAddress         solana.PublicKey
 	SOLAmount            string
 	TokenAmount          string
-	Type                 SwapType
+	Type                 type_.SwapType
 	UserAddress          solana.PublicKey
 	Timestamp            uint64
 	VirtualSolReserves   string
@@ -49,6 +44,7 @@ type ParseTxResult struct {
 	SwapTxData      *SwapTxDataType
 	CreateTxData    *CreateTxDataType
 	RemoveLiqTxData *RemoveLiqTxDataType
+	AddLiqTxData    *AddLiqTxDataType
 }
 
 func ParseTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*ParseTxResult, error) {
@@ -67,10 +63,16 @@ func ParseTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*Parse
 		return nil, err
 	}
 
+	addLiqData, err := ParseAddLiqTx(meta, transaction)
+	if err != nil {
+		return nil, err
+	}
+
 	return &ParseTxResult{
 		SwapTxData:      swapData,
 		CreateTxData:    createData,
 		RemoveLiqTxData: removeLiqData,
+		AddLiqTxData:    addLiqData,
 	}, nil
 }
 
@@ -141,11 +143,11 @@ func ParseSwapTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*S
 				TokenAddress: log.Mint,
 				SOLAmount:    go_decimal.Decimal.MustStart(log.SOLAmount).MustUnShiftedBy(constant.SOL_Decimals).EndForString(),
 				TokenAmount:  go_decimal.Decimal.MustStart(log.TokenAmount).MustUnShiftedBy(pumpfun_constant.Pumpfun_Token_Decimals).EndForString(),
-				Type: func() SwapType {
+				Type: func() type_.SwapType {
 					if log.IsBuy {
-						return SwapType_Buy
+						return type_.SwapType_Buy
 					} else {
-						return SwapType_Sell
+						return type_.SwapType_Sell
 					}
 				}(),
 				UserAddress:          log.User,
@@ -269,6 +271,69 @@ func ParseRemoveLiqTx(meta *rpc.TransactionMeta, transaction *solana.Transaction
 	return nil, nil
 }
 
+type AddLiqTxDataType struct {
+	TxId                 string
+	TokenAddress         solana.PublicKey
+	InitSOLAmount        string
+	InitTokenAmount      string
+	AMMAddress           solana.PublicKey
+	PoolCoinTokenAccount solana.PublicKey
+	PoolPcTokenAccount   solana.PublicKey
+
+	FeeInfo *util.FeeInfo
+}
+
+func ParseAddLiqTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*AddLiqTxDataType, error) {
+	accountKeys := transaction.Message.AccountKeys
+	if meta.LoadedAddresses.Writable != nil {
+		accountKeys = append(accountKeys, meta.LoadedAddresses.Writable...)
+	}
+	if meta.LoadedAddresses.ReadOnly != nil {
+		accountKeys = append(accountKeys, meta.LoadedAddresses.ReadOnly...)
+	}
+	if !accountKeys[0].Equals(pumpfun_constant.Pumpfun_Raydium_Migration) {
+		return nil, nil
+	}
+	for _, instruction := range transaction.Message.Instructions {
+		programPKey := accountKeys[instruction.ProgramIDIndex]
+		if !programPKey.Equals(raydium_constant.Raydium_Liquidity_Pool_V4) {
+			continue
+		}
+		if hex.EncodeToString(instruction.Data)[:2] != "01" {
+			continue
+		}
+		var params struct {
+			Discriminator  uint8  `json:"discriminator"`
+			Nonce          uint8  `json:"nonce"`
+			OpenTime       uint64 `json:"openTime"`
+			InitPcAmount   uint64 `json:"initPcAmount"`
+			InitCoinAmount uint64 `json:"initCoinAmount"`
+		}
+		err := bin.NewBorshDecoder(instruction.Data).Decode(&params)
+		if err != nil {
+			return nil, err
+		}
+
+		feeInfo, err := util.GetFeeInfoFromTx(meta, transaction)
+		if err != nil {
+			return nil, err
+		}
+		return &AddLiqTxDataType{
+			TxId:                 transaction.Signatures[0].String(),
+			TokenAddress:         accountKeys[instruction.Accounts[9]],
+			AMMAddress:           accountKeys[instruction.Accounts[4]],
+			PoolCoinTokenAccount: accountKeys[instruction.Accounts[10]],
+			PoolPcTokenAccount:   accountKeys[instruction.Accounts[11]],
+			InitSOLAmount:        go_decimal.Decimal.MustStart(params.InitCoinAmount).MustUnShiftedBy(constant.SOL_Decimals).EndForString(),
+			InitTokenAmount:      go_decimal.Decimal.MustStart(params.InitPcAmount).MustUnShiftedBy(pumpfun_constant.Pumpfun_Token_Decimals).EndForString(),
+			FeeInfo:              feeInfo,
+		}, nil
+
+	}
+
+	return nil, nil
+}
+
 type TokenMetadata struct {
 	Name        string `json:"name"`
 	Symbol      string `json:"symbol"`
@@ -350,7 +415,7 @@ func GetBondingCurveData(
 
 func GetSwapInstructions(
 	userAddress solana.PublicKey,
-	swapType SwapType,
+	swapType type_.SwapType,
 	tokenAddress solana.PublicKey,
 	tokenAmount string,
 	isCloseUserAssociatedTokenAddress bool,
@@ -367,7 +432,7 @@ func GetSwapInstructions(
 	if err != nil {
 		return nil, err
 	}
-	if swapType == SwapType_Buy {
+	if swapType == type_.SwapType_Buy {
 		instructions = append(instructions, associated_token_account_instruction.NewCreateIdempotentInstruction(
 			userAddress,
 			userAssociatedTokenAddress,
@@ -384,7 +449,7 @@ func GetSwapInstructions(
 		return nil, err
 	}
 	var swapInstruction solana.Instruction
-	if swapType == SwapType_Buy {
+	if swapType == type_.SwapType_Buy {
 		// 应该花费的 sol 数量
 		shouldCostSolAmount := go_decimal.Decimal.MustStart(virtualSolReserve).MustMulti(tokenAmount).MustDiv(virtualTokenReserve).MustMultiForString(1.01) // pumpfun 收取 1% 手续费
 		// 最大多花 sol 的数量
@@ -423,7 +488,7 @@ func GetSwapInstructions(
 	}
 	instructions = append(instructions, swapInstruction)
 
-	if swapType == SwapType_Sell && isCloseUserAssociatedTokenAddress {
+	if swapType == type_.SwapType_Sell && isCloseUserAssociatedTokenAddress {
 		instructions = append(
 			instructions,
 			token.NewCloseAccountInstruction(
