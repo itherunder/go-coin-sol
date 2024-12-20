@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"os"
 	"testing"
-	"time"
 
 	"github.com/gagliardetto/solana-go"
 	"github.com/pefish/go-coin-sol/program/pumpfun"
 	pumpfun_constant "github.com/pefish/go-coin-sol/program/pumpfun/constant"
+	type_ "github.com/pefish/go-coin-sol/type"
 	i_logger "github.com/pefish/go-interface/i-logger"
 	go_test_ "github.com/pefish/go-test"
 )
@@ -34,7 +34,7 @@ func TestWallet_SendTx(t *testing.T) {
 
 	swapInstructions, err := pumpfun.GetSwapInstructions(
 		privObj.PublicKey(),
-		pumpfun.SwapType_Sell,
+		type_.SwapType_Sell,
 		tokenAddress,
 		"6000",
 		true,
