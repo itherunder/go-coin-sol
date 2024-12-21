@@ -20,10 +20,10 @@ func FindInnerInstructions(meta *rpc.TransactionMeta, index uint64) []solana.Com
 }
 
 type FeeInfo struct {
-	BaseFee          string
-	PriorityFee      string
-	TotalFee         string
-	ComputeUnitPrice uint64
+	BaseFee          string `json:"base_fee"`
+	PriorityFee      string `json:"priority_fee"`
+	TotalFee         string `json:"total_fee"`
+	ComputeUnitPrice uint64 `json:"compute_unit_price"`
 }
 
 func GetFeeInfoFromTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*FeeInfo, error) {

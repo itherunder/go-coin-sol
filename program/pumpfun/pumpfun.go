@@ -23,15 +23,15 @@ import (
 )
 
 type SwapDataType struct {
-	TokenAddress         solana.PublicKey
-	SOLAmount            string
-	TokenAmount          string
-	Type                 type_.SwapType
-	UserAddress          solana.PublicKey
-	Timestamp            uint64
-	VirtualSolReserves   string
-	VirtualTokenReserves string
-	UserTokenBalance     string // 交易之后用户的余额
+	TokenAddress         solana.PublicKey `json:"token_address"`
+	SOLAmount            string           `json:"sol_amount"`
+	TokenAmount          string           `json:"token_amount"`
+	Type                 type_.SwapType   `json:"type"`
+	UserAddress          solana.PublicKey `json:"user_address"`
+	Timestamp            uint64           `json:"timestamp"`
+	VirtualSolReserves   string           `json:"virtual_sol_reserves"`
+	VirtualTokenReserves string           `json:"virtual_token_reserves"`
+	UserTokenBalance     string           `json:"user_token_balance"` // 交易之后用户的余额
 }
 
 type SwapTxDataType struct {
@@ -172,14 +172,14 @@ func ParseSwapTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*S
 }
 
 type CreateTxDataType struct {
-	TxId                string
-	Name                string
-	Symbol              string
-	URI                 string
-	UserAddress         solana.PublicKey
-	BondingCurveAddress solana.PublicKey
-	TokenAddress        solana.PublicKey
-	FeeInfo             *util.FeeInfo
+	TxId                string           `json:"txid"`
+	Name                string           `json:"name"`
+	Symbol              string           `json:"symbol"`
+	URI                 string           `json:"uri"`
+	UserAddress         solana.PublicKey `json:"user_address"`
+	BondingCurveAddress solana.PublicKey `json:"bonding_curve_address"`
+	TokenAddress        solana.PublicKey `json:"token_address"`
+	FeeInfo             *util.FeeInfo    `json:"fee_info"`
 }
 
 func ParseCreateTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*CreateTxDataType, error) {
@@ -229,10 +229,10 @@ func ParseCreateTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (
 }
 
 type RemoveLiqTxDataType struct {
-	TxId                string
-	BondingCurveAddress solana.PublicKey
-	TokenAddress        solana.PublicKey
-	FeeInfo             *util.FeeInfo
+	TxId                string           `json:"txid"`
+	BondingCurveAddress solana.PublicKey `json:"bonding_curve_address"`
+	TokenAddress        solana.PublicKey `json:"token_address"`
+	FeeInfo             *util.FeeInfo    `json:"fee_info"`
 }
 
 // 上岸
@@ -272,15 +272,15 @@ func ParseRemoveLiqTx(meta *rpc.TransactionMeta, transaction *solana.Transaction
 }
 
 type AddLiqTxDataType struct {
-	TxId                 string
-	TokenAddress         solana.PublicKey
-	InitSOLAmount        string
-	InitTokenAmount      string
-	AMMAddress           solana.PublicKey
-	PoolCoinTokenAccount solana.PublicKey
-	PoolPcTokenAccount   solana.PublicKey
+	TxId                 string           `json:"txid"`
+	TokenAddress         solana.PublicKey `json:"token_address"`
+	InitSOLAmount        string           `json:"init_sol_amount"`
+	InitTokenAmount      string           `json:"init_token_amount"`
+	AMMAddress           solana.PublicKey `json:"amm_address"`
+	PoolCoinTokenAccount solana.PublicKey `json:"pool_coin_token_account"`
+	PoolPcTokenAccount   solana.PublicKey `json:"pool_pc_token_account"`
 
-	FeeInfo *util.FeeInfo
+	FeeInfo *util.FeeInfo `json:"fee_info"`
 }
 
 func ParseAddLiqTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*AddLiqTxDataType, error) {
