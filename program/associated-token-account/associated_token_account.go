@@ -53,3 +53,32 @@ func GetAssociatedTokenAccountData(
 	}
 	return &data, nil
 }
+
+func GetAssociatedTokenAccountDatas(
+	rpcClient *rpc.Client,
+	accounts []solana.PublicKey,
+) ([]*AssociatedTokenAccountDataType, error) {
+	results := make([]*AssociatedTokenAccountDataType, 0)
+	result, err := rpcClient.GetMultipleAccountsWithOpts(
+		context.Background(),
+		accounts,
+		&rpc.GetMultipleAccountsOpts{
+			Encoding:   solana.EncodingJSONParsed,
+			Commitment: rpc.CommitmentConfirmed,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, account := range result.Value {
+		var data AssociatedTokenAccountDataType
+		err = json.Unmarshal(account.Data.GetRawJSON(), &data)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, &data)
+	}
+
+	return results, nil
+}
