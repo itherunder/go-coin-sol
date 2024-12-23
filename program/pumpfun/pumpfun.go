@@ -455,12 +455,15 @@ func GetSwapInstructions(
 		// 最大多花 sol 的数量
 		maxMoreSolAmount := go_decimal.Decimal.MustStart(shouldCostSolAmount).MustMulti(slippage).MustDivForString(10000)
 		maxCostSolAmount := go_decimal.Decimal.MustStart(shouldCostSolAmount).MustAdd(maxMoreSolAmount).RoundDownForString(constant.SOL_Decimals)
-		instruction, err := pumpfun_instruction.NewBuyInstruction(
+		instruction, err := pumpfun_instruction.NewBuyBaseOutInstruction(
 			userAddress,
 			tokenAddress,
 			bondingCurveAddress,
 			userAssociatedTokenAddress,
-			tokenAmount,
+			type_.TokenAmountInfo{
+				Amount:   tokenAmount,
+				Decimals: pumpfun_constant.Pumpfun_Token_Decimals,
+			},
 			maxCostSolAmount,
 		)
 		if err != nil {
@@ -473,12 +476,15 @@ func GetSwapInstructions(
 		// 最大少收到 sol 的数量
 		maxLessSolAmount := go_decimal.Decimal.MustStart(shouldReceiveSolAmount).MustMulti(slippage).MustDivForString(10000)
 		minReceiveSolAmount := go_decimal.Decimal.MustStart(shouldReceiveSolAmount).MustSub(maxLessSolAmount).RoundDownForString(constant.SOL_Decimals)
-		instruction, err := pumpfun_instruction.NewSellInstruction(
+		instruction, err := pumpfun_instruction.NewSellBaseInInstruction(
 			userAddress,
 			tokenAddress,
 			bondingCurveAddress,
 			userAssociatedTokenAddress,
-			tokenAmount,
+			type_.TokenAmountInfo{
+				Amount:   tokenAmount,
+				Decimals: pumpfun_constant.Pumpfun_Token_Decimals,
+			},
 			minReceiveSolAmount,
 		)
 		if err != nil {

@@ -6,8 +6,9 @@ import (
 
 	bin "github.com/gagliardetto/binary"
 	"github.com/gagliardetto/solana-go"
-	constant "github.com/pefish/go-coin-sol/constant"
+	"github.com/pefish/go-coin-sol/constant"
 	pumpfun_constant "github.com/pefish/go-coin-sol/program/pumpfun/constant"
+	type_ "github.com/pefish/go-coin-sol/type"
 	go_decimal "github.com/pefish/go-decimal"
 )
 
@@ -17,12 +18,12 @@ type SellInstruction struct {
 	programID solana.PublicKey
 }
 
-func NewSellInstruction(
+func NewSellBaseInInstruction(
 	userAddress solana.PublicKey,
 	tokenAddress solana.PublicKey,
 	bondingCurveAddress solana.PublicKey,
 	userAssociatedTokenAddress solana.PublicKey,
-	tokenAmount string,
+	tokenAmount type_.TokenAmountInfo,
 	minSolReceiveAmount string,
 ) (*SellInstruction, error) {
 	bondingCurveAssociatedTokenAddress, _, err := solana.FindAssociatedTokenAddress(
@@ -41,7 +42,7 @@ func NewSellInstruction(
 		TokenAmountWithDecimals  uint64
 		MaxSolAmountWithDecimals uint64
 	}{
-		TokenAmountWithDecimals:  go_decimal.Decimal.MustStart(tokenAmount).MustShiftedBy(pumpfun_constant.Pumpfun_Token_Decimals).RoundDown(0).MustEndForUint64(),
+		TokenAmountWithDecimals:  go_decimal.Decimal.MustStart(tokenAmount.Amount).MustShiftedBy(tokenAmount.Decimals).RoundDown(0).MustEndForUint64(),
 		MaxSolAmountWithDecimals: go_decimal.Decimal.MustStart(minSolReceiveAmount).MustShiftedBy(constant.SOL_Decimals).RoundDown(0).MustEndForUint64(),
 	})
 	if err != nil {
