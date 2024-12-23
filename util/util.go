@@ -7,6 +7,7 @@ import (
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
 	constant "github.com/pefish/go-coin-sol/constant"
+	type_ "github.com/pefish/go-coin-sol/type"
 	go_decimal "github.com/pefish/go-decimal"
 )
 
@@ -19,14 +20,7 @@ func FindInnerInstructions(meta *rpc.TransactionMeta, index uint64) []solana.Com
 	return nil
 }
 
-type FeeInfo struct {
-	BaseFee          string `json:"base_fee"`
-	PriorityFee      string `json:"priority_fee"`
-	TotalFee         string `json:"total_fee"`
-	ComputeUnitPrice uint64 `json:"compute_unit_price"`
-}
-
-func GetFeeInfoFromTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*FeeInfo, error) {
+func GetFeeInfoFromTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*type_.FeeInfo, error) {
 	accountKeys := transaction.Message.AccountKeys
 	if meta.LoadedAddresses.Writable != nil {
 		accountKeys = append(accountKeys, meta.LoadedAddresses.Writable...)
@@ -81,7 +75,7 @@ func GetFeeInfoFromTx(meta *rpc.TransactionMeta, transaction *solana.Transaction
 		priorityFee = go_decimal.Decimal.MustStart(computeUnitPrice).MustMulti(computeUnitLimit).MustUnShiftedBy(constant.SOL_Decimals + 6).EndForString()
 	}
 
-	return &FeeInfo{
+	return &type_.FeeInfo{
 		BaseFee:          baseFee,
 		PriorityFee:      priorityFee,
 		TotalFee:         go_decimal.Decimal.MustStart(baseFee).MustAddForString(priorityFee),

@@ -23,20 +23,19 @@ import (
 )
 
 type SwapDataType struct {
-	TokenAddress         solana.PublicKey `json:"token_address"`
-	SOLAmount            string           `json:"sol_amount"`
-	TokenAmount          string           `json:"token_amount"`
-	Type                 type_.SwapType   `json:"type"`
-	UserAddress          solana.PublicKey `json:"user_address"`
-	Timestamp            uint64           `json:"timestamp"`
-	VirtualSolReserves   string           `json:"virtual_sol_reserves"`
-	VirtualTokenReserves string           `json:"virtual_token_reserves"`
-	UserTokenBalance     string           `json:"user_token_balance"` // 交易之后用户的余额
+	TokenAddress       solana.PublicKey `json:"token_address"`
+	SOLAmount          string           `json:"sol_amount"`
+	TokenAmount        string           `json:"token_amount"`
+	Type               type_.SwapType   `json:"type"`
+	UserAddress        solana.PublicKey `json:"user_address"`
+	ReserveSOLAmount   string           `json:"reserve_sol_amount"`
+	ReserveTokenAmount string           `json:"reserve_token_amount"`
+	UserTokenBalance   string           `json:"user_token_balance"` // 交易之后用户的余额
 }
 
 type SwapTxDataType struct {
 	Swaps   []*SwapDataType
-	FeeInfo *util.FeeInfo
+	FeeInfo *type_.FeeInfo
 	TxId    string
 }
 
@@ -139,10 +138,11 @@ func ParseSwapTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*S
 					break
 				}
 			}
+			tokenAmount := go_decimal.Decimal.MustStart(log.TokenAmount).MustUnShiftedBy(pumpfun_constant.Pumpfun_Token_Decimals).EndForString()
 			swaps = append(swaps, &SwapDataType{
 				TokenAddress: log.Mint,
 				SOLAmount:    go_decimal.Decimal.MustStart(log.SOLAmount).MustUnShiftedBy(constant.SOL_Decimals).EndForString(),
-				TokenAmount:  go_decimal.Decimal.MustStart(log.TokenAmount).MustUnShiftedBy(pumpfun_constant.Pumpfun_Token_Decimals).EndForString(),
+				TokenAmount:  tokenAmount,
 				Type: func() type_.SwapType {
 					if log.IsBuy {
 						return type_.SwapType_Buy
@@ -150,11 +150,10 @@ func ParseSwapTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*S
 						return type_.SwapType_Sell
 					}
 				}(),
-				UserAddress:          log.User,
-				UserTokenBalance:     userTokenBalance,
-				Timestamp:            uint64(log.Timestamp) * 1000,
-				VirtualSolReserves:   go_decimal.Decimal.MustStart(log.VirtualSolReserves).MustUnShiftedBy(constant.SOL_Decimals).EndForString(),
-				VirtualTokenReserves: go_decimal.Decimal.MustStart(log.VirtualTokenReserves).MustUnShiftedBy(pumpfun_constant.Pumpfun_Token_Decimals).EndForString(),
+				UserAddress:        log.User,
+				UserTokenBalance:   userTokenBalance,
+				ReserveSOLAmount:   go_decimal.Decimal.MustStart(log.VirtualSolReserves).MustUnShiftedBy(constant.SOL_Decimals).EndForString(),
+				ReserveTokenAmount: go_decimal.Decimal.MustStart(log.VirtualTokenReserves).MustUnShiftedBy(pumpfun_constant.Pumpfun_Token_Decimals).EndForString(),
 			})
 		}
 	}
@@ -179,7 +178,7 @@ type CreateTxDataType struct {
 	UserAddress         solana.PublicKey `json:"user_address"`
 	BondingCurveAddress solana.PublicKey `json:"bonding_curve_address"`
 	TokenAddress        solana.PublicKey `json:"token_address"`
-	FeeInfo             *util.FeeInfo    `json:"fee_info"`
+	FeeInfo             *type_.FeeInfo   `json:"fee_info"`
 }
 
 func ParseCreateTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*CreateTxDataType, error) {
@@ -232,7 +231,7 @@ type RemoveLiqTxDataType struct {
 	TxId                string           `json:"txid"`
 	BondingCurveAddress solana.PublicKey `json:"bonding_curve_address"`
 	TokenAddress        solana.PublicKey `json:"token_address"`
-	FeeInfo             *util.FeeInfo    `json:"fee_info"`
+	FeeInfo             *type_.FeeInfo   `json:"fee_info"`
 }
 
 // 上岸
@@ -280,7 +279,7 @@ type AddLiqTxDataType struct {
 	PoolCoinTokenAccount solana.PublicKey `json:"pool_coin_token_account"`
 	PoolPcTokenAccount   solana.PublicKey `json:"pool_pc_token_account"`
 
-	FeeInfo *util.FeeInfo `json:"fee_info"`
+	FeeInfo *type_.FeeInfo `json:"fee_info"`
 }
 
 func ParseAddLiqTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*AddLiqTxDataType, error) {

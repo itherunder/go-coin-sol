@@ -1,6 +1,9 @@
 package raydium
 
 import (
+	"encoding/hex"
+
+	bin "github.com/gagliardetto/binary"
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/programs/system"
 	"github.com/gagliardetto/solana-go/programs/token"
@@ -8,9 +11,11 @@ import (
 	"github.com/pefish/go-coin-sol/constant"
 	associated_token_account "github.com/pefish/go-coin-sol/program/associated-token-account"
 	associated_token_account_instruction "github.com/pefish/go-coin-sol/program/associated-token-account/instruction"
+	raydium_constant "github.com/pefish/go-coin-sol/program/raydium/constant"
 	"github.com/pefish/go-coin-sol/program/raydium/instruction"
 	raydium_type_ "github.com/pefish/go-coin-sol/program/raydium/type"
 	type_ "github.com/pefish/go-coin-sol/type"
+	"github.com/pefish/go-coin-sol/util"
 	go_decimal "github.com/pefish/go-decimal"
 )
 
@@ -156,4 +161,104 @@ func GetReserves(
 	return datas[0].Parsed.Info.TokenAmount.UIAmountString,
 		datas[1].Parsed.Info.TokenAmount.UIAmountString,
 		nil
+}
+
+func ParseSwapTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*raydium_type_.SwapTxDataType, error) {
+	swaps := make([]*raydium_type_.SwapDataType, 0)
+
+	accountKeys := transaction.Message.AccountKeys
+	if meta.LoadedAddresses.Writable != nil {
+		accountKeys = append(accountKeys, meta.LoadedAddresses.Writable...)
+	}
+	if meta.LoadedAddresses.ReadOnly != nil {
+		accountKeys = append(accountKeys, meta.LoadedAddresses.ReadOnly...)
+	}
+
+	allInstructions := make([]solana.CompiledInstruction, 0)
+	for index, instruction := range transaction.Message.Instructions {
+		allInstructions = append(allInstructions, instruction)
+		innerInstructions := util.FindInnerInstructions(meta, uint64(index))
+		if innerInstructions == nil {
+			continue
+		}
+		allInstructions = append(allInstructions, innerInstructions...)
+	}
+
+	for index, instruction := range allInstructions {
+		programPKey := accountKeys[instruction.ProgramIDIndex]
+		if !programPKey.Equals(raydium_constant.Raydium_Liquidity_Pool_V4) {
+			continue
+		}
+		methodId := hex.EncodeToString(instruction.Data)[:2]
+		if methodId != "0b" && methodId != "09" {
+			continue
+		}
+
+		poolCoinTokenAccount := accountKeys[instruction.Accounts[len(instruction.Accounts)-13]]
+
+		transfer1Instruction := allInstructions[index+1]
+		transfer2Instruction := allInstructions[index+2]
+
+		var transfer1InstructionData struct {
+			Discriminator uint8  `json:"discriminator"`
+			Amount        uint64 `json:"amount"`
+		}
+		err := bin.NewBorshDecoder(transfer1Instruction.Data).Decode(&transfer1InstructionData)
+		if err != nil {
+			return nil, err
+		}
+
+		var transfer2InstructionData struct {
+			Discriminator uint8  `json:"discriminator"`
+			Amount        uint64 `json:"amount"`
+		}
+		err = bin.NewBorshDecoder(transfer2Instruction.Data).Decode(&transfer2InstructionData)
+		if err != nil {
+			return nil, err
+		}
+		var swapType type_.SwapType
+		var solAmount string
+		var tokenAmountWithDecimals uint64
+		if accountKeys[transfer1Instruction.Accounts[1]].Equals(poolCoinTokenAccount) {
+			swapType = type_.SwapType_Buy
+			solAmount = go_decimal.Decimal.MustStart(transfer1InstructionData.Amount).MustUnShiftedBy(constant.SOL_Decimals).EndForString()
+			tokenAmountWithDecimals = transfer2InstructionData.Amount
+		} else {
+			swapType = type_.SwapType_Sell
+			solAmount = go_decimal.Decimal.MustStart(transfer2InstructionData.Amount).MustUnShiftedBy(constant.SOL_Decimals).EndForString()
+			tokenAmountWithDecimals = transfer1InstructionData.Amount
+		}
+		swaps = append(swaps, &raydium_type_.SwapDataType{
+			SOLAmount:               solAmount,
+			TokenAmountWithDecimals: tokenAmountWithDecimals,
+			Type:                    swapType,
+			UserAddress:             accountKeys[instruction.Accounts[16]],
+			RaydiumSwapKeys: raydium_type_.RaydiumSwapKeys{
+				AmmAddress:                   accountKeys[instruction.Accounts[1]],
+				AmmOpenOrdersAddress:         &accountKeys[instruction.Accounts[3]],
+				AmmTargetOrdersAddress:       &accountKeys[instruction.Accounts[len(instruction.Accounts)-14]],
+				PoolCoinTokenAccountAddress:  poolCoinTokenAccount,
+				PoolPcTokenAccountAddress:    accountKeys[instruction.Accounts[len(instruction.Accounts)-12]],
+				SerumProgramAddress:          &accountKeys[instruction.Accounts[len(instruction.Accounts)-11]],
+				SerumMarketAddress:           &accountKeys[instruction.Accounts[len(instruction.Accounts)-10]],
+				SerumBidsAddress:             &accountKeys[instruction.Accounts[len(instruction.Accounts)-9]],
+				SerumAsksAddress:             &accountKeys[instruction.Accounts[len(instruction.Accounts)-8]],
+				SerumEventQueueAddress:       &accountKeys[instruction.Accounts[len(instruction.Accounts)-7]],
+				SerumCoinVaultAccountAddress: &accountKeys[instruction.Accounts[len(instruction.Accounts)-6]],
+				SerumPcVaultAccountAddress:   &accountKeys[instruction.Accounts[len(instruction.Accounts)-5]],
+				SerumVaultSignerAddress:      &accountKeys[instruction.Accounts[len(instruction.Accounts)-4]],
+			},
+		})
+	}
+
+	feeInfo, err := util.GetFeeInfoFromTx(meta, transaction)
+	if err != nil {
+		return nil, err
+	}
+
+	return &raydium_type_.SwapTxDataType{
+		TxId:    transaction.Signatures[0].String(),
+		Swaps:   swaps,
+		FeeInfo: feeInfo,
+	}, nil
 }

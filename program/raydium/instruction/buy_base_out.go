@@ -8,7 +8,7 @@ import (
 	"github.com/gagliardetto/solana-go"
 	"github.com/pefish/go-coin-sol/constant"
 	raydium_constant "github.com/pefish/go-coin-sol/program/raydium/constant"
-	raydium_type_ "github.com/pefish/go-coin-sol/program/raydium/type"
+	raydium_type "github.com/pefish/go-coin-sol/program/raydium/type"
 	type_ "github.com/pefish/go-coin-sol/type"
 	go_decimal "github.com/pefish/go-decimal"
 )
@@ -26,7 +26,7 @@ func NewBuyBaseOutInstruction(
 	userTokenAssociatedAccount solana.PublicKey,
 	tokenAmount type_.TokenAmountInfo,
 	maxCostSolAmount string,
-	raydiumSwapKeys raydium_type_.RaydiumSwapKeys,
+	raydiumSwapKeys raydium_type.RaydiumSwapKeys,
 ) (*BuyInstruction, error) {
 	methodBytes, err := hex.DecodeString("0b")
 	if err != nil {
