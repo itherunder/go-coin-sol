@@ -66,21 +66,23 @@ func (t *Wallet) SendTx(
 ) (
 	meta_ *rpc.TransactionMeta,
 	tx_ *solana.Transaction,
+	timestamp_ uint64,
 	err_ error,
 ) {
 	tx, err := t.BuildTx(privObj, latestBlockhash, instructions, unitPrice, unitLimit)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, 0, err
 	}
 	t.logger.InfoF("交易构建成功。<%s>", tx.Signatures[0].String())
 
 	newCtx, _ := context.WithTimeout(ctx, 60*time.Second)
-	meta, err := t.SendAndConfirmTransaction(newCtx, tx, skipPreflight)
+	meta, timestamp, err := t.SendAndConfirmTransaction(newCtx, tx, skipPreflight)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, 0, err
 	}
 	t.logger.InfoF("交易已确认。<%s>", tx.Signatures[0].String())
-	return meta, tx, nil
+
+	return meta, tx, timestamp, nil
 }
 
 func (t *Wallet) BuildTx(
@@ -135,12 +137,16 @@ func (t *Wallet) SendAndConfirmTransaction(
 	ctx context.Context,
 	tx *solana.Transaction,
 	skipPreflight bool,
-) (*rpc.TransactionMeta, error) {
+) (
+	meta_ *rpc.TransactionMeta,
+	timestamp_ uint64,
+	err_ error,
+) {
 	signature, err := t.rpcClient.SendTransactionWithOpts(ctx, tx, rpc.TransactionOpts{
 		SkipPreflight: skipPreflight,
 	})
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	timer := time.NewTimer(2 * time.Second)
 	for {
@@ -163,9 +169,9 @@ func (t *Wallet) SendAndConfirmTransaction(
 				timer.Reset(2 * time.Second)
 				continue
 			}
-			return getTransactionResult.Meta, nil
+			return getTransactionResult.Meta, uint64(*getTransactionResult.BlockTime * 1000), nil
 		case <-ctx.Done():
-			return nil, ctx.Err()
+			return nil, 0, ctx.Err()
 		}
 	}
 

@@ -47,7 +47,7 @@ func TestWallet_SwapPumpfun(t *testing.T) {
 		50,
 	)
 	go_test_.Equal(t, nil, err)
-	meta, tx, err := WalletInstance.SendTx(
+	meta, tx, _, err := WalletInstance.SendTx(
 		context.Background(),
 		privObj,
 		nil,
@@ -99,7 +99,7 @@ func TestWallet_SwapRaydium(t *testing.T) {
 		50,
 	)
 	go_test_.Equal(t, nil, err)
-	_, _, err = WalletInstance.SendTx(
+	_, _, _, err = WalletInstance.SendTx(
 		context.Background(),
 		privObj,
 		nil,
