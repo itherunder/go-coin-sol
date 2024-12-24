@@ -21,7 +21,17 @@ import (
 var WalletInstance *Wallet
 
 func init() {
-	instance, err := New(context.Background(), &i_logger.DefaultLogger, rpc.MainNetBeta_RPC, "")
+	url := rpc.MainNetBeta_RPC
+	envUrl := os.Getenv("URL")
+	if envUrl != "" {
+		url = envUrl
+	}
+	instance, err := New(
+		context.Background(),
+		&i_logger.DefaultLogger,
+		url,
+		"",
+	)
 	if err != nil {
 		panic(err)
 	}
@@ -29,7 +39,7 @@ func init() {
 }
 
 func TestWallet_SwapPumpfun(t *testing.T) {
-	return
+	// return
 	privObj, err := solana.PrivateKeyFromBase58(os.Getenv("PRIV"))
 	go_test_.Equal(t, nil, err)
 	tokenAddress := solana.MustPublicKeyFromBase58("CcZJFmUJ95vX4Ae4g2SCjQzT8hGqFsQdPi5WeD9Qpump")
@@ -52,7 +62,7 @@ func TestWallet_SwapPumpfun(t *testing.T) {
 		privObj,
 		nil,
 		swapInstructions,
-		11000,
+		0,
 		pumpfun_constant.Pumpfun_Buy_Unit_Limit,
 		false,
 		nil,

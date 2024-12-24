@@ -12,6 +12,7 @@ import (
 	constant "github.com/pefish/go-coin-sol/constant"
 	go_format "github.com/pefish/go-format"
 	i_logger "github.com/pefish/go-interface/i-logger"
+	"github.com/pefish/go-time"
 	"github.com/pkg/errors"
 )
 
@@ -77,7 +78,7 @@ func (t *Wallet) SendTx(
 	if err != nil {
 		return nil, nil, 0, err
 	}
-	t.logger.InfoF("交易构建成功。<%s>", tx.Signatures[0].String())
+	t.logger.InfoF("交易构建成功 <%d>。<%s>", go_time.CurrentTimestamp(), tx.Signatures[0].String())
 
 	meta, timestamp, err := t.SendAndConfirmTransaction(ctx, tx, skipPreflight, urls)
 	if err != nil {
@@ -190,10 +191,10 @@ func (t *Wallet) SendAndConfirmTransaction(
 			}
 
 			if getTransactionResult.Meta.Err != nil {
-				t.logger.InfoF("交易已确认[执行失败]。<%s>", tx.Signatures[0].String())
+				t.logger.InfoF("交易已确认[执行失败] <%d>。<%s>", *getTransactionResult.BlockTime*1000, tx.Signatures[0].String())
 				return getTransactionResult.Meta, uint64(*getTransactionResult.BlockTime * 1000), errors.New(go_format.ToString(getTransactionResult.Meta.Err))
 			}
-			t.logger.InfoF("交易已确认[执行成功]。<%s>", tx.Signatures[0].String())
+			t.logger.InfoF("交易已确认[执行成功] <%d>。<%s>", *getTransactionResult.BlockTime*1000, tx.Signatures[0].String())
 			return getTransactionResult.Meta, uint64(*getTransactionResult.BlockTime * 1000), nil
 		case <-newCtx.Done():
 			return nil, 0, errors.New("确认超时")

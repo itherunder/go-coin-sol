@@ -40,6 +40,7 @@ require (
 	github.com/mr-tron/base58 v1.2.0 // indirect
 	github.com/pefish/go-desensitize v0.0.7 // indirect
 	github.com/pefish/go-format v0.5.1 // indirect
+	github.com/pefish/go-time v0.3.5 // indirect
 	github.com/smarty/assertions v1.16.0 // indirect
 	github.com/streamingfast/logging v0.0.0-20230608130331-f22c91403091 // indirect
 	go.mongodb.org/mongo-driver v1.12.2 // indirect

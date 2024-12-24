@@ -84,6 +84,8 @@ github.com/pefish/go-interface v0.1.5 h1:ec0+NYAIN+5UYjHrpg6O8qaSquH8qQzFpZgE6g0
 github.com/pefish/go-interface v0.1.5/go.mod h1:usSGQkQvVOKPGeDEEYpA7EnqCT/kADcLQxmfdRfMQXE=
 github.com/pefish/go-test v0.0.4 h1:s1RmZWe91K1MtENJUcl7CjGUFK/TmleZ5h3OkHq/BTI=
 github.com/pefish/go-test v0.0.4/go.mod h1:z9DAQQyjfKx0dRTBSaJCOSMwyMjwNEHI+/CBwNaCwk0=
+github.com/pefish/go-time v0.3.5 h1:bLkvBH99+PhS9zLEyPJQWgaQmhCTIcqKdOqRFKPCA4c=
+github.com/pefish/go-time v0.3.5/go.mod h1:QO6RKtlUBbbOGEoJEZA/+vmQvfBdavAMP09ROZhTV0Q=
 github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
