@@ -55,6 +55,7 @@ func TestWallet_SwapPumpfun(t *testing.T) {
 		1000000,
 		pumpfun_constant.Pumpfun_Buy_Unit_Limit,
 		false,
+		nil,
 	)
 	go_test_.Equal(t, nil, err)
 	swapResult, err := pumpfun.ParseSwapTx(meta, tx)
@@ -107,6 +108,7 @@ func TestWallet_SwapRaydium(t *testing.T) {
 		1000000,
 		raydium_constant.Raydium_Buy_Unit_Limit,
 		false,
+		nil,
 	)
 	go_test_.Equal(t, nil, err)
 }

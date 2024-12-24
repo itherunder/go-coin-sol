@@ -2,6 +2,8 @@ package util
 
 import (
 	"encoding/hex"
+	"fmt"
+	"time"
 
 	bin "github.com/gagliardetto/binary"
 	"github.com/gagliardetto/solana-go"
@@ -9,6 +11,8 @@ import (
 	constant "github.com/pefish/go-coin-sol/constant"
 	type_ "github.com/pefish/go-coin-sol/type"
 	go_decimal "github.com/pefish/go-decimal"
+	go_http "github.com/pefish/go-http"
+	i_logger "github.com/pefish/go-interface/i-logger"
 )
 
 func FindInnerInstructions(meta *rpc.TransactionMeta, index uint64) []solana.CompiledInstruction {
@@ -20,6 +24,44 @@ func FindInnerInstructions(meta *rpc.TransactionMeta, index uint64) []solana.Com
 	return nil
 }
 
+func GetComputeUnitPriceFromHelius(
+	logger i_logger.ILogger,
+	key string,
+	accountKeys []string,
+) (uint64, error) {
+	var httpResult struct {
+		Result struct {
+			PriorityFeeEstimate float64 `json:"priorityFeeEstimate"`
+		} `json:"result"`
+	}
+	_, _, err := go_http.NewHttpRequester(
+		go_http.WithLogger(logger),
+		go_http.WithTimeout(10*time.Second),
+	).PostForStruct(
+		&go_http.RequestParams{
+			Url: fmt.Sprintf("https://mainnet.helius-rpc.com/?api-key=%s", key),
+			Params: map[string]interface{}{
+				"jsonrpc": "2.0",
+				"id":      "helius-example",
+				"method":  "getPriorityFeeEstimate",
+				"params": []map[string]interface{}{
+					{
+						"accountKeys": accountKeys,
+						"options": map[string]interface{}{
+							"recommended": true,
+						},
+					},
+				},
+			},
+		},
+		&httpResult,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return go_decimal.Decimal.MustStart(httpResult.Result.PriorityFeeEstimate).RoundDown(0).MustEndForUint64(), nil
+}
+
 func GetFeeInfoFromTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*type_.FeeInfo, error) {
 	accountKeys := transaction.Message.AccountKeys
 	if meta.LoadedAddresses.Writable != nil {
@@ -29,7 +71,7 @@ func GetFeeInfoFromTx(meta *rpc.TransactionMeta, transaction *solana.Transaction
 		accountKeys = append(accountKeys, meta.LoadedAddresses.ReadOnly...)
 	}
 
-	baseFee := go_decimal.Decimal.MustStart(meta.Fee).MustUnShiftedBy(constant.SOL_Decimals).EndForString()
+	totalFee := go_decimal.Decimal.MustStart(meta.Fee).MustUnShiftedBy(constant.SOL_Decimals).EndForString()
 	priorityFee := "0"
 	computeUnitPrice := 0
 
@@ -76,9 +118,9 @@ func GetFeeInfoFromTx(meta *rpc.TransactionMeta, transaction *solana.Transaction
 	}
 
 	return &type_.FeeInfo{
-		BaseFee:          baseFee,
+		BaseFee:          go_decimal.Decimal.MustStart(totalFee).MustSubForString(priorityFee),
 		PriorityFee:      priorityFee,
-		TotalFee:         go_decimal.Decimal.MustStart(baseFee).MustAddForString(priorityFee),
+		TotalFee:         totalFee,
 		ComputeUnitPrice: uint64(computeUnitPrice),
 	}, nil
 }
