@@ -168,7 +168,8 @@ func (t *Wallet) SendAndConfirmTransaction(
 					confirmTimer.Reset(500 * time.Millisecond)
 					continue
 				}
-				if strings.Contains(err.Error(), "Program failed to complete") {
+				if strings.Contains(err.Error(), "Program failed to complete") ||
+					strings.Contains(err.Error(), "custom program error") {
 					return nil, 0, err
 				}
 				// t.logger.Error(err.Error())
