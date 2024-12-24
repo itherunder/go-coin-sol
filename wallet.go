@@ -12,7 +12,7 @@ import (
 	constant "github.com/pefish/go-coin-sol/constant"
 	go_format "github.com/pefish/go-format"
 	i_logger "github.com/pefish/go-interface/i-logger"
-	"github.com/pefish/go-time"
+	go_time "github.com/pefish/go-time"
 	"github.com/pkg/errors"
 )
 
@@ -153,7 +153,7 @@ func (t *Wallet) SendAndConfirmTransaction(
 			})
 		}(url)
 	}
-	newCtx, _ := context.WithTimeout(ctx, 60*time.Second)
+	newCtx, _ := context.WithTimeout(ctx, 90*time.Second) // 150 个 slot 链上就会超时，每个 slot 是 400ms - 600ms，也就是 60-90s
 	confirmTimer := time.NewTimer(0)
 	for {
 		select {
