@@ -147,15 +147,11 @@ func (t *Wallet) SendAndConfirmTransaction(
 	err_ error,
 ) {
 	for _, url := range urls {
-		_, err := rpc.New(url).SendTransactionWithOpts(ctx, tx, rpc.TransactionOpts{
-			SkipPreflight: skipPreflight,
-		})
-		if err != nil {
-			if strings.Contains(err.Error(), "Program failed to complete") ||
-				strings.Contains(err.Error(), "custom program error") {
-				return nil, 0, err
-			}
-		}
+		go func() {
+			rpc.New(url).SendTransactionWithOpts(ctx, tx, rpc.TransactionOpts{
+				SkipPreflight: skipPreflight,
+			})
+		}()
 	}
 	confirmTimer := time.NewTimer(0)
 	for {
