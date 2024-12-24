@@ -10,7 +10,9 @@ import (
 	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/gagliardetto/solana-go/rpc/ws"
 	constant "github.com/pefish/go-coin-sol/constant"
+	go_format "github.com/pefish/go-format"
 	i_logger "github.com/pefish/go-interface/i-logger"
+	"github.com/pkg/errors"
 )
 
 type Wallet struct {
@@ -81,7 +83,6 @@ func (t *Wallet) SendTx(
 	if err != nil {
 		return nil, nil, 0, err
 	}
-	t.logger.InfoF("交易已确认。<%s>", tx.Signatures[0].String())
 
 	return meta, tx, timestamp, nil
 }
@@ -158,7 +159,7 @@ func (t *Wallet) SendAndConfirmTransaction(
 				if strings.Contains(err.Error(), "Program failed to complete") {
 					return nil, 0, err
 				}
-				// t.logger.Error(err.Error())
+				t.logger.Error(err.Error())
 			}
 			getTransactionResult, err := t.rpcClient.GetTransaction(
 				ctx,
@@ -176,6 +177,10 @@ func (t *Wallet) SendAndConfirmTransaction(
 			if getTransactionResult == nil {
 				confirmTimer.Reset(2 * time.Second)
 				continue
+			}
+			t.logger.InfoF("交易已确认。<%s>", tx.Signatures[0].String())
+			if getTransactionResult.Meta.Err != nil {
+				return getTransactionResult.Meta, uint64(*getTransactionResult.BlockTime * 1000), errors.New(go_format.ToString(getTransactionResult.Meta.Err))
 			}
 			return getTransactionResult.Meta, uint64(*getTransactionResult.BlockTime * 1000), nil
 		case <-ctx.Done():
