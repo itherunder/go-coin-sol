@@ -142,19 +142,32 @@ func (t *Wallet) SendAndConfirmTransaction(
 	timestamp_ uint64,
 	err_ error,
 ) {
-	signature, err := t.rpcClient.SendTransactionWithOpts(ctx, tx, rpc.TransactionOpts{
-		SkipPreflight: skipPreflight,
-	})
-	if err != nil {
-		return nil, 0, err
-	}
-	timer := time.NewTimer(2 * time.Second)
+	sendTimer := time.NewTimer(0)
+sendOver:
 	for {
 		select {
-		case <-timer.C:
+		case <-sendTimer.C:
+			_, err := t.rpcClient.SendTransactionWithOpts(ctx, tx, rpc.TransactionOpts{
+				SkipPreflight: skipPreflight,
+			})
+			if err != nil {
+				t.logger.Debug(err)
+				sendTimer.Reset(500 * time.Millisecond)
+				continue
+			}
+			break sendOver
+		case <-ctx.Done():
+			return nil, 0, ctx.Err()
+		}
+	}
+	t.logger.InfoF("交易发送成功。<%s>", tx.Signatures[0].String())
+	confirmTimer := time.NewTimer(2 * time.Second)
+	for {
+		select {
+		case <-confirmTimer.C:
 			getTransactionResult, err := t.rpcClient.GetTransaction(
 				ctx,
-				signature,
+				tx.Signatures[0],
 				&rpc.GetTransactionOpts{
 					Commitment:                     rpc.CommitmentConfirmed,
 					MaxSupportedTransactionVersion: constant.MaxSupportedTransactionVersion_0,
@@ -162,11 +175,11 @@ func (t *Wallet) SendAndConfirmTransaction(
 			)
 			if err != nil {
 				t.logger.Debug(err)
-				timer.Reset(2 * time.Second)
+				confirmTimer.Reset(2 * time.Second)
 				continue
 			}
 			if getTransactionResult == nil {
-				timer.Reset(2 * time.Second)
+				confirmTimer.Reset(2 * time.Second)
 				continue
 			}
 			return getTransactionResult.Meta, uint64(*getTransactionResult.BlockTime * 1000), nil
