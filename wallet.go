@@ -2,6 +2,7 @@ package go_coin_sol
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/gagliardetto/solana-go"
@@ -150,9 +151,10 @@ func (t *Wallet) SendAndConfirmTransaction(
 				SkipPreflight: skipPreflight,
 			})
 			if err != nil {
-				t.logger.Error(err.Error())
-				confirmTimer.Reset(500 * time.Millisecond)
-				continue
+				if strings.Contains(err.Error(), "Blockhash not found") {
+					confirmTimer.Reset(500 * time.Millisecond)
+					continue
+				}
 			}
 			getTransactionResult, err := t.rpcClient.GetTransaction(
 				ctx,
