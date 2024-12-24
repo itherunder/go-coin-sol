@@ -155,6 +155,10 @@ func (t *Wallet) SendAndConfirmTransaction(
 					confirmTimer.Reset(500 * time.Millisecond)
 					continue
 				}
+				if strings.Contains(err.Error(), "Program failed to complete") {
+					return nil, 0, err
+				}
+				// t.logger.Error(err.Error())
 			}
 			getTransactionResult, err := t.rpcClient.GetTransaction(
 				ctx,
