@@ -66,6 +66,7 @@ func (t *Wallet) SendTx(
 	unitPrice uint64,
 	unitLimit uint64,
 	skipPreflight bool,
+	urls []string,
 ) (
 	meta_ *rpc.TransactionMeta,
 	tx_ *solana.Transaction,
@@ -79,7 +80,7 @@ func (t *Wallet) SendTx(
 	t.logger.InfoF("交易构建成功。<%s>", tx.Signatures[0].String())
 
 	newCtx, _ := context.WithTimeout(ctx, 60*time.Second)
-	meta, timestamp, err := t.SendAndConfirmTransaction(newCtx, tx, skipPreflight)
+	meta, timestamp, err := t.SendAndConfirmTransaction(newCtx, tx, skipPreflight, urls)
 	if err != nil {
 		return nil, nil, 0, err
 	}
@@ -139,11 +140,22 @@ func (t *Wallet) SendAndConfirmTransaction(
 	ctx context.Context,
 	tx *solana.Transaction,
 	skipPreflight bool,
+	urls []string,
 ) (
 	meta_ *rpc.TransactionMeta,
 	timestamp_ uint64,
 	err_ error,
 ) {
+	for _, url := range urls {
+		_, err := rpc.New(url).SendTransactionWithOpts(ctx, tx, rpc.TransactionOpts{
+			SkipPreflight: skipPreflight,
+		})
+		if err != nil {
+			if strings.Contains(err.Error(), "Program failed to complete") {
+				return nil, 0, err
+			}
+		}
+	}
 	confirmTimer := time.NewTimer(0)
 	for {
 		select {
@@ -159,7 +171,7 @@ func (t *Wallet) SendAndConfirmTransaction(
 				if strings.Contains(err.Error(), "Program failed to complete") {
 					return nil, 0, err
 				}
-				t.logger.Error(err.Error())
+				// t.logger.Error(err.Error())
 			}
 			getTransactionResult, err := t.rpcClient.GetTransaction(
 				ctx,
