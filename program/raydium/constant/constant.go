@@ -8,6 +8,6 @@ var (
 )
 
 const (
-	Raydium_Buy_Unit_Limit  = 65000
-	Raydium_Sell_Unit_Limit = 40000
+	Raydium_Buy_Unit_Limit  = 70000
+	Raydium_Sell_Unit_Limit = 50000
 )

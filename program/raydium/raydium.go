@@ -114,6 +114,12 @@ func GetSwapInstructions(
 		}
 		instructions = append(
 			instructions,
+			associated_token_account_instruction.NewCreateIdempotentInstruction(
+				userAddress,
+				userWSOLAssociatedAccount,
+				userAddress,
+				solana.SolMint,
+			),
 			swapInstruction,
 		)
 
