@@ -147,11 +147,11 @@ func (t *Wallet) SendAndConfirmTransaction(
 	err_ error,
 ) {
 	for _, url := range urls {
-		go func() {
+		go func(url string) {
 			rpc.New(url).SendTransactionWithOpts(ctx, tx, rpc.TransactionOpts{
 				SkipPreflight: skipPreflight,
 			})
-		}()
+		}(url)
 	}
 	confirmTimer := time.NewTimer(0)
 	for {
@@ -188,10 +188,12 @@ func (t *Wallet) SendAndConfirmTransaction(
 				confirmTimer.Reset(2 * time.Second)
 				continue
 			}
-			t.logger.InfoF("交易已确认。<%s>", tx.Signatures[0].String())
+
 			if getTransactionResult.Meta.Err != nil {
+				t.logger.InfoF("交易已确认[执行失败]。<%s>", tx.Signatures[0].String())
 				return getTransactionResult.Meta, uint64(*getTransactionResult.BlockTime * 1000), errors.New(go_format.ToString(getTransactionResult.Meta.Err))
 			}
+			t.logger.InfoF("交易已确认[执行成功]。<%s>", tx.Signatures[0].String())
 			return getTransactionResult.Meta, uint64(*getTransactionResult.BlockTime * 1000), nil
 		case <-ctx.Done():
 			return nil, 0, ctx.Err()
