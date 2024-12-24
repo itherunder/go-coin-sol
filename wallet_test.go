@@ -32,15 +32,15 @@ func TestWallet_SwapPumpfun(t *testing.T) {
 	return
 	privObj, err := solana.PrivateKeyFromBase58(os.Getenv("PRIV"))
 	go_test_.Equal(t, nil, err)
-	tokenAddress := solana.MustPublicKeyFromBase58("ESxwAtD82mHgPDvQ2D1j1EEi5UFYXGRFB4MdWLq8pump")
+	tokenAddress := solana.MustPublicKeyFromBase58("CcZJFmUJ95vX4Ae4g2SCjQzT8hGqFsQdPi5WeD9Qpump")
 	data, err := pumpfun.GetBondingCurveData(WalletInstance.rpcClient, &tokenAddress, nil)
 	go_test_.Equal(t, nil, err)
 
 	swapInstructions, err := pumpfun.GetSwapInstructions(
 		privObj.PublicKey(),
-		type_.SwapType_Sell,
+		type_.SwapType_Buy,
 		tokenAddress,
-		"1000",
+		"300",
 		true,
 		data.VirtualSolReserves,
 		data.VirtualTokenReserves,
@@ -52,7 +52,7 @@ func TestWallet_SwapPumpfun(t *testing.T) {
 		privObj,
 		nil,
 		swapInstructions,
-		1000000,
+		11000,
 		pumpfun_constant.Pumpfun_Buy_Unit_Limit,
 		false,
 		nil,
