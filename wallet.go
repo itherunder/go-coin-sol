@@ -142,29 +142,18 @@ func (t *Wallet) SendAndConfirmTransaction(
 	timestamp_ uint64,
 	err_ error,
 ) {
-	sendTimer := time.NewTimer(0)
-sendOver:
+	confirmTimer := time.NewTimer(0)
 	for {
 		select {
-		case <-sendTimer.C:
+		case <-confirmTimer.C:
 			_, err := t.rpcClient.SendTransactionWithOpts(ctx, tx, rpc.TransactionOpts{
 				SkipPreflight: skipPreflight,
 			})
 			if err != nil {
-				t.logger.Debug(err)
-				sendTimer.Reset(500 * time.Millisecond)
+				t.logger.Error(err.Error())
+				confirmTimer.Reset(500 * time.Millisecond)
 				continue
 			}
-			break sendOver
-		case <-ctx.Done():
-			return nil, 0, ctx.Err()
-		}
-	}
-	t.logger.InfoF("交易发送成功。<%s>", tx.Signatures[0].String())
-	confirmTimer := time.NewTimer(2 * time.Second)
-	for {
-		select {
-		case <-confirmTimer.C:
 			getTransactionResult, err := t.rpcClient.GetTransaction(
 				ctx,
 				tx.Signatures[0],
