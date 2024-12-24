@@ -121,17 +121,17 @@ func GetSwapInstructions(
 				solana.SolMint,
 			),
 			swapInstruction,
+			token.NewCloseAccountInstruction(
+				userWSOLAssociatedAccount,
+				userAddress,
+				userAddress,
+				nil,
+			).Build(),
 		)
 
 		if isClose {
 			instructions = append(
 				instructions,
-				token.NewCloseAccountInstruction(
-					userWSOLAssociatedAccount,
-					userAddress,
-					userAddress,
-					nil,
-				).Build(),
 				token.NewCloseAccountInstruction(
 					userTokenAssociatedAccount,
 					userAddress,
