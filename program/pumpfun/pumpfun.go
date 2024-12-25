@@ -31,6 +31,7 @@ type SwapDataType struct {
 	ReserveSOLAmount   string           `json:"reserve_sol_amount"`
 	ReserveTokenAmount string           `json:"reserve_token_amount"`
 	UserTokenBalance   string           `json:"user_token_balance"` // 交易之后用户的余额
+	UserBalance        string           `json:"user_balance"`
 }
 
 type SwapTxDataType struct {
@@ -133,7 +134,8 @@ func ParseSwapTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*S
 			}
 			userTokenBalance := "0"
 			for _, postTokenBalanceInfo := range meta.PostTokenBalances {
-				if postTokenBalanceInfo.Owner.Equals(log.User) {
+				if postTokenBalanceInfo.Owner.Equals(log.User) &&
+					postTokenBalanceInfo.Mint.Equals(log.Mint) {
 					userTokenBalance = postTokenBalanceInfo.UiTokenAmount.UiAmountString
 					break
 				}
@@ -152,6 +154,7 @@ func ParseSwapTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*S
 				}(),
 				UserAddress:        log.User,
 				UserTokenBalance:   userTokenBalance,
+				UserBalance:        go_decimal.Decimal.MustStart(meta.PostBalances[0]).MustUnShiftedBy(constant.SOL_Decimals).EndForString(),
 				ReserveSOLAmount:   go_decimal.Decimal.MustStart(log.VirtualSolReserves).MustUnShiftedBy(constant.SOL_Decimals).EndForString(),
 				ReserveTokenAmount: go_decimal.Decimal.MustStart(log.VirtualTokenReserves).MustUnShiftedBy(pumpfun_constant.Pumpfun_Token_Decimals).EndForString(),
 			})

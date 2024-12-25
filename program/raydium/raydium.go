@@ -2,6 +2,7 @@ package raydium
 
 import (
 	"encoding/hex"
+	"fmt"
 
 	bin "github.com/gagliardetto/binary"
 	"github.com/gagliardetto/solana-go"
@@ -232,20 +233,59 @@ func ParseSwapTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*r
 		var swapType type_.SwapType
 		var solAmount string
 		var tokenAmountWithDecimals uint64
+		var userTokenAssociatedAccount solana.PublicKey
 		if accountKeys[transfer1Instruction.Accounts[1]].Equals(poolCoinTokenAccount) {
 			swapType = type_.SwapType_Buy
 			solAmount = go_decimal.Decimal.MustStart(transfer1InstructionData.Amount).MustUnShiftedBy(constant.SOL_Decimals).EndForString()
 			tokenAmountWithDecimals = transfer2InstructionData.Amount
+			userTokenAssociatedAccount = accountKeys[instruction.Accounts[16]]
 		} else {
 			swapType = type_.SwapType_Sell
 			solAmount = go_decimal.Decimal.MustStart(transfer2InstructionData.Amount).MustUnShiftedBy(constant.SOL_Decimals).EndForString()
 			tokenAmountWithDecimals = transfer1InstructionData.Amount
+			userTokenAssociatedAccount = accountKeys[instruction.Accounts[15]]
 		}
+
+		userAddress := accountKeys[0]
+		var tokenAddress solana.PublicKey
+		userTokenBalance := "0"
+		var tokenDecimals uint64
+
+		fmt.Println(userTokenAssociatedAccount.String(), userAddress)
+		var tokenBalanceInfo *rpc.TokenBalance
+		for _, postTokenBalanceInfo := range meta.PostTokenBalances {
+			if postTokenBalanceInfo.Owner.Equals(userAddress) &&
+				accountKeys[postTokenBalanceInfo.AccountIndex].Equals(userTokenAssociatedAccount) {
+				tokenBalanceInfo = &postTokenBalanceInfo
+				break
+			}
+		}
+		if tokenBalanceInfo == nil {
+			for _, postTokenBalanceInfo := range meta.PreTokenBalances {
+				if postTokenBalanceInfo.Owner.Equals(userAddress) &&
+					accountKeys[postTokenBalanceInfo.AccountIndex].Equals(userTokenAssociatedAccount) {
+					tokenBalanceInfo = &postTokenBalanceInfo
+					break
+				}
+			}
+			if tokenBalanceInfo == nil {
+				return nil, errors.New("没有找到 token 相关的 balance info")
+			}
+			userTokenBalance = "0"
+		} else {
+			userTokenBalance = tokenBalanceInfo.UiTokenAmount.UiAmountString
+		}
+		tokenAddress = tokenBalanceInfo.Mint
+		tokenDecimals = uint64(tokenBalanceInfo.UiTokenAmount.Decimals)
+
 		swaps = append(swaps, &raydium_type_.SwapDataType{
-			SOLAmount:               solAmount,
-			TokenAmountWithDecimals: tokenAmountWithDecimals,
-			Type:                    swapType,
-			UserAddress:             accountKeys[instruction.Accounts[16]],
+			TokenAddress:     tokenAddress,
+			SOLAmount:        solAmount,
+			TokenAmount:      go_decimal.Decimal.MustStart(tokenAmountWithDecimals).MustUnShiftedBy(tokenDecimals).EndForString(),
+			Type:             swapType,
+			UserAddress:      userAddress,
+			UserBalance:      go_decimal.Decimal.MustStart(meta.PostBalances[0]).MustUnShiftedBy(constant.SOL_Decimals).EndForString(),
+			UserTokenBalance: userTokenBalance,
 			RaydiumSwapKeys: raydium_type_.RaydiumSwapKeys{
 				AmmAddress:                   accountKeys[instruction.Accounts[1]],
 				AmmOpenOrdersAddress:         &accountKeys[instruction.Accounts[3]],

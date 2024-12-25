@@ -12,7 +12,7 @@ import (
 )
 
 func TestParseSwapTx(t *testing.T) {
-	return
+	// return
 	endpoint := rpc.MainNetBeta_RPC
 	client := rpc.New(endpoint)
 	getTransactionResult, err := client.GetTransaction(
@@ -29,7 +29,16 @@ func TestParseSwapTx(t *testing.T) {
 	r, err := ParseSwapTx(getTransactionResult.Meta, tx)
 	go_test_.Equal(t, nil, err)
 	for _, swap := range r.Swaps {
-		fmt.Printf("<%s> <%s> <%s sol> <%d token>\n", swap.UserAddress, swap.Type, swap.SOLAmount, swap.TokenAmountWithDecimals)
+		fmt.Printf(
+			"<UserAddress: %s> <%s> <TokenAddress: %s> <%s sol> <TokenAmount: %s> <UserBalance: %s> <UserTokenBalance: %s>\n",
+			swap.UserAddress,
+			swap.Type,
+			swap.TokenAddress,
+			swap.SOLAmount,
+			swap.TokenAmount,
+			swap.UserBalance,
+			swap.UserTokenBalance,
+		)
 	}
 
 }

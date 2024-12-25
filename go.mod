@@ -6,9 +6,11 @@ require (
 	github.com/gagliardetto/binary v0.8.0
 	github.com/gagliardetto/solana-go v1.12.0
 	github.com/pefish/go-decimal v0.4.5
+	github.com/pefish/go-format v0.5.1
 	github.com/pefish/go-http v0.8.7
 	github.com/pefish/go-interface v0.1.5
 	github.com/pefish/go-test v0.0.4
+	github.com/pefish/go-time v0.3.5
 	github.com/pkg/errors v0.9.1
 )
 
@@ -39,8 +41,6 @@ require (
 	github.com/mostynb/zstdpool-freelist v0.0.0-20201229113212-927304c0c3b1 // indirect
 	github.com/mr-tron/base58 v1.2.0 // indirect
 	github.com/pefish/go-desensitize v0.0.7 // indirect
-	github.com/pefish/go-format v0.5.1 // indirect
-	github.com/pefish/go-time v0.3.5 // indirect
 	github.com/smarty/assertions v1.16.0 // indirect
 	github.com/streamingfast/logging v0.0.0-20230608130331-f22c91403091 // indirect
 	go.mongodb.org/mongo-driver v1.12.2 // indirect

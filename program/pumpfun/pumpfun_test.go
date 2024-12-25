@@ -13,7 +13,6 @@ import (
 )
 
 func TestParseSwapTx(t *testing.T) {
-	return
 	endpoint := rpc.MainNetBeta_RPC
 	client := rpc.New(endpoint)
 	getTransactionResult, err := client.GetTransaction(
@@ -33,12 +32,11 @@ func TestParseSwapTx(t *testing.T) {
 }
 
 func TestParseTx(t *testing.T) {
-	// return
 	endpoint := rpc.MainNetBeta_RPC
 	client := rpc.New(endpoint)
 	getTransactionResult, err := client.GetTransaction(
 		context.TODO(),
-		solana.MustSignatureFromBase58("4NCCT3vSriju4zQwwrukrhLA3b3iuriBN4ANFCkEEvDT554PTTnCZxLpwypBzkZCGUST85MRVwiVjbDwpLT21Xvw"),
+		solana.MustSignatureFromBase58("4zGZfarZKsp6SNkWv2YXzeTBCuFKUAaHbGeoTTU64bkXBCU6Km4ZWrscW9frTRofQybneH33siPnhwtHyuxF5AJ7"),
 		&rpc.GetTransactionOpts{
 			Commitment:                     rpc.CommitmentConfirmed,
 			MaxSupportedTransactionVersion: constant.MaxSupportedTransactionVersion_0,
@@ -63,13 +61,18 @@ func TestParseTx(t *testing.T) {
 
 	if r.SwapTxData != nil {
 		for _, swapData := range r.SwapTxData.Swaps {
-			fmt.Printf("[Swap] <%s> <%s> <%s>\n", swapData.SOLAmount, swapData.TokenAmount, swapData.UserTokenBalance)
+			fmt.Printf(
+				"[Swap] <SOLAmount: %s> <TokenAmount: %s> <UserBalance: %s> <UserTokenBalance: %s>\n",
+				swapData.SOLAmount,
+				swapData.TokenAmount,
+				swapData.UserBalance,
+				swapData.UserTokenBalance,
+			)
 		}
 	}
 }
 
 func TestURIInfo(t *testing.T) {
-	return
 	r, err := URIInfo(&i_logger.DefaultLogger, "https://ipfs.io/ipfs/QmVSKrX4XxUgHMCp2wnmE3VmnK3fCyZsSqFiVGQZowiM1c")
 	go_test_.Equal(t, nil, err)
 	fmt.Println("aa", r.Twitter)
