@@ -420,7 +420,7 @@ func GetSwapInstructions(
 	isCloseUserAssociatedTokenAddress bool,
 	virtualSolReserve string,
 	virtualTokenReserve string,
-	slippage uint64,
+	slippage int64,
 ) ([]solana.Instruction, error) {
 	if slippage == 0 {
 		slippage = 50 // 0.5%
@@ -449,6 +449,9 @@ func GetSwapInstructions(
 	}
 	var swapInstruction solana.Instruction
 	if swapType == type_.SwapType_Buy {
+		if slippage == -1 {
+			return nil, errors.New("购买必须设置滑点")
+		}
 		// 应该花费的 sol 数量
 		shouldCostSolAmount := go_decimal.Decimal.MustStart(virtualSolReserve).MustMulti(tokenAmount).MustDiv(virtualTokenReserve).MustMultiForString(1.01) // pumpfun 收取 1% 手续费
 		// 最大多花 sol 的数量
@@ -470,11 +473,14 @@ func GetSwapInstructions(
 		}
 		swapInstruction = instruction
 	} else {
-		// 应该收到的 sol 数量
-		shouldReceiveSolAmount := go_decimal.Decimal.MustStart(virtualSolReserve).MustMulti(tokenAmount).MustDiv(virtualTokenReserve).MustMultiForString(0.99)
-		// 最大少收到 sol 的数量
-		maxLessSolAmount := go_decimal.Decimal.MustStart(shouldReceiveSolAmount).MustMulti(slippage).MustDivForString(10000)
-		minReceiveSolAmount := go_decimal.Decimal.MustStart(shouldReceiveSolAmount).MustSub(maxLessSolAmount).RoundDownForString(constant.SOL_Decimals)
+		minReceiveSolAmount := "0"
+		if slippage != -1 {
+			// 应该收到的 sol 数量
+			shouldReceiveSolAmount := go_decimal.Decimal.MustStart(virtualSolReserve).MustMulti(tokenAmount).MustDiv(virtualTokenReserve).MustMultiForString(0.99)
+			// 最大少收到 sol 的数量
+			maxLessSolAmount := go_decimal.Decimal.MustStart(shouldReceiveSolAmount).MustMulti(slippage).MustDivForString(10000)
+			minReceiveSolAmount = go_decimal.Decimal.MustStart(shouldReceiveSolAmount).MustSub(maxLessSolAmount).RoundDownForString(constant.SOL_Decimals)
+		}
 		instruction, err := pumpfun_instruction.NewSellBaseInInstruction(
 			userAddress,
 			tokenAddress,

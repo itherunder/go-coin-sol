@@ -17,6 +17,7 @@ import (
 	type_ "github.com/pefish/go-coin-sol/type"
 	"github.com/pefish/go-coin-sol/util"
 	go_decimal "github.com/pefish/go-decimal"
+	"github.com/pkg/errors"
 )
 
 func GetSwapInstructions(
@@ -28,7 +29,7 @@ func GetSwapInstructions(
 	isClose bool,
 	solReserve string,
 	tokenReserve string,
-	slippage uint64,
+	slippage int64,
 ) ([]solana.Instruction, error) {
 	if slippage == 0 {
 		slippage = 50 // 0.5%
@@ -52,6 +53,9 @@ func GetSwapInstructions(
 	}
 
 	if swapType == type_.SwapType_Buy {
+		if slippage == -1 {
+			return nil, errors.New("购买必须设置滑点")
+		}
 		// 应该花费的 sol 数量
 		shouldCostSolAmount := go_decimal.Decimal.MustStart(solReserve).MustMulti(tokenAmount.Amount).MustDiv(tokenReserve).MustMultiForString(1.005) // raydium 收取 0.25% 交易手续费
 		// 最大多花 sol 的数量
@@ -94,11 +98,14 @@ func GetSwapInstructions(
 			swapInstruction,
 		)
 	} else {
-		// 应该收到的 sol 数量
-		shouldReceiveSolAmount := go_decimal.Decimal.MustStart(solReserve).MustMulti(tokenAmount.Amount).MustDiv(tokenReserve).MustMultiForString(0.995)
-		// 最大少收到 sol 的数量
-		maxLessSolAmount := go_decimal.Decimal.MustStart(shouldReceiveSolAmount).MustMulti(slippage).MustDivForString(10000)
-		minReceiveSolAmount := go_decimal.Decimal.MustStart(shouldReceiveSolAmount).MustSub(maxLessSolAmount).RoundDownForString(constant.SOL_Decimals)
+		minReceiveSolAmount := "0"
+		if slippage != -1 {
+			// 应该收到的 sol 数量
+			shouldReceiveSolAmount := go_decimal.Decimal.MustStart(solReserve).MustMulti(tokenAmount.Amount).MustDiv(tokenReserve).MustMultiForString(0.995)
+			// 最大少收到 sol 的数量
+			maxLessSolAmount := go_decimal.Decimal.MustStart(shouldReceiveSolAmount).MustMulti(slippage).MustDivForString(10000)
+			minReceiveSolAmount = go_decimal.Decimal.MustStart(shouldReceiveSolAmount).MustSub(maxLessSolAmount).RoundDownForString(constant.SOL_Decimals)
+		}
 
 		swapInstruction, err := instruction.NewSellBaseInInstruction(
 			userAddress,
