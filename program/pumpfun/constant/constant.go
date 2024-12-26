@@ -14,5 +14,5 @@ var (
 const (
 	Pumpfun_Token_Decimals  = 6
 	Pumpfun_Buy_Unit_Limit  = 80000
-	Pumpfun_Sell_Unit_Limit = 50000
+	Pumpfun_Sell_Unit_Limit = 60000
 )
