@@ -22,14 +22,15 @@ type RaydiumSwapKeys struct {
 }
 
 type SwapDataType struct {
-	TokenAddress     solana.PublicKey `json:"token_address"`
-	SOLAmount        string           `json:"sol_amount"`
-	TokenAmount      string           `json:"token_amount"`
-	Type             type_.SwapType   `json:"type"`
-	UserAddress      solana.PublicKey `json:"user_address"`
-	UserBalance      string           `json:"user_balance"`
-	UserTokenBalance string           `json:"user_token_balance"`
-	RaydiumSwapKeys  RaydiumSwapKeys  `json:"raydium_swap_keys,omitempty"`
+	TokenAddress      solana.PublicKey `json:"token_address"`
+	SOLAmount         string           `json:"sol_amount"`
+	TokenAmount       string           `json:"token_amount"`
+	Type              type_.SwapType   `json:"type"`
+	UserAddress       solana.PublicKey `json:"user_address"`
+	UserBalance       string           `json:"user_balance"`
+	BeforeUserBalance string           `json:"before_user_balance"`
+	UserTokenBalance  string           `json:"user_token_balance"`
+	RaydiumSwapKeys   RaydiumSwapKeys  `json:"raydium_swap_keys,omitempty"`
 }
 
 type SwapTxDataType struct {

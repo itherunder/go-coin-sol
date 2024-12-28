@@ -279,13 +279,14 @@ func ParseSwapTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*r
 		tokenDecimals = uint64(tokenBalanceInfo.UiTokenAmount.Decimals)
 
 		swaps = append(swaps, &raydium_type_.SwapDataType{
-			TokenAddress:     tokenAddress,
-			SOLAmount:        solAmount,
-			TokenAmount:      go_decimal.Decimal.MustStart(tokenAmountWithDecimals).MustUnShiftedBy(tokenDecimals).EndForString(),
-			Type:             swapType,
-			UserAddress:      userAddress,
-			UserBalance:      go_decimal.Decimal.MustStart(meta.PostBalances[0]).MustUnShiftedBy(constant.SOL_Decimals).EndForString(),
-			UserTokenBalance: userTokenBalance,
+			TokenAddress:      tokenAddress,
+			SOLAmount:         solAmount,
+			TokenAmount:       go_decimal.Decimal.MustStart(tokenAmountWithDecimals).MustUnShiftedBy(tokenDecimals).EndForString(),
+			Type:              swapType,
+			UserAddress:       userAddress,
+			UserBalance:       go_decimal.Decimal.MustStart(meta.PostBalances[0]).MustUnShiftedBy(constant.SOL_Decimals).EndForString(),
+			BeforeUserBalance: go_decimal.Decimal.MustStart(meta.PreBalances[0]).MustUnShiftedBy(constant.SOL_Decimals).EndForString(),
+			UserTokenBalance:  userTokenBalance,
 			RaydiumSwapKeys: raydium_type_.RaydiumSwapKeys{
 				AmmAddress:                   accountKeys[instruction.Accounts[1]],
 				AmmOpenOrdersAddress:         &accountKeys[instruction.Accounts[3]],
