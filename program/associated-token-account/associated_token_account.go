@@ -72,6 +72,10 @@ func GetAssociatedTokenAccountDatas(
 	}
 
 	for _, account := range result.Value {
+		if account.Data == nil {
+			results = append(results, nil)
+			continue
+		}
 		var data AssociatedTokenAccountDataType
 		err = json.Unmarshal(account.Data.GetRawJSON(), &data)
 		if err != nil {
