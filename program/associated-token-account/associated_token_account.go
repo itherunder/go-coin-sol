@@ -72,7 +72,7 @@ func GetAssociatedTokenAccountDatas(
 	}
 
 	for _, account := range result.Value {
-		if account.Data == nil {
+		if account == nil || account.Data == nil {
 			results = append(results, nil)
 			continue
 		}
