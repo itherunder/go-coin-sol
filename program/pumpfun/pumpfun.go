@@ -86,81 +86,77 @@ func ParseSwapTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*S
 	if meta.LoadedAddresses.ReadOnly != nil {
 		accountKeys = append(accountKeys, meta.LoadedAddresses.ReadOnly...)
 	}
-	for index, instruction := range transaction.Message.Instructions {
-		programPKey := accountKeys[instruction.ProgramIDIndex]
-		if !programPKey.Equals(pumpfun_constant.Pumpfun_Program) {
-			continue
-		}
-		methodId := hex.EncodeToString(instruction.Data)[:16]
-		if methodId != "66063d1201daebea" && methodId != "33e685a4017f83ad" {
-			continue
-		}
 
+	allInstructions := make([]solana.CompiledInstruction, 0)
+	for index, instruction := range transaction.Message.Instructions {
+		allInstructions = append(allInstructions, instruction)
 		innerInstructions := util.FindInnerInstructions(meta, uint64(index))
 		if innerInstructions == nil {
 			continue
 		}
-		// 查找 log
-		for _, innerInstruction := range innerInstructions {
-			programPKey := accountKeys[innerInstruction.ProgramIDIndex]
-			if !programPKey.Equals(pumpfun_constant.Pumpfun_Program) {
-				continue
-			}
-			if len(innerInstruction.Accounts) != 1 || !accountKeys[innerInstruction.Accounts[0]].Equals(pumpfun_constant.Pumpfun_Event_Authority) {
-				continue
-			}
-			// 记录事件的指令
-			if hex.EncodeToString(innerInstruction.Data)[:16] != "e445a52e51cb9a1d" {
-				continue
-			}
-			var log struct {
-				Id                   bin.Uint128      `json:"id"`
-				Mint                 solana.PublicKey `json:"mint"`
-				SOLAmount            uint64           `json:"solAmount"`
-				TokenAmount          uint64           `json:"tokenAmount"`
-				IsBuy                bool             `json:"isBuy"`
-				User                 solana.PublicKey `json:"user"`
-				Timestamp            int64            `json:"timestamp"`
-				VirtualSolReserves   uint64           `json:"virtualSolReserves"`
-				VirtualTokenReserves uint64           `json:"virtualTokenReserves"`
-			}
-			err := bin.NewBorshDecoder(innerInstruction.Data).Decode(&log)
-			if err != nil {
-				// 说明记录的不是 swap 信息
-				continue
-			}
-			// 不报错的，也有可能将其他内容误解读为 swap，所以做校验
-			if !log.Mint.Equals(accountKeys[instruction.Accounts[2]]) || !log.User.Equals(accountKeys[instruction.Accounts[6]]) {
-				continue
-			}
-			userTokenBalance := "0"
-			for _, postTokenBalanceInfo := range meta.PostTokenBalances {
-				if postTokenBalanceInfo.Owner.Equals(log.User) &&
-					postTokenBalanceInfo.Mint.Equals(log.Mint) {
-					userTokenBalance = postTokenBalanceInfo.UiTokenAmount.UiAmountString
-					break
-				}
-			}
-			tokenAmount := go_decimal.Decimal.MustStart(log.TokenAmount).MustUnShiftedBy(pumpfun_constant.Pumpfun_Token_Decimals).EndForString()
-			swaps = append(swaps, &SwapDataType{
-				TokenAddress: log.Mint,
-				SOLAmount:    go_decimal.Decimal.MustStart(log.SOLAmount).MustUnShiftedBy(constant.SOL_Decimals).EndForString(),
-				TokenAmount:  tokenAmount,
-				Type: func() type_.SwapType {
-					if log.IsBuy {
-						return type_.SwapType_Buy
-					} else {
-						return type_.SwapType_Sell
-					}
-				}(),
-				UserAddress:        log.User,
-				UserTokenBalance:   userTokenBalance,
-				UserBalance:        go_decimal.Decimal.MustStart(meta.PostBalances[0]).MustUnShiftedBy(constant.SOL_Decimals).EndForString(),
-				BeforeUserBalance:  go_decimal.Decimal.MustStart(meta.PreBalances[0]).MustUnShiftedBy(constant.SOL_Decimals).EndForString(),
-				ReserveSOLAmount:   go_decimal.Decimal.MustStart(log.VirtualSolReserves).MustUnShiftedBy(constant.SOL_Decimals).EndForString(),
-				ReserveTokenAmount: go_decimal.Decimal.MustStart(log.VirtualTokenReserves).MustUnShiftedBy(pumpfun_constant.Pumpfun_Token_Decimals).EndForString(),
-			})
+		allInstructions = append(allInstructions, innerInstructions...)
+	}
+
+	for _, instruction := range allInstructions {
+		programPKey := accountKeys[instruction.ProgramIDIndex]
+		if !programPKey.Equals(pumpfun_constant.Pumpfun_Program) {
+			continue
 		}
+		if len(instruction.Accounts) != 1 || !accountKeys[instruction.Accounts[0]].Equals(pumpfun_constant.Pumpfun_Event_Authority) {
+			continue
+		}
+		// 记录事件的指令
+		if hex.EncodeToString(instruction.Data)[:16] != "e445a52e51cb9a1d" {
+			continue
+		}
+		var log struct {
+			Id                   bin.Uint128      `json:"id"`
+			Mint                 solana.PublicKey `json:"mint"`
+			SOLAmount            uint64           `json:"solAmount"`
+			TokenAmount          uint64           `json:"tokenAmount"`
+			IsBuy                bool             `json:"isBuy"`
+			User                 solana.PublicKey `json:"user"`
+			Timestamp            int64            `json:"timestamp"`
+			VirtualSolReserves   uint64           `json:"virtualSolReserves"`
+			VirtualTokenReserves uint64           `json:"virtualTokenReserves"`
+		}
+		err := bin.NewBorshDecoder(instruction.Data).Decode(&log)
+		if err != nil {
+			// 说明记录的不是 swap 信息
+			continue
+		}
+		if log.VirtualSolReserves == 0 ||
+			log.VirtualTokenReserves == 0 ||
+			log.Timestamp == 0 {
+			continue
+		}
+		userTokenBalance := "0"
+		for _, postTokenBalanceInfo := range meta.PostTokenBalances {
+			if postTokenBalanceInfo.Owner.Equals(log.User) &&
+				postTokenBalanceInfo.Mint.Equals(log.Mint) {
+				userTokenBalance = postTokenBalanceInfo.UiTokenAmount.UiAmountString
+				break
+			}
+		}
+		tokenAmount := go_decimal.Decimal.MustStart(log.TokenAmount).MustUnShiftedBy(pumpfun_constant.Pumpfun_Token_Decimals).EndForString()
+		swaps = append(swaps, &SwapDataType{
+			TokenAddress: log.Mint,
+			SOLAmount:    go_decimal.Decimal.MustStart(log.SOLAmount).MustUnShiftedBy(constant.SOL_Decimals).EndForString(),
+			TokenAmount:  tokenAmount,
+			Type: func() type_.SwapType {
+				if log.IsBuy {
+					return type_.SwapType_Buy
+				} else {
+					return type_.SwapType_Sell
+				}
+			}(),
+			UserAddress:        log.User,
+			UserTokenBalance:   userTokenBalance,
+			UserBalance:        go_decimal.Decimal.MustStart(meta.PostBalances[0]).MustUnShiftedBy(constant.SOL_Decimals).EndForString(),
+			BeforeUserBalance:  go_decimal.Decimal.MustStart(meta.PreBalances[0]).MustUnShiftedBy(constant.SOL_Decimals).EndForString(),
+			ReserveSOLAmount:   go_decimal.Decimal.MustStart(log.VirtualSolReserves).MustUnShiftedBy(constant.SOL_Decimals).EndForString(),
+			ReserveTokenAmount: go_decimal.Decimal.MustStart(log.VirtualTokenReserves).MustUnShiftedBy(pumpfun_constant.Pumpfun_Token_Decimals).EndForString(),
+		})
 	}
 
 	feeInfo, err := util.GetFeeInfoFromTx(meta, transaction)
