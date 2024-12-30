@@ -188,7 +188,7 @@ func ParseSwapByLogs(logs []string) ([]*SwapDataType, error) {
 			continue
 		}
 		data := log[14:]
-		b, err := base64.RawStdEncoding.DecodeString(data)
+		b, err := base64.StdEncoding.DecodeString(data)
 		if err != nil {
 			continue
 		}
@@ -236,14 +236,18 @@ func ParseSwapByLogs(logs []string) ([]*SwapDataType, error) {
 }
 
 type CreateTxDataType struct {
-	TxId                string           `json:"txid"`
+	CreateDataType
+	TxId    string         `json:"txid"`
+	FeeInfo *type_.FeeInfo `json:"fee_info"`
+}
+
+type CreateDataType struct {
 	Name                string           `json:"name"`
 	Symbol              string           `json:"symbol"`
 	URI                 string           `json:"uri"`
 	UserAddress         solana.PublicKey `json:"user_address"`
 	BondingCurveAddress solana.PublicKey `json:"bonding_curve_address"`
 	TokenAddress        solana.PublicKey `json:"token_address"`
-	FeeInfo             *type_.FeeInfo   `json:"fee_info"`
 }
 
 func ParseCreateTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*CreateTxDataType, error) {
@@ -277,14 +281,16 @@ func ParseCreateTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (
 			return nil, err
 		}
 		return &CreateTxDataType{
-			TxId:                transaction.Signatures[0].String(),
-			Name:                params.Name,
-			Symbol:              params.Symbol,
-			URI:                 params.URI,
-			UserAddress:         accountKeys[instruction.Accounts[7]],
-			BondingCurveAddress: accountKeys[instruction.Accounts[2]],
-			TokenAddress:        accountKeys[instruction.Accounts[0]],
-			FeeInfo:             feeInfo,
+			TxId: transaction.Signatures[0].String(),
+			CreateDataType: CreateDataType{
+				Name:                params.Name,
+				Symbol:              params.Symbol,
+				URI:                 params.URI,
+				UserAddress:         accountKeys[instruction.Accounts[7]],
+				BondingCurveAddress: accountKeys[instruction.Accounts[2]],
+				TokenAddress:        accountKeys[instruction.Accounts[0]],
+			},
+			FeeInfo: feeInfo,
 		}, nil
 
 	}
@@ -292,11 +298,90 @@ func ParseCreateTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (
 	return nil, nil
 }
 
+func ParseCreateByLogs(logs []string) (*CreateDataType, error) {
+	stack := util.NewStack()
+	for _, log := range logs {
+		pushPrefix := fmt.Sprintf("Program %s invoke", pumpfun_constant.Pumpfun_Program)
+		popLog := fmt.Sprintf("Program %s success", pumpfun_constant.Pumpfun_Program)
+		if strings.HasPrefix(log, pushPrefix) {
+			stack.Push(log)
+			continue
+		}
+		if log == popLog {
+			stack.Pop()
+			continue
+		}
+		if stack.Size() == 0 {
+			continue
+		}
+
+		if !strings.HasPrefix(log, "Program data:") {
+			continue
+		}
+		data := log[14:]
+
+		b, err := base64.StdEncoding.DecodeString(data)
+		if err != nil {
+			fmt.Println("base64 decode", err)
+			continue
+		}
+		var logObj struct {
+			Id           uint64           `json:"id"`
+			Name         string           `json:"name"`
+			Symbol       string           `json:"symbol"`
+			URI          string           `json:"uri"`
+			Mint         solana.PublicKey `json:"mint"`
+			BondingCurve solana.PublicKey `json:"bondingCurve"`
+			User         solana.PublicKey `json:"user"`
+		}
+		err = bin.NewBorshDecoder(b).Decode(&logObj)
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		return &CreateDataType{
+			Name:                logObj.Name,
+			Symbol:              logObj.Symbol,
+			URI:                 logObj.URI,
+			UserAddress:         logObj.User,
+			BondingCurveAddress: logObj.BondingCurve,
+			TokenAddress:        logObj.Mint,
+		}, nil
+	}
+
+	return nil, errors.New("Not found.")
+}
+
 type RemoveLiqTxDataType struct {
 	TxId                string           `json:"txid"`
 	BondingCurveAddress solana.PublicKey `json:"bonding_curve_address"`
 	TokenAddress        solana.PublicKey `json:"token_address"`
 	FeeInfo             *type_.FeeInfo   `json:"fee_info"`
+}
+
+func IsRemoveLiqByLogs(logs []string) (bool, error) {
+	stack := util.NewStack()
+	for _, log := range logs {
+		pushPrefix := fmt.Sprintf("Program %s invoke", pumpfun_constant.Pumpfun_Program)
+		popLog := fmt.Sprintf("Program %s success", pumpfun_constant.Pumpfun_Program)
+		if strings.HasPrefix(log, pushPrefix) {
+			stack.Push(log)
+			continue
+		}
+		if log == popLog {
+			stack.Pop()
+			continue
+		}
+		if stack.Size() == 0 {
+			continue
+		}
+
+		if log == "Program log: Instruction: Withdraw" {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
 
 // 上岸

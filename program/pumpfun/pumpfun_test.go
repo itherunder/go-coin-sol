@@ -68,6 +68,30 @@ func TestParseSwapByLogs(t *testing.T) {
 	}
 }
 
+func TestParseCreateByLogs(t *testing.T) {
+	// return
+	endpoint := rpc.MainNetBeta_RPC
+	client := rpc.New(endpoint)
+	getTransactionResult, err := client.GetTransaction(
+		context.TODO(),
+		solana.MustSignatureFromBase58("F5ahQP2qDcktN7MKW3mQJJY7dM279naRNPVZE9z9fnTyUPjsNX7kKok7vUYZe5LjuyYVgkXwYpZXMxZxfiVyAaf"),
+		&rpc.GetTransactionOpts{
+			Commitment:                     rpc.CommitmentConfirmed,
+			MaxSupportedTransactionVersion: constant.MaxSupportedTransactionVersion_0,
+		},
+	)
+	go_test_.Equal(t, nil, err)
+	d, err := ParseCreateByLogs(getTransactionResult.Meta.LogMessages)
+	go_test_.Equal(t, nil, err)
+	fmt.Printf(
+		"<%s> <TokenAddress: %s> <UserAddress: %s> <URI: %s>\n",
+		d.Symbol,
+		d.TokenAddress,
+		d.UserAddress,
+		d.URI,
+	)
+}
+
 func TestParseTx(t *testing.T) {
 	// return
 	endpoint := rpc.MainNetBeta_RPC
