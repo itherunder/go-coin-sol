@@ -123,7 +123,7 @@ func ParseSwapTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*S
 			VirtualSolReserves   uint64           `json:"virtualSolReserves"`
 			VirtualTokenReserves uint64           `json:"virtualTokenReserves"`
 		}
-		err := bin.NewBorshDecoder(instruction.Data[16:]).Decode(&log)
+		err := bin.NewBorshDecoder(instruction.Data[8:]).Decode(&log)
 		if err != nil {
 			// 说明记录的不是 swap 信息
 			continue
