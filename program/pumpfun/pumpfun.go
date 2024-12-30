@@ -226,6 +226,7 @@ func ParseSwapByLogs(logs []string) ([]*SwapDataType, error) {
 				}
 			}(),
 			UserAddress:        logObj.User,
+			Timestamp:          uint64(logObj.Timestamp * 1000),
 			ReserveSOLAmount:   go_decimal.Decimal.MustStart(logObj.VirtualSolReserves).MustUnShiftedBy(constant.SOL_Decimals).EndForString(),
 			ReserveTokenAmount: go_decimal.Decimal.MustStart(logObj.VirtualTokenReserves).MustUnShiftedBy(pumpfun_constant.Pumpfun_Token_Decimals).EndForString(),
 		})
