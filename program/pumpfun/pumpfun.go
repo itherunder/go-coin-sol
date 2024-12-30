@@ -2,7 +2,10 @@ package pumpfun
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/hex"
+	"fmt"
+	"strings"
 	"time"
 
 	bin "github.com/gagliardetto/binary"
@@ -30,15 +33,15 @@ type SwapDataType struct {
 	UserAddress        solana.PublicKey `json:"user_address"`
 	ReserveSOLAmount   string           `json:"reserve_sol_amount"`
 	ReserveTokenAmount string           `json:"reserve_token_amount"`
-	UserTokenBalance   string           `json:"user_token_balance"` // 交易之后用户的余额
-	UserBalance        string           `json:"user_balance"`
-	BeforeUserBalance  string           `json:"before_user_balance"`
+	Timestamp          uint64           `json:"timestamp"`
 }
 
 type SwapTxDataType struct {
-	Swaps   []*SwapDataType
-	FeeInfo *type_.FeeInfo
-	TxId    string
+	Swaps             []*SwapDataType `json:"swaps"`
+	FeeInfo           *type_.FeeInfo  `json:"fee_info"`
+	TxId              string          `json:"tx_id"`
+	UserBalance       string          `json:"user_balance"`
+	BeforeUserBalance string          `json:"before_user_balance"`
 }
 
 type ParseTxResult struct {
@@ -110,7 +113,7 @@ func ParseSwapTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*S
 			continue
 		}
 		var log struct {
-			Id                   bin.Uint128      `json:"id"`
+			Id                   uint64           `json:"id"`
 			Mint                 solana.PublicKey `json:"mint"`
 			SOLAmount            uint64           `json:"solAmount"`
 			TokenAmount          uint64           `json:"tokenAmount"`
@@ -120,7 +123,7 @@ func ParseSwapTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*S
 			VirtualSolReserves   uint64           `json:"virtualSolReserves"`
 			VirtualTokenReserves uint64           `json:"virtualTokenReserves"`
 		}
-		err := bin.NewBorshDecoder(instruction.Data).Decode(&log)
+		err := bin.NewBorshDecoder(instruction.Data[16:]).Decode(&log)
 		if err != nil {
 			// 说明记录的不是 swap 信息
 			continue
@@ -129,14 +132,6 @@ func ParseSwapTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*S
 			log.VirtualTokenReserves == 0 ||
 			log.Timestamp == 0 {
 			continue
-		}
-		userTokenBalance := "0"
-		for _, postTokenBalanceInfo := range meta.PostTokenBalances {
-			if postTokenBalanceInfo.Owner.Equals(log.User) &&
-				postTokenBalanceInfo.Mint.Equals(log.Mint) {
-				userTokenBalance = postTokenBalanceInfo.UiTokenAmount.UiAmountString
-				break
-			}
 		}
 		tokenAmount := go_decimal.Decimal.MustStart(log.TokenAmount).MustUnShiftedBy(pumpfun_constant.Pumpfun_Token_Decimals).EndForString()
 		swaps = append(swaps, &SwapDataType{
@@ -151,9 +146,7 @@ func ParseSwapTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*S
 				}
 			}(),
 			UserAddress:        log.User,
-			UserTokenBalance:   userTokenBalance,
-			UserBalance:        go_decimal.Decimal.MustStart(meta.PostBalances[0]).MustUnShiftedBy(constant.SOL_Decimals).EndForString(),
-			BeforeUserBalance:  go_decimal.Decimal.MustStart(meta.PreBalances[0]).MustUnShiftedBy(constant.SOL_Decimals).EndForString(),
+			Timestamp:          uint64(log.Timestamp * 1000),
 			ReserveSOLAmount:   go_decimal.Decimal.MustStart(log.VirtualSolReserves).MustUnShiftedBy(constant.SOL_Decimals).EndForString(),
 			ReserveTokenAmount: go_decimal.Decimal.MustStart(log.VirtualTokenReserves).MustUnShiftedBy(pumpfun_constant.Pumpfun_Token_Decimals).EndForString(),
 		})
@@ -163,12 +156,82 @@ func ParseSwapTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*S
 	if err != nil {
 		return nil, err
 	}
-
 	return &SwapTxDataType{
-		TxId:    transaction.Signatures[0].String(),
-		Swaps:   swaps,
-		FeeInfo: feeInfo,
+		TxId:              transaction.Signatures[0].String(),
+		Swaps:             swaps,
+		FeeInfo:           feeInfo,
+		UserBalance:       go_decimal.Decimal.MustStart(meta.PostBalances[0]).MustUnShiftedBy(constant.SOL_Decimals).EndForString(),
+		BeforeUserBalance: go_decimal.Decimal.MustStart(meta.PreBalances[0]).MustUnShiftedBy(constant.SOL_Decimals).EndForString(),
 	}, nil
+}
+
+func ParseSwapByLogs(logs []string) ([]*SwapDataType, error) {
+	swaps := make([]*SwapDataType, 0)
+
+	stack := util.NewStack()
+	for _, log := range logs {
+		pushPrefix := fmt.Sprintf("Program %s invoke", pumpfun_constant.Pumpfun_Program)
+		popLog := fmt.Sprintf("Program %s success", pumpfun_constant.Pumpfun_Program)
+		if strings.HasPrefix(log, pushPrefix) {
+			stack.Push(log)
+			continue
+		}
+		if log == popLog {
+			stack.Pop()
+			continue
+		}
+		if stack.Size() == 0 {
+			continue
+		}
+
+		if !strings.HasPrefix(log, "Program data:") {
+			continue
+		}
+		data := log[14:]
+		b, err := base64.RawStdEncoding.DecodeString(data)
+		if err != nil {
+			continue
+		}
+		var logObj struct {
+			Id                   uint64           `json:"id"`
+			Mint                 solana.PublicKey `json:"mint"`
+			SOLAmount            uint64           `json:"solAmount"`
+			TokenAmount          uint64           `json:"tokenAmount"`
+			IsBuy                bool             `json:"isBuy"`
+			User                 solana.PublicKey `json:"user"`
+			Timestamp            int64            `json:"timestamp"`
+			VirtualSolReserves   uint64           `json:"virtualSolReserves"`
+			VirtualTokenReserves uint64           `json:"virtualTokenReserves"`
+		}
+		err = bin.NewBorshDecoder(b).Decode(&logObj)
+		if err != nil {
+			// 说明记录的不是 swap 信息
+			continue
+		}
+		if logObj.VirtualSolReserves == 0 ||
+			logObj.VirtualTokenReserves == 0 ||
+			logObj.Timestamp == 0 {
+			continue
+		}
+		tokenAmount := go_decimal.Decimal.MustStart(logObj.TokenAmount).MustUnShiftedBy(pumpfun_constant.Pumpfun_Token_Decimals).EndForString()
+		swaps = append(swaps, &SwapDataType{
+			TokenAddress: logObj.Mint,
+			SOLAmount:    go_decimal.Decimal.MustStart(logObj.SOLAmount).MustUnShiftedBy(constant.SOL_Decimals).EndForString(),
+			TokenAmount:  tokenAmount,
+			Type: func() type_.SwapType {
+				if logObj.IsBuy {
+					return type_.SwapType_Buy
+				} else {
+					return type_.SwapType_Sell
+				}
+			}(),
+			UserAddress:        logObj.User,
+			ReserveSOLAmount:   go_decimal.Decimal.MustStart(logObj.VirtualSolReserves).MustUnShiftedBy(constant.SOL_Decimals).EndForString(),
+			ReserveTokenAmount: go_decimal.Decimal.MustStart(logObj.VirtualTokenReserves).MustUnShiftedBy(pumpfun_constant.Pumpfun_Token_Decimals).EndForString(),
+		})
+	}
+
+	return swaps, nil
 }
 
 type CreateTxDataType struct {

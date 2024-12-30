@@ -2,6 +2,8 @@ package go_coin_sol
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"os"
 	"testing"
@@ -121,4 +123,15 @@ func TestWallet_SwapRaydium(t *testing.T) {
 		nil,
 	)
 	go_test_.Equal(t, nil, err)
+}
+
+func TestWallet_DecodeProgramDataInLog(t *testing.T) {
+	// EBd6RndiETniYBUREhYbYd9Ur1NrgdrDAnZfyAWqqYgLp4kNBY3UBghUAerddDqquX5dj3RUuy7s24cn3VH6xcG
+	b, err := base64.RawStdEncoding.DecodeString("vdt/007mYe4+dQga6O8cSVy9IJsAPfc8BNC1hUfe1jIxkxCQ/2eXr48Pm1kAAAAA4n0OuJEuAAAAtBUSa0Qo7DENjrIxwgVuIRrUtrNJSCYNFytWRQseZyoCWnJnAAAAAAevI/wGAAAA1jczRuPPAwAHAwAAAAAAANafIPpR0QIA")
+	go_test_.Equal(t, nil, err)
+	fmt.Println(hex.EncodeToString(b))
+	// WalletInstance.DecodeProgramDataInLog(
+	// 	"",
+	// 	&a,
+	// )
 }
