@@ -2,10 +2,7 @@ package pumpfun
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/hex"
-	"fmt"
-	"strings"
 	"time"
 
 	bin "github.com/gagliardetto/binary"
@@ -16,6 +13,7 @@ import (
 	associated_token_account_instruction "github.com/pefish/go-coin-sol/program/associated-token-account/instruction"
 	pumpfun_constant "github.com/pefish/go-coin-sol/program/pumpfun/constant"
 	pumpfun_instruction "github.com/pefish/go-coin-sol/program/pumpfun/instruction"
+	pumpfun_type "github.com/pefish/go-coin-sol/program/pumpfun/type"
 	raydium_constant "github.com/pefish/go-coin-sol/program/raydium/constant"
 	type_ "github.com/pefish/go-coin-sol/type"
 	util "github.com/pefish/go-coin-sol/util"
@@ -25,33 +23,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-type SwapDataType struct {
-	TokenAddress       solana.PublicKey `json:"token_address"`
-	SOLAmount          string           `json:"sol_amount"`
-	TokenAmount        string           `json:"token_amount"`
-	Type               type_.SwapType   `json:"type"`
-	UserAddress        solana.PublicKey `json:"user_address"`
-	ReserveSOLAmount   string           `json:"reserve_sol_amount"`
-	ReserveTokenAmount string           `json:"reserve_token_amount"`
-	Timestamp          uint64           `json:"timestamp"`
-}
-
-type SwapTxDataType struct {
-	Swaps             []*SwapDataType `json:"swaps"`
-	FeeInfo           *type_.FeeInfo  `json:"fee_info"`
-	TxId              string          `json:"tx_id"`
-	UserBalance       string          `json:"user_balance"`
-	BeforeUserBalance string          `json:"before_user_balance"`
-}
-
-type ParseTxResult struct {
-	SwapTxData      *SwapTxDataType
-	CreateTxData    *CreateTxDataType
-	RemoveLiqTxData *RemoveLiqTxDataType
-	AddLiqTxData    *AddLiqTxDataType
-}
-
-func ParseTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*ParseTxResult, error) {
+func ParseTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*pumpfun_type.ParseTxResult, error) {
 	swapData, err := ParseSwapTx(meta, transaction)
 	if err != nil {
 		return nil, err
@@ -72,7 +44,7 @@ func ParseTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*Parse
 		return nil, err
 	}
 
-	return &ParseTxResult{
+	return &pumpfun_type.ParseTxResult{
 		SwapTxData:      swapData,
 		CreateTxData:    createData,
 		RemoveLiqTxData: removeLiqData,
@@ -80,8 +52,8 @@ func ParseTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*Parse
 	}, nil
 }
 
-func ParseSwapTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*SwapTxDataType, error) {
-	swaps := make([]*SwapDataType, 0)
+func ParseSwapTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*pumpfun_type.SwapTxDataType, error) {
+	swaps := make([]*pumpfun_type.SwapDataType, 0)
 	accountKeys := transaction.Message.AccountKeys
 	if meta.LoadedAddresses.Writable != nil {
 		accountKeys = append(accountKeys, meta.LoadedAddresses.Writable...)
@@ -134,7 +106,7 @@ func ParseSwapTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*S
 			continue
 		}
 		tokenAmount := go_decimal.Decimal.MustStart(log.TokenAmount).MustUnShiftedBy(pumpfun_constant.Pumpfun_Token_Decimals).EndForString()
-		swaps = append(swaps, &SwapDataType{
+		swaps = append(swaps, &pumpfun_type.SwapDataType{
 			TokenAddress: log.Mint,
 			SOLAmount:    go_decimal.Decimal.MustStart(log.SOLAmount).MustUnShiftedBy(constant.SOL_Decimals).EndForString(),
 			TokenAmount:  tokenAmount,
@@ -156,7 +128,7 @@ func ParseSwapTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*S
 	if err != nil {
 		return nil, err
 	}
-	return &SwapTxDataType{
+	return &pumpfun_type.SwapTxDataType{
 		TxId:              transaction.Signatures[0].String(),
 		Swaps:             swaps,
 		FeeInfo:           feeInfo,
@@ -165,92 +137,7 @@ func ParseSwapTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*S
 	}, nil
 }
 
-func ParseSwapByLogs(logs []string) ([]*SwapDataType, error) {
-	swaps := make([]*SwapDataType, 0)
-
-	stack := util.NewStack()
-	for _, log := range logs {
-		pushPrefix := fmt.Sprintf("Program %s invoke", pumpfun_constant.Pumpfun_Program)
-		popLog := fmt.Sprintf("Program %s success", pumpfun_constant.Pumpfun_Program)
-		if strings.HasPrefix(log, pushPrefix) {
-			stack.Push(log)
-			continue
-		}
-		if log == popLog {
-			stack.Pop()
-			continue
-		}
-		if stack.Size() == 0 {
-			continue
-		}
-
-		if !strings.HasPrefix(log, "Program data:") {
-			continue
-		}
-		data := log[14:]
-		b, err := base64.StdEncoding.DecodeString(data)
-		if err != nil {
-			continue
-		}
-		var logObj struct {
-			Id                   uint64           `json:"id"`
-			Mint                 solana.PublicKey `json:"mint"`
-			SOLAmount            uint64           `json:"solAmount"`
-			TokenAmount          uint64           `json:"tokenAmount"`
-			IsBuy                bool             `json:"isBuy"`
-			User                 solana.PublicKey `json:"user"`
-			Timestamp            int64            `json:"timestamp"`
-			VirtualSolReserves   uint64           `json:"virtualSolReserves"`
-			VirtualTokenReserves uint64           `json:"virtualTokenReserves"`
-		}
-		err = bin.NewBorshDecoder(b).Decode(&logObj)
-		if err != nil {
-			// 说明记录的不是 swap 信息
-			continue
-		}
-		if logObj.VirtualSolReserves == 0 ||
-			logObj.VirtualTokenReserves == 0 ||
-			logObj.Timestamp == 0 {
-			continue
-		}
-		tokenAmount := go_decimal.Decimal.MustStart(logObj.TokenAmount).MustUnShiftedBy(pumpfun_constant.Pumpfun_Token_Decimals).EndForString()
-		swaps = append(swaps, &SwapDataType{
-			TokenAddress: logObj.Mint,
-			SOLAmount:    go_decimal.Decimal.MustStart(logObj.SOLAmount).MustUnShiftedBy(constant.SOL_Decimals).EndForString(),
-			TokenAmount:  tokenAmount,
-			Type: func() type_.SwapType {
-				if logObj.IsBuy {
-					return type_.SwapType_Buy
-				} else {
-					return type_.SwapType_Sell
-				}
-			}(),
-			UserAddress:        logObj.User,
-			Timestamp:          uint64(logObj.Timestamp * 1000),
-			ReserveSOLAmount:   go_decimal.Decimal.MustStart(logObj.VirtualSolReserves).MustUnShiftedBy(constant.SOL_Decimals).EndForString(),
-			ReserveTokenAmount: go_decimal.Decimal.MustStart(logObj.VirtualTokenReserves).MustUnShiftedBy(pumpfun_constant.Pumpfun_Token_Decimals).EndForString(),
-		})
-	}
-
-	return swaps, nil
-}
-
-type CreateTxDataType struct {
-	CreateDataType
-	TxId    string         `json:"txid"`
-	FeeInfo *type_.FeeInfo `json:"fee_info"`
-}
-
-type CreateDataType struct {
-	Name                string           `json:"name"`
-	Symbol              string           `json:"symbol"`
-	URI                 string           `json:"uri"`
-	UserAddress         solana.PublicKey `json:"user_address"`
-	BondingCurveAddress solana.PublicKey `json:"bonding_curve_address"`
-	TokenAddress        solana.PublicKey `json:"token_address"`
-}
-
-func ParseCreateTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*CreateTxDataType, error) {
+func ParseCreateTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*pumpfun_type.CreateTxDataType, error) {
 	accountKeys := transaction.Message.AccountKeys
 	if meta.LoadedAddresses.Writable != nil {
 		accountKeys = append(accountKeys, meta.LoadedAddresses.Writable...)
@@ -280,9 +167,9 @@ func ParseCreateTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (
 		if err != nil {
 			return nil, err
 		}
-		return &CreateTxDataType{
+		return &pumpfun_type.CreateTxDataType{
 			TxId: transaction.Signatures[0].String(),
-			CreateDataType: CreateDataType{
+			CreateDataType: pumpfun_type.CreateDataType{
 				Name:                params.Name,
 				Symbol:              params.Symbol,
 				URI:                 params.URI,
@@ -298,94 +185,8 @@ func ParseCreateTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (
 	return nil, nil
 }
 
-func ParseCreateByLogs(logs []string) (*CreateDataType, error) {
-	stack := util.NewStack()
-	for _, log := range logs {
-		pushPrefix := fmt.Sprintf("Program %s invoke", pumpfun_constant.Pumpfun_Program)
-		popLog := fmt.Sprintf("Program %s success", pumpfun_constant.Pumpfun_Program)
-		if strings.HasPrefix(log, pushPrefix) {
-			stack.Push(log)
-			continue
-		}
-		if log == popLog {
-			stack.Pop()
-			continue
-		}
-		if stack.Size() == 0 {
-			continue
-		}
-
-		if !strings.HasPrefix(log, "Program data:") {
-			continue
-		}
-		data := log[14:]
-
-		b, err := base64.StdEncoding.DecodeString(data)
-		if err != nil {
-			fmt.Println("base64 decode", err)
-			continue
-		}
-		var logObj struct {
-			Id           uint64           `json:"id"`
-			Name         string           `json:"name"`
-			Symbol       string           `json:"symbol"`
-			URI          string           `json:"uri"`
-			Mint         solana.PublicKey `json:"mint"`
-			BondingCurve solana.PublicKey `json:"bondingCurve"`
-			User         solana.PublicKey `json:"user"`
-		}
-		err = bin.NewBorshDecoder(b).Decode(&logObj)
-		if err != nil {
-			fmt.Println(err)
-			continue
-		}
-		return &CreateDataType{
-			Name:                logObj.Name,
-			Symbol:              logObj.Symbol,
-			URI:                 logObj.URI,
-			UserAddress:         logObj.User,
-			BondingCurveAddress: logObj.BondingCurve,
-			TokenAddress:        logObj.Mint,
-		}, nil
-	}
-
-	return nil, errors.New("Not found.")
-}
-
-type RemoveLiqTxDataType struct {
-	TxId                string           `json:"txid"`
-	BondingCurveAddress solana.PublicKey `json:"bonding_curve_address"`
-	TokenAddress        solana.PublicKey `json:"token_address"`
-	FeeInfo             *type_.FeeInfo   `json:"fee_info"`
-}
-
-func IsRemoveLiqByLogs(logs []string) (bool, error) {
-	stack := util.NewStack()
-	for _, log := range logs {
-		pushPrefix := fmt.Sprintf("Program %s invoke", pumpfun_constant.Pumpfun_Program)
-		popLog := fmt.Sprintf("Program %s success", pumpfun_constant.Pumpfun_Program)
-		if strings.HasPrefix(log, pushPrefix) {
-			stack.Push(log)
-			continue
-		}
-		if log == popLog {
-			stack.Pop()
-			continue
-		}
-		if stack.Size() == 0 {
-			continue
-		}
-
-		if log == "Program log: Instruction: Withdraw" {
-			return true, nil
-		}
-	}
-
-	return false, nil
-}
-
 // 上岸
-func ParseRemoveLiqTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*RemoveLiqTxDataType, error) {
+func ParseRemoveLiqTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*pumpfun_type.RemoveLiqTxDataType, error) {
 	accountKeys := transaction.Message.AccountKeys
 	if meta.LoadedAddresses.Writable != nil {
 		accountKeys = append(accountKeys, meta.LoadedAddresses.Writable...)
@@ -408,7 +209,7 @@ func ParseRemoveLiqTx(meta *rpc.TransactionMeta, transaction *solana.Transaction
 		if err != nil {
 			return nil, err
 		}
-		return &RemoveLiqTxDataType{
+		return &pumpfun_type.RemoveLiqTxDataType{
 			TxId:                transaction.Signatures[0].String(),
 			BondingCurveAddress: accountKeys[instruction.Accounts[3]],
 			TokenAddress:        accountKeys[instruction.Accounts[2]],
@@ -420,19 +221,7 @@ func ParseRemoveLiqTx(meta *rpc.TransactionMeta, transaction *solana.Transaction
 	return nil, nil
 }
 
-type AddLiqTxDataType struct {
-	TxId                 string           `json:"txid"`
-	TokenAddress         solana.PublicKey `json:"token_address"`
-	InitSOLAmount        string           `json:"init_sol_amount"`
-	InitTokenAmount      string           `json:"init_token_amount"`
-	AMMAddress           solana.PublicKey `json:"amm_address"`
-	PoolCoinTokenAccount solana.PublicKey `json:"pool_coin_token_account"`
-	PoolPcTokenAccount   solana.PublicKey `json:"pool_pc_token_account"`
-
-	FeeInfo *type_.FeeInfo `json:"fee_info"`
-}
-
-func ParseAddLiqTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*AddLiqTxDataType, error) {
+func ParseAddLiqTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*pumpfun_type.AddLiqTxDataType, error) {
 	accountKeys := transaction.Message.AccountKeys
 	if meta.LoadedAddresses.Writable != nil {
 		accountKeys = append(accountKeys, meta.LoadedAddresses.Writable...)
@@ -467,7 +256,7 @@ func ParseAddLiqTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (
 		if err != nil {
 			return nil, err
 		}
-		return &AddLiqTxDataType{
+		return &pumpfun_type.AddLiqTxDataType{
 			TxId:                 transaction.Signatures[0].String(),
 			TokenAddress:         accountKeys[instruction.Accounts[9]],
 			AMMAddress:           accountKeys[instruction.Accounts[4]],
