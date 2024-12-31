@@ -81,7 +81,11 @@ func ParseSwapTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*p
 			continue
 		}
 		// 记录事件的指令
-		if hex.EncodeToString(instruction.Data)[:16] != "e445a52e51cb9a1d" {
+		dataHexString := hex.EncodeToString(instruction.Data)
+		if dataHexString[:16] != "e445a52e51cb9a1d" {
+			continue
+		}
+		if len(dataHexString) > 350 {
 			continue
 		}
 		var log struct {

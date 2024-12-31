@@ -100,7 +100,7 @@ func TestParseTx(t *testing.T) {
 	client := rpc.New(endpoint)
 	getTransactionResult, err := client.GetTransaction(
 		context.TODO(),
-		solana.MustSignatureFromBase58("ystcu4rAXbEeaEFDAPc3CSpufZu2t92SzM8x8xBmQWbjYymxpBqyTsNJQuJ4twWpuvoisYzqqRBBp5Rhea1Vkb7"),
+		solana.MustSignatureFromBase58("4UwSB7vSay2wBpeC9K4rghpVu8VMx8AS5nQaXm3Nasv8kKJX9pUVckYhF1Ga5ETiCS5QoswCgHyXQLwry7UBobh1"),
 		&rpc.GetTransactionOpts{
 			Commitment:                     rpc.CommitmentConfirmed,
 			MaxSupportedTransactionVersion: constant.MaxSupportedTransactionVersion_0,
@@ -126,7 +126,8 @@ func TestParseTx(t *testing.T) {
 	if r.SwapTxData != nil {
 		for _, swapData := range r.SwapTxData.Swaps {
 			fmt.Printf(
-				"[Swap] <SOLAmount: %s> <TokenAmount: %s> <UserBalance: %s>\n",
+				"[Swap] <%s> <SOLAmount: %s> <TokenAmount: %s> <UserBalance: %s>\n",
+				swapData.Type,
 				swapData.SOLAmount,
 				swapData.TokenAmount,
 				r.SwapTxData.UserBalance,
