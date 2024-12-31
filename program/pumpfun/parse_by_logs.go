@@ -18,6 +18,7 @@ import (
 func ParseSwapByLogs(logs []string) ([]*pumpfun_type.SwapDataType, error) {
 	swaps := make([]*pumpfun_type.SwapDataType, 0)
 
+	isSwap := false
 	stack := util.NewStack()
 	for _, log := range logs {
 		pushPrefix := fmt.Sprintf("Program %s invoke", pumpfun_constant.Pumpfun_Program)
@@ -31,6 +32,15 @@ func ParseSwapByLogs(logs []string) ([]*pumpfun_type.SwapDataType, error) {
 			continue
 		}
 		if stack.Size() == 0 {
+			continue
+		}
+
+		if log == "Program log: Instruction: Buy" ||
+			log == "Program log: Instruction: Sell" {
+			isSwap = true
+			continue
+		}
+		if !isSwap {
 			continue
 		}
 
@@ -86,6 +96,7 @@ func ParseSwapByLogs(logs []string) ([]*pumpfun_type.SwapDataType, error) {
 }
 
 func ParseCreateByLogs(logs []string) (*pumpfun_type.CreateDataType, error) {
+	isCreate := false
 	stack := util.NewStack()
 	for _, log := range logs {
 		pushPrefix := fmt.Sprintf("Program %s invoke", pumpfun_constant.Pumpfun_Program)
@@ -102,6 +113,14 @@ func ParseCreateByLogs(logs []string) (*pumpfun_type.CreateDataType, error) {
 			continue
 		}
 
+		if log == "Program log: Instruction: Create" {
+			isCreate = true
+			continue
+		}
+		if !isCreate {
+			continue
+		}
+
 		if !strings.HasPrefix(log, "Program data:") {
 			continue
 		}
@@ -109,7 +128,6 @@ func ParseCreateByLogs(logs []string) (*pumpfun_type.CreateDataType, error) {
 
 		b, err := base64.StdEncoding.DecodeString(data)
 		if err != nil {
-			fmt.Println("base64 decode", err)
 			continue
 		}
 		var logObj struct {
@@ -123,7 +141,6 @@ func ParseCreateByLogs(logs []string) (*pumpfun_type.CreateDataType, error) {
 		}
 		err = bin.NewBorshDecoder(b).Decode(&logObj)
 		if err != nil {
-			fmt.Println(err)
 			continue
 		}
 		return &pumpfun_type.CreateDataType{

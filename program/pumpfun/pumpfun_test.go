@@ -83,13 +83,15 @@ func TestParseCreateByLogs(t *testing.T) {
 	go_test_.Equal(t, nil, err)
 	d, err := ParseCreateByLogs(getTransactionResult.Meta.LogMessages)
 	go_test_.Equal(t, nil, err)
-	fmt.Printf(
-		"<%s> <TokenAddress: %s> <UserAddress: %s> <URI: %s>\n",
-		d.Symbol,
-		d.TokenAddress,
-		d.UserAddress,
-		d.URI,
-	)
+	if d != nil {
+		fmt.Printf(
+			"<%s> <TokenAddress: %s> <UserAddress: %s> <URI: %s>\n",
+			d.Symbol,
+			d.TokenAddress,
+			d.UserAddress,
+			d.URI,
+		)
+	}
 }
 
 func TestParseTx(t *testing.T) {
