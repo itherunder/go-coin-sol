@@ -19,7 +19,7 @@ import (
 type Wallet struct {
 	logger    i_logger.ILogger
 	rpcClient *rpc.Client
-	wsClient  *ws.Client
+	wssUrl    string
 }
 
 func New(
@@ -35,14 +35,10 @@ func New(
 		wssUrl = rpc.MainNetBeta_WS
 	}
 	rpcClient := rpc.New(httpsUrl)
-	wsClient, err := ws.Connect(ctx, wssUrl)
-	if err != nil {
-		return nil, err
-	}
 	return &Wallet{
 		logger:    logger,
 		rpcClient: rpcClient,
-		wsClient:  wsClient,
+		wssUrl:    wssUrl,
 	}, nil
 }
 
@@ -50,8 +46,12 @@ func (t *Wallet) RPCClient() *rpc.Client {
 	return t.rpcClient
 }
 
-func (t *Wallet) WSClient() *ws.Client {
-	return t.wsClient
+func (t *Wallet) NewWSClient(ctx context.Context) (*ws.Client, error) {
+	wsClient, err := ws.Connect(ctx, t.wssUrl)
+	if err != nil {
+		return nil, err
+	}
+	return wsClient, nil
 }
 
 func (t *Wallet) NewAddress() (address_ string, priv_ string) {
