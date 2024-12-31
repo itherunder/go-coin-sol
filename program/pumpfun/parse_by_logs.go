@@ -48,6 +48,9 @@ func ParseSwapByLogs(logs []string) ([]*pumpfun_type.SwapDataType, error) {
 			continue
 		}
 		data := log[14:]
+		if len(data) < 150 {
+			continue
+		}
 		b, err := base64.StdEncoding.DecodeString(data)
 		if err != nil {
 			continue
@@ -125,7 +128,9 @@ func ParseCreateByLogs(logs []string) (*pumpfun_type.CreateDataType, error) {
 			continue
 		}
 		data := log[14:]
-
+		if len(data) < 200 {
+			continue
+		}
 		b, err := base64.StdEncoding.DecodeString(data)
 		if err != nil {
 			continue
