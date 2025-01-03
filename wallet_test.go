@@ -181,3 +181,10 @@ func TestWallet_SendTxByJito(t *testing.T) {
 	)
 	go_test_.Equal(t, nil, err)
 }
+
+func TestWallet_GetJitoTipInfo(t *testing.T) {
+	// return
+	info, err := WalletInstance.GetJitoTipInfo()
+	go_test_.Equal(t, nil, err)
+	fmt.Println(info.EMALandedTips50thPercentile)
+}

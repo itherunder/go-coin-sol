@@ -13,6 +13,7 @@ import (
 	constant "github.com/pefish/go-coin-sol/constant"
 	go_decimal "github.com/pefish/go-decimal"
 	go_format "github.com/pefish/go-format"
+	go_http "github.com/pefish/go-http"
 	i_logger "github.com/pefish/go-interface/i-logger"
 	go_time "github.com/pefish/go-time"
 	"github.com/pkg/errors"
@@ -181,6 +182,33 @@ func (t *Wallet) BuildTx(
 		return nil, err
 	}
 	return tx, nil
+}
+
+type JitoTipInfo struct {
+	Time                        string  `json:"time"`
+	LandedTips25thPercentile    float64 `json:"landed_tips_25th_percentile"`
+	LandedTips50thPercentile    float64 `json:"landed_tips_50th_percentile"`
+	LandedTips75thPercentile    float64 `json:"landed_tips_75th_percentile"`
+	LandedTips95thPercentile    float64 `json:"landed_tips_95th_percentile"`
+	LandedTips99thPercentile    float64 `json:"landed_tips_99th_percentile"`
+	EMALandedTips50thPercentile float64 `json:"ema_landed_tips_50th_percentile"`
+}
+
+func (t *Wallet) GetJitoTipInfo() (*JitoTipInfo, error) {
+	var httpResult []*JitoTipInfo
+	_, _, err := go_http.NewHttpRequester(
+		go_http.WithLogger(t.logger),
+		go_http.WithTimeout(5*time.Second),
+	).GetForStruct(
+		&go_http.RequestParams{
+			Url: "https://bundles.jito.wtf/api/v1/bundles/tip_floor",
+		},
+		&httpResult,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return httpResult[0], nil
 }
 
 func (t *Wallet) SendByJitoAndConfirmTransaction(
