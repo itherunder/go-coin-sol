@@ -7,9 +7,11 @@ import (
 
 	"github.com/gagliardetto/solana-go"
 	computebudget "github.com/gagliardetto/solana-go/programs/compute-budget"
+	"github.com/gagliardetto/solana-go/programs/system"
 	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/gagliardetto/solana-go/rpc/ws"
 	constant "github.com/pefish/go-coin-sol/constant"
+	go_decimal "github.com/pefish/go-decimal"
 	go_format "github.com/pefish/go-format"
 	i_logger "github.com/pefish/go-interface/i-logger"
 	go_time "github.com/pefish/go-time"
@@ -88,6 +90,51 @@ func (t *Wallet) SendTx(
 	return meta, tx, timestamp, nil
 }
 
+func (t *Wallet) SendTxByJito(
+	ctx context.Context,
+	privObj solana.PrivateKey,
+	latestBlockhash *solana.Hash,
+	instructions []solana.Instruction,
+	unitPrice uint64,
+	unitLimit uint64,
+	jitoTipAmount string,
+	jitoAccount solana.PublicKey,
+) (
+	meta_ *rpc.TransactionMeta,
+	tx_ *solana.Transaction,
+	timestamp_ uint64,
+	err_ error,
+) {
+
+	instructions = append(
+		instructions,
+		system.
+			NewTransferInstructionBuilder().
+			SetFundingAccount(privObj.PublicKey()).
+			SetRecipientAccount(jitoAccount).
+			SetLamports(
+				go_decimal.Decimal.MustStart(jitoTipAmount).
+					MustShiftedBy(constant.SOL_Decimals).
+					RoundDown(0).
+					MustEndForUint64(),
+			).
+			Build(),
+	)
+
+	tx, err := t.BuildTx(privObj, latestBlockhash, instructions, unitPrice, unitLimit)
+	if err != nil {
+		return nil, nil, 0, err
+	}
+	t.logger.InfoF("交易构建成功 <%d>。<%s>", go_time.CurrentTimestamp(), tx.Signatures[0].String())
+
+	meta, timestamp, err := t.SendByJitoAndConfirmTransaction(ctx, tx)
+	if err != nil {
+		return nil, nil, 0, err
+	}
+
+	return meta, tx, timestamp, nil
+}
+
 func (t *Wallet) BuildTx(
 	privObj solana.PrivateKey,
 	latestBlockhash *solana.Hash,
@@ -134,6 +181,75 @@ func (t *Wallet) BuildTx(
 		return nil, err
 	}
 	return tx, nil
+}
+
+func (t *Wallet) SendByJitoAndConfirmTransaction(
+	ctx context.Context,
+	tx *solana.Transaction,
+) (
+	meta_ *rpc.TransactionMeta,
+	timestamp_ uint64,
+	err_ error,
+) {
+	rpcClient := rpc.New("https://tokyo.mainnet.block-engine.jito.wtf/api/v1/transactions")
+	signature, err := rpcClient.
+		SendTransactionWithOpts(ctx, tx, rpc.TransactionOpts{
+			SkipPreflight: true,
+		})
+	if err != nil {
+		return nil, 0, err
+	}
+	t.logger.InfoF("交易发送成功 <%d>。<%s>", go_time.CurrentTimestamp(), signature.String())
+
+	newCtx, _ := context.WithTimeout(ctx, 90*time.Second) // 150 个 slot 链上就会超时，每个 slot 是 400ms - 600ms，也就是 60-90s
+	confirmTimer := time.NewTimer(0)
+	for {
+		select {
+		case <-confirmTimer.C:
+			_, err := rpcClient.SendTransactionWithOpts(ctx, tx, rpc.TransactionOpts{
+				SkipPreflight: true,
+			})
+			if err != nil {
+				if strings.Contains(err.Error(), "Blockhash not found") {
+					confirmTimer.Reset(500 * time.Millisecond)
+					continue
+				}
+				if strings.Contains(err.Error(), "Program failed to complete") ||
+					strings.Contains(err.Error(), "custom program error") {
+					return nil, 0, err
+				}
+				// t.logger.Error(err.Error())
+			}
+
+			getTransactionResult, err := t.rpcClient.GetTransaction(
+				ctx,
+				tx.Signatures[0],
+				&rpc.GetTransactionOpts{
+					Commitment:                     rpc.CommitmentConfirmed,
+					MaxSupportedTransactionVersion: constant.MaxSupportedTransactionVersion_0,
+				},
+			)
+			if err != nil {
+				t.logger.Debug(err)
+				confirmTimer.Reset(2 * time.Second)
+				continue
+			}
+			if getTransactionResult == nil {
+				confirmTimer.Reset(2 * time.Second)
+				continue
+			}
+
+			if getTransactionResult.Meta.Err != nil {
+				t.logger.InfoF("交易已确认[执行失败] <%d>。<%s>", *getTransactionResult.BlockTime*1000, tx.Signatures[0].String())
+				return getTransactionResult.Meta, uint64(*getTransactionResult.BlockTime * 1000), errors.New(go_format.ToString(getTransactionResult.Meta.Err))
+			}
+			t.logger.InfoF("交易已确认[执行成功] <%d>。<%s>", *getTransactionResult.BlockTime*1000, tx.Signatures[0].String())
+			return getTransactionResult.Meta, uint64(*getTransactionResult.BlockTime * 1000), nil
+		case <-newCtx.Done():
+			return nil, 0, errors.New("确认超时")
+		}
+	}
+
 }
 
 func (t *Wallet) SendAndConfirmTransaction(
