@@ -2,6 +2,7 @@ package go_coin_sol
 
 import (
 	"context"
+	"strconv"
 	"strings"
 	"time"
 
@@ -11,6 +12,8 @@ import (
 	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/gagliardetto/solana-go/rpc/ws"
 	constant "github.com/pefish/go-coin-sol/constant"
+	associated_token_account "github.com/pefish/go-coin-sol/program/associated-token-account"
+	type_ "github.com/pefish/go-coin-sol/type"
 	go_format "github.com/pefish/go-format"
 	go_http "github.com/pefish/go-http"
 	i_logger "github.com/pefish/go-interface/i-logger"
@@ -59,6 +62,46 @@ func (t *Wallet) NewWSClient(ctx context.Context) (*ws.Client, error) {
 func (t *Wallet) NewAddress() (address_ string, priv_ string) {
 	account := solana.NewWallet()
 	return account.PublicKey().String(), account.PrivateKey.String()
+}
+
+func (t *Wallet) TokenBalance(
+	address solana.PublicKey,
+	tokenAddress solana.PublicKey,
+) (*type_.TokenAmountInfo, error) {
+	userTokenAssociatedAccount, _, err := solana.FindAssociatedTokenAddress(
+		address,
+		tokenAddress,
+	)
+	if err != nil {
+		return nil, err
+	}
+	data, err := associated_token_account.GetAssociatedTokenAccountData(
+		t.rpcClient,
+		userTokenAssociatedAccount,
+	)
+	if err != nil {
+		if err.Error() == "not found" {
+			return &type_.TokenAmountInfo{
+				AmountWithDecimals: 0,
+				Decimals:           0,
+			}, nil
+		}
+		return nil, err
+	}
+	if data == nil {
+		return &type_.TokenAmountInfo{
+			AmountWithDecimals: 0,
+			Decimals:           0,
+		}, nil
+	}
+	amountWithDecimals, err := strconv.ParseUint(data.Parsed.Info.TokenAmount.Amount, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+	return &type_.TokenAmountInfo{
+		AmountWithDecimals: amountWithDecimals,
+		Decimals:           data.Parsed.Info.TokenAmount.Decimals,
+	}, nil
 }
 
 func (t *Wallet) SendTx(

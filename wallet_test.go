@@ -11,7 +11,7 @@ import (
 
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
-	"github.com/pefish/go-coin-sol/constant"
+	constant "github.com/pefish/go-coin-sol/constant"
 	"github.com/pefish/go-coin-sol/program/pumpfun"
 	pumpfun_constant "github.com/pefish/go-coin-sol/program/pumpfun/constant"
 	"github.com/pefish/go-coin-sol/program/raydium"
@@ -182,4 +182,13 @@ func TestWallet_GetJitoTipInfo(t *testing.T) {
 	info, err := WalletInstance.GetJitoTipInfo()
 	go_test_.Equal(t, nil, err)
 	fmt.Println(info.EMALandedTips50thPercentile)
+}
+
+func TestWallet_TokenBalance(t *testing.T) {
+	info, err := WalletInstance.TokenBalance(
+		solana.MustPublicKeyFromBase58("Gr1KhnM4sjzwHnnLbVPMVgQcv2AXwaP7m2U8k3PKcNXz"),
+		solana.MustPublicKeyFromBase58("EJJ1EdGLAyd97AMqF3xBT4HT8uvBavcR2US5eM7vVsF9"),
+	)
+	go_test_.Equal(t, nil, err)
+	fmt.Println(info.AmountWithDecimals)
 }
