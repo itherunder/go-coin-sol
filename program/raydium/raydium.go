@@ -168,6 +168,9 @@ func GetReserves(
 	if err != nil {
 		return nil, nil, err
 	}
+	if datas[0] == nil || datas[1] == nil {
+		return nil, nil, errors.New("raydium 账户没查到信息")
+	}
 	solAmountWithDecimals, err := strconv.ParseUint(datas[0].Parsed.Info.TokenAmount.Amount, 10, 64)
 	if err != nil {
 		return nil, nil, err
