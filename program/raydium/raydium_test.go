@@ -30,15 +30,15 @@ func TestParseSwapTx(t *testing.T) {
 	go_test_.Equal(t, nil, err)
 	for _, swap := range r.Swaps {
 		fmt.Printf(
-			"<UserAddress: %s> <%s> <TokenAddress: %s> <%s sol> <TokenAmount: %s> <UserBalance: %s -> %s> <UserTokenBalance: %s>\n",
+			"<UserAddress: %s> <%s> <TokenAddress: %s> <%d sol> <TokenAmount: %d> <UserBalance: %d -> %d> <UserTokenBalance: %d>\n",
 			swap.UserAddress,
 			swap.Type,
 			swap.TokenAddress,
-			swap.SOLAmount,
-			swap.TokenAmount,
-			swap.BeforeUserBalance,
-			swap.UserBalance,
-			swap.UserTokenBalance,
+			swap.SOLAmountWithDecimals,
+			swap.TokenAmountWithDecimals,
+			swap.BeforeUserBalanceWithDecimals,
+			swap.UserBalanceWithDecimals,
+			swap.UserTokenBalanceWithDecimals,
 		)
 	}
 

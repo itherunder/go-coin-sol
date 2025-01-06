@@ -3,13 +3,13 @@ package raydium
 import (
 	"encoding/hex"
 	"fmt"
+	"strconv"
 
 	bin "github.com/gagliardetto/binary"
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/programs/system"
 	"github.com/gagliardetto/solana-go/programs/token"
 	"github.com/gagliardetto/solana-go/rpc"
-	"github.com/pefish/go-coin-sol/constant"
 	associated_token_account "github.com/pefish/go-coin-sol/program/associated-token-account"
 	associated_token_account_instruction "github.com/pefish/go-coin-sol/program/associated-token-account/instruction"
 	raydium_constant "github.com/pefish/go-coin-sol/program/raydium/constant"
@@ -17,7 +17,6 @@ import (
 	raydium_type_ "github.com/pefish/go-coin-sol/program/raydium/type"
 	type_ "github.com/pefish/go-coin-sol/type"
 	"github.com/pefish/go-coin-sol/util"
-	go_decimal "github.com/pefish/go-decimal"
 	"github.com/pkg/errors"
 )
 
@@ -25,11 +24,11 @@ func GetSwapInstructions(
 	userAddress solana.PublicKey,
 	swapType type_.SwapType,
 	tokenAddress solana.PublicKey,
-	tokenAmount type_.TokenAmountInfo,
+	tokenAmountWithDecimals uint64,
 	raydiumSwapKeys raydium_type_.RaydiumSwapKeys,
 	isClose bool,
-	solReserve string,
-	tokenReserve string,
+	solReserveWithDecimals uint64,
+	tokenReserveWithDecimals uint64,
 	slippage int64,
 ) ([]solana.Instruction, error) {
 	if slippage == 0 {
@@ -57,19 +56,17 @@ func GetSwapInstructions(
 		if slippage == -1 {
 			return nil, errors.New("购买必须设置滑点")
 		}
-		// 应该花费的 sol 数量
-		shouldCostSolAmount := go_decimal.Decimal.MustStart(solReserve).MustMulti(tokenAmount.Amount).MustDiv(tokenReserve).MustMultiForString(1.005) // raydium 收取 0.25% 交易手续费
-		// 最大多花 sol 的数量
-		maxMoreSolAmount := go_decimal.Decimal.MustStart(shouldCostSolAmount).MustMulti(slippage).MustDivForString(10000)
-		maxCostSolAmount := go_decimal.Decimal.MustStart(shouldCostSolAmount).MustAdd(maxMoreSolAmount).RoundDownForString(constant.SOL_Decimals)
+		maxCostSolAmountWithDecimals := uint64(
+			float64(slippage+10000) * 1.005 * float64(solReserveWithDecimals) * float64(tokenAmountWithDecimals) / float64(tokenReserveWithDecimals) / 10000,
+		) // raydium 收取 0.25% 交易手续费
 
 		swapInstruction, err := instruction.NewBuyBaseOutInstruction(
 			userAddress,
 			tokenAddress,
 			userWSOLAssociatedAccount,
 			userTokenAssociatedAccount,
-			tokenAmount,
-			maxCostSolAmount,
+			tokenAmountWithDecimals,
+			maxCostSolAmountWithDecimals,
 			raydiumSwapKeys,
 		)
 		if err != nil {
@@ -91,7 +88,7 @@ func GetSwapInstructions(
 				tokenAddress,
 			),
 			system.NewTransferInstruction(
-				go_decimal.Decimal.MustStart(maxCostSolAmount).MustShiftedBy(constant.SOL_Decimals).RoundDown(0).MustEndForUint64(),
+				maxCostSolAmountWithDecimals,
 				userAddress,
 				userWSOLAssociatedAccount,
 			).Build(),
@@ -99,13 +96,12 @@ func GetSwapInstructions(
 			swapInstruction,
 		)
 	} else {
-		minReceiveSolAmount := "0"
+		minReceiveSolAmountWithDecimals := uint64(0)
 		if slippage != -1 {
 			// 应该收到的 sol 数量
-			shouldReceiveSolAmount := go_decimal.Decimal.MustStart(solReserve).MustMulti(tokenAmount.Amount).MustDiv(tokenReserve).MustMultiForString(0.995)
-			// 最大少收到 sol 的数量
-			maxLessSolAmount := go_decimal.Decimal.MustStart(shouldReceiveSolAmount).MustMulti(slippage).MustDivForString(10000)
-			minReceiveSolAmount = go_decimal.Decimal.MustStart(shouldReceiveSolAmount).MustSub(maxLessSolAmount).RoundDownForString(constant.SOL_Decimals)
+			minReceiveSolAmountWithDecimals = uint64(
+				0.995 * float64(10000-slippage) * float64(solReserveWithDecimals) * float64(tokenAmountWithDecimals) / float64(tokenReserveWithDecimals) / 10000,
+			)
 		}
 
 		swapInstruction, err := instruction.NewSellBaseInInstruction(
@@ -113,8 +109,8 @@ func GetSwapInstructions(
 			tokenAddress,
 			userWSOLAssociatedAccount,
 			userTokenAssociatedAccount,
-			tokenAmount,
-			minReceiveSolAmount,
+			tokenAmountWithDecimals,
+			minReceiveSolAmountWithDecimals,
 			raydiumSwapKeys,
 		)
 		if err != nil {
@@ -158,8 +154,8 @@ func GetReserves(
 	poolCoinTokenAccount solana.PublicKey,
 	poolPcTokenAccount solana.PublicKey,
 ) (
-	reserveSolAmount_ string,
-	reserveTokenAmount_ string,
+	reserveSol_ *type_.TokenAmountInfo,
+	reserveToken_ *type_.TokenAmountInfo,
 	err_ error,
 ) {
 	datas, err := associated_token_account.GetAssociatedTokenAccountDatas(
@@ -170,10 +166,24 @@ func GetReserves(
 		},
 	)
 	if err != nil {
-		return "", "", err
+		return nil, nil, err
 	}
-	return datas[0].Parsed.Info.TokenAmount.UIAmountString,
-		datas[1].Parsed.Info.TokenAmount.UIAmountString,
+	solAmountWithDecimals, err := strconv.ParseUint(datas[0].Parsed.Info.TokenAmount.Amount, 10, 64)
+	if err != nil {
+		return nil, nil, err
+	}
+	tokenAmountWithDecimals, err := strconv.ParseUint(datas[1].Parsed.Info.TokenAmount.Amount, 10, 64)
+	if err != nil {
+		return nil, nil, err
+	}
+	return &type_.TokenAmountInfo{
+			AmountWithDecimals: solAmountWithDecimals,
+			Decimals:           datas[0].Parsed.Info.TokenAmount.Decimals,
+		},
+		&type_.TokenAmountInfo{
+			AmountWithDecimals: tokenAmountWithDecimals,
+			Decimals:           datas[1].Parsed.Info.TokenAmount.Decimals,
+		},
 		nil
 }
 
@@ -231,25 +241,24 @@ func ParseSwapTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*r
 			return nil, err
 		}
 		var swapType type_.SwapType
-		var solAmount string
+		var solAmountWithDecimals uint64
 		var tokenAmountWithDecimals uint64
 		var userTokenAssociatedAccount solana.PublicKey
 		if accountKeys[transfer1Instruction.Accounts[1]].Equals(poolCoinTokenAccount) {
 			swapType = type_.SwapType_Buy
-			solAmount = go_decimal.Decimal.MustStart(transfer1InstructionData.Amount).MustUnShiftedBy(constant.SOL_Decimals).EndForString()
+			solAmountWithDecimals = transfer1InstructionData.Amount
 			tokenAmountWithDecimals = transfer2InstructionData.Amount
 			userTokenAssociatedAccount = accountKeys[instruction.Accounts[16]]
 		} else {
 			swapType = type_.SwapType_Sell
-			solAmount = go_decimal.Decimal.MustStart(transfer2InstructionData.Amount).MustUnShiftedBy(constant.SOL_Decimals).EndForString()
+			solAmountWithDecimals = transfer2InstructionData.Amount
 			tokenAmountWithDecimals = transfer1InstructionData.Amount
 			userTokenAssociatedAccount = accountKeys[instruction.Accounts[15]]
 		}
 
 		userAddress := accountKeys[0]
 		var tokenAddress solana.PublicKey
-		userTokenBalance := "0"
-		var tokenDecimals uint64
+		var userTokenBalanceWithDecimals uint64
 
 		fmt.Println(userTokenAssociatedAccount.String(), userAddress)
 		var tokenBalanceInfo *rpc.TokenBalance
@@ -271,22 +280,20 @@ func ParseSwapTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*r
 			if tokenBalanceInfo == nil {
 				return nil, errors.New("没有找到 token 相关的 balance info")
 			}
-			userTokenBalance = "0"
 		} else {
-			userTokenBalance = tokenBalanceInfo.UiTokenAmount.UiAmountString
+			userTokenBalanceWithDecimals, _ = strconv.ParseUint(tokenBalanceInfo.UiTokenAmount.Amount, 10, 64)
 		}
 		tokenAddress = tokenBalanceInfo.Mint
-		tokenDecimals = uint64(tokenBalanceInfo.UiTokenAmount.Decimals)
 
 		swaps = append(swaps, &raydium_type_.SwapDataType{
-			TokenAddress:      tokenAddress,
-			SOLAmount:         solAmount,
-			TokenAmount:       go_decimal.Decimal.MustStart(tokenAmountWithDecimals).MustUnShiftedBy(tokenDecimals).EndForString(),
-			Type:              swapType,
-			UserAddress:       userAddress,
-			UserBalance:       go_decimal.Decimal.MustStart(meta.PostBalances[0]).MustUnShiftedBy(constant.SOL_Decimals).EndForString(),
-			BeforeUserBalance: go_decimal.Decimal.MustStart(meta.PreBalances[0]).MustUnShiftedBy(constant.SOL_Decimals).EndForString(),
-			UserTokenBalance:  userTokenBalance,
+			TokenAddress:                  tokenAddress,
+			SOLAmountWithDecimals:         solAmountWithDecimals,
+			TokenAmountWithDecimals:       tokenAmountWithDecimals,
+			Type:                          swapType,
+			UserAddress:                   userAddress,
+			UserBalanceWithDecimals:       meta.PostBalances[0],
+			BeforeUserBalanceWithDecimals: meta.PreBalances[0],
+			UserTokenBalanceWithDecimals:  userTokenBalanceWithDecimals,
 			RaydiumSwapKeys: raydium_type_.RaydiumSwapKeys{
 				AmmAddress:                   accountKeys[instruction.Accounts[1]],
 				AmmOpenOrdersAddress:         &accountKeys[instruction.Accounts[3]],

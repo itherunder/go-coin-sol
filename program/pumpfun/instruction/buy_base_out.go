@@ -8,8 +8,6 @@ import (
 	"github.com/gagliardetto/solana-go"
 	constant "github.com/pefish/go-coin-sol/constant"
 	pumpfun_constant "github.com/pefish/go-coin-sol/program/pumpfun/constant"
-	type_ "github.com/pefish/go-coin-sol/type"
-	go_decimal "github.com/pefish/go-decimal"
 )
 
 type BuyInstruction struct {
@@ -23,8 +21,8 @@ func NewBuyBaseOutInstruction(
 	tokenAddress solana.PublicKey,
 	bondingCurveAddress solana.PublicKey,
 	userAssociatedTokenAddress solana.PublicKey,
-	tokenAmount type_.TokenAmountInfo,
-	maxCostSolAmount string,
+	tokenAmountWithDecimals uint64,
+	maxSolAmountWithDecimals uint64,
 ) (*BuyInstruction, error) {
 	bondingCurveAssociatedTokenAddress, _, err := solana.FindAssociatedTokenAddress(
 		bondingCurveAddress,
@@ -42,8 +40,8 @@ func NewBuyBaseOutInstruction(
 		TokenAmountWithDecimals  uint64
 		MaxSolAmountWithDecimals uint64
 	}{
-		TokenAmountWithDecimals:  go_decimal.Decimal.MustStart(tokenAmount.Amount).MustShiftedBy(tokenAmount.Decimals).RoundDown(0).MustEndForUint64(),
-		MaxSolAmountWithDecimals: go_decimal.Decimal.MustStart(maxCostSolAmount).MustShiftedBy(constant.SOL_Decimals).RoundDown(0).MustEndForUint64(),
+		TokenAmountWithDecimals:  tokenAmountWithDecimals,
+		MaxSolAmountWithDecimals: maxSolAmountWithDecimals,
 	})
 	if err != nil {
 		return nil, err

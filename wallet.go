@@ -11,7 +11,6 @@ import (
 	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/gagliardetto/solana-go/rpc/ws"
 	constant "github.com/pefish/go-coin-sol/constant"
-	go_decimal "github.com/pefish/go-decimal"
 	go_format "github.com/pefish/go-format"
 	go_http "github.com/pefish/go-http"
 	i_logger "github.com/pefish/go-interface/i-logger"
@@ -98,7 +97,7 @@ func (t *Wallet) SendTxByJito(
 	instructions []solana.Instruction,
 	unitPrice uint64,
 	unitLimit uint64,
-	jitoTipAmount string,
+	jitoTipAmountWithDecimals uint64,
 	jitoAccount solana.PublicKey,
 ) (
 	meta_ *rpc.TransactionMeta,
@@ -113,12 +112,7 @@ func (t *Wallet) SendTxByJito(
 			NewTransferInstructionBuilder().
 			SetFundingAccount(privObj.PublicKey()).
 			SetRecipientAccount(jitoAccount).
-			SetLamports(
-				go_decimal.Decimal.MustStart(jitoTipAmount).
-					MustShiftedBy(constant.SOL_Decimals).
-					RoundDown(0).
-					MustEndForUint64(),
-			).
+			SetLamports(jitoTipAmountWithDecimals).
 			Build(),
 	)
 

@@ -7,12 +7,10 @@ import (
 
 	bin "github.com/gagliardetto/binary"
 	solana "github.com/gagliardetto/solana-go"
-	constant "github.com/pefish/go-coin-sol/constant"
 	pumpfun_constant "github.com/pefish/go-coin-sol/program/pumpfun/constant"
 	pumpfun_type "github.com/pefish/go-coin-sol/program/pumpfun/type"
 	type_ "github.com/pefish/go-coin-sol/type"
 	util "github.com/pefish/go-coin-sol/util"
-	go_decimal "github.com/pefish/go-decimal"
 )
 
 func ParseSwapByLogs(logs []string) ([]*pumpfun_type.SwapDataType, error) {
@@ -76,11 +74,10 @@ func ParseSwapByLogs(logs []string) ([]*pumpfun_type.SwapDataType, error) {
 			logObj.Timestamp == 0 {
 			continue
 		}
-		tokenAmount := go_decimal.Decimal.MustStart(logObj.TokenAmount).MustUnShiftedBy(pumpfun_constant.Pumpfun_Token_Decimals).EndForString()
 		swaps = append(swaps, &pumpfun_type.SwapDataType{
-			TokenAddress: logObj.Mint,
-			SOLAmount:    go_decimal.Decimal.MustStart(logObj.SOLAmount).MustUnShiftedBy(constant.SOL_Decimals).EndForString(),
-			TokenAmount:  tokenAmount,
+			TokenAddress:            logObj.Mint,
+			SOLAmountWithDecimals:   logObj.SOLAmount,
+			TokenAmountWithDecimals: logObj.TokenAmount,
 			Type: func() type_.SwapType {
 				if logObj.IsBuy {
 					return type_.SwapType_Buy
@@ -88,10 +85,10 @@ func ParseSwapByLogs(logs []string) ([]*pumpfun_type.SwapDataType, error) {
 					return type_.SwapType_Sell
 				}
 			}(),
-			UserAddress:        logObj.User,
-			Timestamp:          uint64(logObj.Timestamp * 1000),
-			ReserveSOLAmount:   go_decimal.Decimal.MustStart(logObj.VirtualSolReserves).MustUnShiftedBy(constant.SOL_Decimals).EndForString(),
-			ReserveTokenAmount: go_decimal.Decimal.MustStart(logObj.VirtualTokenReserves).MustUnShiftedBy(pumpfun_constant.Pumpfun_Token_Decimals).EndForString(),
+			UserAddress:                    logObj.User,
+			Timestamp:                      uint64(logObj.Timestamp * 1000),
+			ReserveSOLAmountWithDecimals:   logObj.VirtualSolReserves,
+			ReserveTokenAmountWithDecimals: logObj.VirtualTokenReserves,
 		})
 	}
 

@@ -30,7 +30,7 @@ func TestGetFeeInfoFromTx(t *testing.T) {
 	go_test_.Equal(t, nil, err)
 	r, err := GetFeeInfoFromTx(getTransactionResult.Meta, tx)
 	go_test_.Equal(t, nil, err)
-	fmt.Printf("%s, %s, %s\n", r.BaseFee, r.PriorityFee, r.TotalFee)
+	fmt.Printf("%d, %d, %d\n", r.BaseFeeWithDecimals, r.PriorityFeeWithDecimals, r.TotalFeeWithDecimals)
 }
 
 func TestGetComputeUnitPriceFromHelius(t *testing.T) {

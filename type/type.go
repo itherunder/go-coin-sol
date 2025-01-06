@@ -8,13 +8,13 @@ const (
 )
 
 type TokenAmountInfo struct {
-	Amount   string `json:"amount"`
-	Decimals uint64 `json:"decimals"`
+	AmountWithDecimals uint64 `json:"amount_with_decimals"`
+	Decimals           uint64 `json:"decimals"`
 }
 
 type FeeInfo struct {
-	BaseFee          string `json:"base_fee"`
-	PriorityFee      string `json:"priority_fee"`
-	TotalFee         string `json:"total_fee"`
-	ComputeUnitPrice uint64 `json:"compute_unit_price"`
+	BaseFeeWithDecimals     uint64 `json:"base_fee_with_decimals"`
+	PriorityFeeWithDecimals uint64 `json:"priority_fee_with_decimals"`
+	TotalFeeWithDecimals    uint64 `json:"total_fee_with_decimals"`
+	ComputeUnitPrice        uint64 `json:"compute_unit_price"`
 }

@@ -5,11 +5,13 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
+	"math"
 	"os"
 	"testing"
 
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
+	"github.com/pefish/go-coin-sol/constant"
 	"github.com/pefish/go-coin-sol/program/pumpfun"
 	pumpfun_constant "github.com/pefish/go-coin-sol/program/pumpfun/constant"
 	"github.com/pefish/go-coin-sol/program/raydium"
@@ -28,7 +30,6 @@ func init() {
 	if envUrl != "" {
 		url = envUrl
 	}
-	fmt.Println(url)
 	instance, err := New(
 		context.Background(),
 		&i_logger.DefaultLogger,
@@ -53,10 +54,10 @@ func TestWallet_SwapPumpfun(t *testing.T) {
 		privObj.PublicKey(),
 		type_.SwapType_Buy,
 		tokenAddress,
-		"300",
+		uint64(300*math.Pow(10, pumpfun_constant.Pumpfun_Token_Decimals)),
 		true,
-		data.VirtualSolReserves,
-		data.VirtualTokenReserves,
+		data.VirtualSolReserveWithDecimals,
+		data.VirtualTokenReserveWithDecimals,
 		50,
 	)
 	go_test_.Equal(t, nil, err)
@@ -102,14 +103,11 @@ func TestWallet_SwapRaydium(t *testing.T) {
 		privObj.PublicKey(),
 		type_.SwapType_Sell,
 		tokenAddress,
-		type_.TokenAmountInfo{
-			Amount:   "4",
-			Decimals: pumpfun_constant.Pumpfun_Token_Decimals,
-		},
+		uint64(4*math.Pow(10, pumpfun_constant.Pumpfun_Token_Decimals)),
 		raydiumSwapKeys,
 		true,
-		solAmount,
-		tokenAmount,
+		solAmount.AmountWithDecimals,
+		tokenAmount.AmountWithDecimals,
 		50,
 	)
 	go_test_.Equal(t, nil, err)
@@ -158,14 +156,11 @@ func TestWallet_SendTxByJito(t *testing.T) {
 		privObj.PublicKey(),
 		type_.SwapType_Sell,
 		tokenAddress,
-		type_.TokenAmountInfo{
-			Amount:   "2",
-			Decimals: pumpfun_constant.Pumpfun_Token_Decimals,
-		},
+		uint64(2*math.Pow(10, pumpfun_constant.Pumpfun_Token_Decimals)),
 		raydiumSwapKeys,
 		true,
-		solAmount,
-		tokenAmount,
+		solAmount.AmountWithDecimals,
+		tokenAmount.AmountWithDecimals,
 		50,
 	)
 	go_test_.Equal(t, nil, err)
@@ -176,7 +171,7 @@ func TestWallet_SendTxByJito(t *testing.T) {
 		swapInstructions,
 		0,
 		raydium_constant.Raydium_Buy_Unit_Limit,
-		"0.00002",
+		uint64(0.00002*math.Pow(10, constant.SOL_Decimals)),
 		solana.MustPublicKeyFromBase58("DttWaMuVvTiduZRnguLF7jNxTgiMBZ1hyAumKUiL2KRL"),
 	)
 	go_test_.Equal(t, nil, err)

@@ -9,7 +9,6 @@ import (
 	solana "github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/programs/token"
 	"github.com/gagliardetto/solana-go/rpc"
-	constant "github.com/pefish/go-coin-sol/constant"
 	associated_token_account_instruction "github.com/pefish/go-coin-sol/program/associated-token-account/instruction"
 	pumpfun_constant "github.com/pefish/go-coin-sol/program/pumpfun/constant"
 	pumpfun_instruction "github.com/pefish/go-coin-sol/program/pumpfun/instruction"
@@ -17,7 +16,6 @@ import (
 	raydium_constant "github.com/pefish/go-coin-sol/program/raydium/constant"
 	type_ "github.com/pefish/go-coin-sol/type"
 	util "github.com/pefish/go-coin-sol/util"
-	go_decimal "github.com/pefish/go-decimal"
 	go_http "github.com/pefish/go-http"
 	i_logger "github.com/pefish/go-interface/i-logger"
 	"github.com/pkg/errors"
@@ -109,11 +107,10 @@ func ParseSwapTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*p
 			log.Timestamp == 0 {
 			continue
 		}
-		tokenAmount := go_decimal.Decimal.MustStart(log.TokenAmount).MustUnShiftedBy(pumpfun_constant.Pumpfun_Token_Decimals).EndForString()
 		swaps = append(swaps, &pumpfun_type.SwapDataType{
-			TokenAddress: log.Mint,
-			SOLAmount:    go_decimal.Decimal.MustStart(log.SOLAmount).MustUnShiftedBy(constant.SOL_Decimals).EndForString(),
-			TokenAmount:  tokenAmount,
+			TokenAddress:            log.Mint,
+			SOLAmountWithDecimals:   log.SOLAmount,
+			TokenAmountWithDecimals: log.TokenAmount,
 			Type: func() type_.SwapType {
 				if log.IsBuy {
 					return type_.SwapType_Buy
@@ -121,10 +118,10 @@ func ParseSwapTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*p
 					return type_.SwapType_Sell
 				}
 			}(),
-			UserAddress:        log.User,
-			Timestamp:          uint64(log.Timestamp * 1000),
-			ReserveSOLAmount:   go_decimal.Decimal.MustStart(log.VirtualSolReserves).MustUnShiftedBy(constant.SOL_Decimals).EndForString(),
-			ReserveTokenAmount: go_decimal.Decimal.MustStart(log.VirtualTokenReserves).MustUnShiftedBy(pumpfun_constant.Pumpfun_Token_Decimals).EndForString(),
+			UserAddress:                    log.User,
+			Timestamp:                      uint64(log.Timestamp * 1000),
+			ReserveSOLAmountWithDecimals:   log.VirtualSolReserves,
+			ReserveTokenAmountWithDecimals: log.VirtualTokenReserves,
 		})
 	}
 
@@ -133,11 +130,11 @@ func ParseSwapTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*p
 		return nil, err
 	}
 	return &pumpfun_type.SwapTxDataType{
-		TxId:              transaction.Signatures[0].String(),
-		Swaps:             swaps,
-		FeeInfo:           feeInfo,
-		UserBalance:       go_decimal.Decimal.MustStart(meta.PostBalances[0]).MustUnShiftedBy(constant.SOL_Decimals).EndForString(),
-		BeforeUserBalance: go_decimal.Decimal.MustStart(meta.PreBalances[0]).MustUnShiftedBy(constant.SOL_Decimals).EndForString(),
+		TxId:                          transaction.Signatures[0].String(),
+		Swaps:                         swaps,
+		FeeInfo:                       feeInfo,
+		UserBalanceWithDecimals:       meta.PostBalances[0],
+		BeforeUserBalanceWithDecimals: meta.PreBalances[0],
 	}, nil
 }
 
@@ -261,14 +258,14 @@ func ParseAddLiqTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (
 			return nil, err
 		}
 		return &pumpfun_type.AddLiqTxDataType{
-			TxId:                 transaction.Signatures[0].String(),
-			TokenAddress:         accountKeys[instruction.Accounts[9]],
-			AMMAddress:           accountKeys[instruction.Accounts[4]],
-			PoolCoinTokenAccount: accountKeys[instruction.Accounts[10]],
-			PoolPcTokenAccount:   accountKeys[instruction.Accounts[11]],
-			InitSOLAmount:        go_decimal.Decimal.MustStart(params.InitCoinAmount).MustUnShiftedBy(constant.SOL_Decimals).EndForString(),
-			InitTokenAmount:      go_decimal.Decimal.MustStart(params.InitPcAmount).MustUnShiftedBy(pumpfun_constant.Pumpfun_Token_Decimals).EndForString(),
-			FeeInfo:              feeInfo,
+			TxId:                        transaction.Signatures[0].String(),
+			TokenAddress:                accountKeys[instruction.Accounts[9]],
+			AMMAddress:                  accountKeys[instruction.Accounts[4]],
+			PoolCoinTokenAccount:        accountKeys[instruction.Accounts[10]],
+			PoolPcTokenAccount:          accountKeys[instruction.Accounts[11]],
+			InitSOLAmountWithDecimals:   params.InitCoinAmount,
+			InitTokenAmountWithDecimals: params.InitPcAmount,
+			FeeInfo:                     feeInfo,
 		}, nil
 
 	}
@@ -303,13 +300,13 @@ func URIInfo(logger i_logger.ILogger, uri string) (*TokenMetadata, error) {
 }
 
 type BondingCurveDataType struct {
-	BondingCurveAddress  string
-	VirtualTokenReserves string
-	VirtualSolReserves   string
-	RealTokenReserves    string
-	RealSolReserves      string
-	TokenTotalSupply     string
-	Complete             bool
+	BondingCurveAddress             string
+	VirtualTokenReserveWithDecimals uint64
+	VirtualSolReserveWithDecimals   uint64
+	RealTokenReserveWithDecimals    uint64
+	RealSolReserveWithDecimals      uint64
+	TokenTotalSupplyWithDecimals    uint64
+	Complete                        bool
 }
 
 func GetBondingCurveData(
@@ -345,13 +342,13 @@ func GetBondingCurveData(
 		return nil, err
 	}
 	return &BondingCurveDataType{
-		BondingCurveAddress:  bondingCurveAddress.String(),
-		VirtualTokenReserves: go_decimal.Decimal.MustStart(data.VirtualTokenReserves).MustUnShiftedBy(pumpfun_constant.Pumpfun_Token_Decimals).EndForString(),
-		VirtualSolReserves:   go_decimal.Decimal.MustStart(data.VirtualSolReserves).MustUnShiftedBy(constant.SOL_Decimals).EndForString(),
-		RealTokenReserves:    go_decimal.Decimal.MustStart(data.RealTokenReserves).MustUnShiftedBy(pumpfun_constant.Pumpfun_Token_Decimals).EndForString(),
-		RealSolReserves:      go_decimal.Decimal.MustStart(data.RealSolReserves).MustUnShiftedBy(constant.SOL_Decimals).EndForString(),
-		TokenTotalSupply:     go_decimal.Decimal.MustStart(data.TokenTotalSupply).MustUnShiftedBy(pumpfun_constant.Pumpfun_Token_Decimals).EndForString(),
-		Complete:             data.Complete,
+		BondingCurveAddress:             bondingCurveAddress.String(),
+		VirtualTokenReserveWithDecimals: data.VirtualTokenReserves,
+		VirtualSolReserveWithDecimals:   data.VirtualSolReserves,
+		RealTokenReserveWithDecimals:    data.RealTokenReserves,
+		RealSolReserveWithDecimals:      data.RealSolReserves,
+		TokenTotalSupplyWithDecimals:    data.TokenTotalSupply,
+		Complete:                        data.Complete,
 	}, nil
 }
 
@@ -359,10 +356,10 @@ func GetSwapInstructions(
 	userAddress solana.PublicKey,
 	swapType type_.SwapType,
 	tokenAddress solana.PublicKey,
-	tokenAmount string,
+	tokenAmountWithDecimals uint64,
 	isCloseUserAssociatedTokenAddress bool,
-	virtualSolReserve string,
-	virtualTokenReserve string,
+	virtualSolReserveWithDecimals uint64,
+	virtualTokenReserveWithDecimals uint64,
 	slippage int64,
 ) ([]solana.Instruction, error) {
 	if slippage == 0 {
@@ -395,45 +392,36 @@ func GetSwapInstructions(
 		if slippage == -1 {
 			return nil, errors.New("购买必须设置滑点")
 		}
-		// 应该花费的 sol 数量
-		shouldCostSolAmount := go_decimal.Decimal.MustStart(virtualSolReserve).MustMulti(tokenAmount).MustDiv(virtualTokenReserve).MustMultiForString(1.01) // pumpfun 收取 1% 手续费
-		// 最大多花 sol 的数量
-		maxMoreSolAmount := go_decimal.Decimal.MustStart(shouldCostSolAmount).MustMulti(slippage).MustDivForString(10000)
-		maxCostSolAmount := go_decimal.Decimal.MustStart(shouldCostSolAmount).MustAdd(maxMoreSolAmount).RoundDownForString(constant.SOL_Decimals)
+		maxCostSolAmountWithDecimals := uint64(
+			float64(slippage+10000) * 1.01 * float64(virtualSolReserveWithDecimals) * float64(tokenAmountWithDecimals) / float64(virtualTokenReserveWithDecimals) / 10000,
+		) // pumpfun 收取 1% 手续费
 		instruction, err := pumpfun_instruction.NewBuyBaseOutInstruction(
 			userAddress,
 			tokenAddress,
 			bondingCurveAddress,
 			userAssociatedTokenAddress,
-			type_.TokenAmountInfo{
-				Amount:   tokenAmount,
-				Decimals: pumpfun_constant.Pumpfun_Token_Decimals,
-			},
-			maxCostSolAmount,
+			tokenAmountWithDecimals,
+			maxCostSolAmountWithDecimals,
 		)
 		if err != nil {
 			return nil, err
 		}
 		swapInstruction = instruction
 	} else {
-		minReceiveSolAmount := "0"
+		minReceiveSolAmountWithDecimals := uint64(0)
 		if slippage != -1 {
 			// 应该收到的 sol 数量
-			shouldReceiveSolAmount := go_decimal.Decimal.MustStart(virtualSolReserve).MustMulti(tokenAmount).MustDiv(virtualTokenReserve).MustMultiForString(0.99)
-			// 最大少收到 sol 的数量
-			maxLessSolAmount := go_decimal.Decimal.MustStart(shouldReceiveSolAmount).MustMulti(slippage).MustDivForString(10000)
-			minReceiveSolAmount = go_decimal.Decimal.MustStart(shouldReceiveSolAmount).MustSub(maxLessSolAmount).RoundDownForString(constant.SOL_Decimals)
+			minReceiveSolAmountWithDecimals = uint64(
+				0.99 * float64(10000-slippage) * float64(virtualSolReserveWithDecimals) * float64(tokenAmountWithDecimals) / float64(virtualTokenReserveWithDecimals) / 10000,
+			)
 		}
 		instruction, err := pumpfun_instruction.NewSellBaseInInstruction(
 			userAddress,
 			tokenAddress,
 			bondingCurveAddress,
 			userAssociatedTokenAddress,
-			type_.TokenAmountInfo{
-				Amount:   tokenAmount,
-				Decimals: pumpfun_constant.Pumpfun_Token_Decimals,
-			},
-			minReceiveSolAmount,
+			tokenAmountWithDecimals,
+			minReceiveSolAmountWithDecimals,
 		)
 		if err != nil {
 			return nil, err

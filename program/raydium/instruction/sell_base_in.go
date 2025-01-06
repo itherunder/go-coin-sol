@@ -6,11 +6,8 @@ import (
 
 	bin "github.com/gagliardetto/binary"
 	"github.com/gagliardetto/solana-go"
-	"github.com/pefish/go-coin-sol/constant"
 	raydium_constant "github.com/pefish/go-coin-sol/program/raydium/constant"
 	raydium_type "github.com/pefish/go-coin-sol/program/raydium/type"
-	type_ "github.com/pefish/go-coin-sol/type"
-	go_decimal "github.com/pefish/go-decimal"
 )
 
 type SellInstruction struct {
@@ -24,8 +21,8 @@ func NewSellBaseInInstruction(
 	tokenAddress solana.PublicKey,
 	userWSOLAssociatedAccount solana.PublicKey,
 	userTokenAssociatedAccount solana.PublicKey,
-	tokenAmount type_.TokenAmountInfo,
-	minReceiveSOLAmount string,
+	tokenAmountWithDecimals uint64,
+	minReceiveSOLAmountWithDecimals uint64,
 	raydiumSwapKeys raydium_type.RaydiumSwapKeys,
 ) (*SellInstruction, error) {
 	methodBytes, err := hex.DecodeString("09")
@@ -37,8 +34,8 @@ func NewSellBaseInInstruction(
 		TokenAmountWithDecimals uint64
 		MinReceiveSOLAmount     uint64
 	}{
-		TokenAmountWithDecimals: go_decimal.Decimal.MustStart(tokenAmount.Amount).MustShiftedBy(tokenAmount.Decimals).RoundDown(0).MustEndForUint64(),
-		MinReceiveSOLAmount:     go_decimal.Decimal.MustStart(minReceiveSOLAmount).MustShiftedBy(constant.SOL_Decimals).RoundDown(0).MustEndForUint64(),
+		TokenAmountWithDecimals: tokenAmountWithDecimals,
+		MinReceiveSOLAmount:     minReceiveSOLAmountWithDecimals,
 	})
 	if err != nil {
 		return nil, err

@@ -3,6 +3,7 @@ package pumpfun
 import (
 	"context"
 	"fmt"
+	"os"
 	"testing"
 
 	solana "github.com/gagliardetto/solana-go"
@@ -14,8 +15,12 @@ import (
 
 func TestParseSwapTx(t *testing.T) {
 	// return
-	endpoint := rpc.MainNetBeta_RPC
-	client := rpc.New(endpoint)
+	url := rpc.MainNetBeta_RPC
+	envUrl := os.Getenv("URL")
+	if envUrl != "" {
+		url = envUrl
+	}
+	client := rpc.New(url)
 	getTransactionResult, err := client.GetTransaction(
 		context.TODO(),
 		solana.MustSignatureFromBase58("3FhAfwZts7di6LwtTY86rVGprB1hvsMtNrpfmt95UxfvH4LSZsn2fjMxuekmm7sx6ZKvxuwzWQhYc7yZdrb2r2f9"),
@@ -31,20 +36,24 @@ func TestParseSwapTx(t *testing.T) {
 	go_test_.Equal(t, nil, err)
 	for _, swapData := range r.Swaps {
 		fmt.Printf(
-			"[Swap] <%s> <SOLAmount: %s> <TokenAmount: %s> <ReserveSOLAmount: %s> <ReserveTokenAmount: %s>\n",
+			"[Swap] <%s> <SOLAmount: %d> <TokenAmount: %d> <ReserveSOLAmount: %d> <ReserveTokenAmount: %d>\n",
 			swapData.Type,
-			swapData.SOLAmount,
-			swapData.TokenAmount,
-			swapData.ReserveSOLAmount,
-			swapData.ReserveTokenAmount,
+			swapData.SOLAmountWithDecimals,
+			swapData.TokenAmountWithDecimals,
+			swapData.ReserveSOLAmountWithDecimals,
+			swapData.ReserveTokenAmountWithDecimals,
 		)
 	}
 }
 
 func TestParseSwapByLogs(t *testing.T) {
 	// return
-	endpoint := rpc.MainNetBeta_RPC
-	client := rpc.New(endpoint)
+	url := rpc.MainNetBeta_RPC
+	envUrl := os.Getenv("URL")
+	if envUrl != "" {
+		url = envUrl
+	}
+	client := rpc.New(url)
 	getTransactionResult, err := client.GetTransaction(
 		context.TODO(),
 		solana.MustSignatureFromBase58("3FhAfwZts7di6LwtTY86rVGprB1hvsMtNrpfmt95UxfvH4LSZsn2fjMxuekmm7sx6ZKvxuwzWQhYc7yZdrb2r2f9"),
@@ -58,20 +67,24 @@ func TestParseSwapByLogs(t *testing.T) {
 	go_test_.Equal(t, nil, err)
 	for _, swapData := range swaps {
 		fmt.Printf(
-			"[Swap] <%s> <SOLAmount: %s> <TokenAmount: %s> <ReserveSOLAmount: %s> <ReserveTokenAmount: %s>\n",
+			"[Swap] <%s> <SOLAmount: %d> <TokenAmount: %d> <ReserveSOLAmount: %d> <ReserveTokenAmount: %d>\n",
 			swapData.Type,
-			swapData.SOLAmount,
-			swapData.TokenAmount,
-			swapData.ReserveSOLAmount,
-			swapData.ReserveTokenAmount,
+			swapData.SOLAmountWithDecimals,
+			swapData.TokenAmountWithDecimals,
+			swapData.ReserveSOLAmountWithDecimals,
+			swapData.ReserveTokenAmountWithDecimals,
 		)
 	}
 }
 
 func TestParseCreateByLogs(t *testing.T) {
 	// return
-	endpoint := rpc.MainNetBeta_RPC
-	client := rpc.New(endpoint)
+	url := rpc.MainNetBeta_RPC
+	envUrl := os.Getenv("URL")
+	if envUrl != "" {
+		url = envUrl
+	}
+	client := rpc.New(url)
 	getTransactionResult, err := client.GetTransaction(
 		context.TODO(),
 		solana.MustSignatureFromBase58("F5ahQP2qDcktN7MKW3mQJJY7dM279naRNPVZE9z9fnTyUPjsNX7kKok7vUYZe5LjuyYVgkXwYpZXMxZxfiVyAaf"),
@@ -96,11 +109,15 @@ func TestParseCreateByLogs(t *testing.T) {
 
 func TestParseTx(t *testing.T) {
 	// return
-	endpoint := rpc.MainNetBeta_RPC
-	client := rpc.New(endpoint)
+	url := rpc.MainNetBeta_RPC
+	envUrl := os.Getenv("URL")
+	if envUrl != "" {
+		url = envUrl
+	}
+	client := rpc.New(url)
 	getTransactionResult, err := client.GetTransaction(
 		context.TODO(),
-		solana.MustSignatureFromBase58("4UwSB7vSay2wBpeC9K4rghpVu8VMx8AS5nQaXm3Nasv8kKJX9pUVckYhF1Ga5ETiCS5QoswCgHyXQLwry7UBobh1"),
+		solana.MustSignatureFromBase58("4jj1WgBN8QYP7pDiazyVXwiwnJQnBVKJM7NpXHEMJiqnu6HfYitBgtEd9hnxtYkpvMjTDsUbgqtFWxnw63J42UdP"),
 		&rpc.GetTransactionOpts{
 			Commitment:                     rpc.CommitmentConfirmed,
 			MaxSupportedTransactionVersion: constant.MaxSupportedTransactionVersion_0,
@@ -126,11 +143,11 @@ func TestParseTx(t *testing.T) {
 	if r.SwapTxData != nil {
 		for _, swapData := range r.SwapTxData.Swaps {
 			fmt.Printf(
-				"[Swap] <%s> <SOLAmount: %s> <TokenAmount: %s> <UserBalance: %s>\n",
+				"[Swap] <%s> <SOLAmount: %d> <TokenAmount: %d> <UserBalance: %d>\n",
 				swapData.Type,
-				swapData.SOLAmount,
-				swapData.TokenAmount,
-				r.SwapTxData.UserBalance,
+				swapData.SOLAmountWithDecimals,
+				swapData.TokenAmountWithDecimals,
+				r.SwapTxData.UserBalanceWithDecimals,
 			)
 		}
 	}

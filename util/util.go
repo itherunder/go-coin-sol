@@ -3,6 +3,7 @@ package util
 import (
 	"encoding/hex"
 	"fmt"
+	"math"
 	"time"
 
 	bin "github.com/gagliardetto/binary"
@@ -71,8 +72,7 @@ func GetFeeInfoFromTx(meta *rpc.TransactionMeta, transaction *solana.Transaction
 		accountKeys = append(accountKeys, meta.LoadedAddresses.ReadOnly...)
 	}
 
-	totalFee := go_decimal.Decimal.MustStart(meta.Fee).MustUnShiftedBy(constant.SOL_Decimals).EndForString()
-	priorityFee := "0"
+	priorityFeeWithDecimals := uint64(0)
 	computeUnitPrice := 0
 
 	var setComputeUnitLimitInstru solana.CompiledInstruction
@@ -114,13 +114,13 @@ func GetFeeInfoFromTx(meta *rpc.TransactionMeta, transaction *solana.Transaction
 		}
 		computeUnitPrice = int(params.MicroLamports)
 
-		priorityFee = go_decimal.Decimal.MustStart(computeUnitPrice).MustMulti(computeUnitLimit).MustUnShiftedBy(constant.SOL_Decimals + 6).EndForString()
+		priorityFeeWithDecimals = uint64((computeUnitPrice * computeUnitLimit) / int(math.Pow(10, 6)))
 	}
 
 	return &type_.FeeInfo{
-		BaseFee:          go_decimal.Decimal.MustStart(totalFee).MustSubForString(priorityFee),
-		PriorityFee:      priorityFee,
-		TotalFee:         totalFee,
-		ComputeUnitPrice: uint64(computeUnitPrice),
+		BaseFeeWithDecimals:     meta.Fee - priorityFeeWithDecimals,
+		PriorityFeeWithDecimals: priorityFeeWithDecimals,
+		TotalFeeWithDecimals:    meta.Fee,
+		ComputeUnitPrice:        uint64(computeUnitPrice),
 	}, nil
 }
