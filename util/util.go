@@ -11,7 +11,6 @@ import (
 	"github.com/gagliardetto/solana-go/rpc"
 	constant "github.com/pefish/go-coin-sol/constant"
 	type_ "github.com/pefish/go-coin-sol/type"
-	go_decimal "github.com/pefish/go-decimal"
 	go_http "github.com/pefish/go-http"
 	i_logger "github.com/pefish/go-interface/i-logger"
 )
@@ -60,7 +59,7 @@ func GetComputeUnitPriceFromHelius(
 	if err != nil {
 		return 0, err
 	}
-	return go_decimal.Decimal.MustStart(httpResult.Result.PriorityFeeEstimate).RoundDown(0).MustEndForUint64(), nil
+	return uint64(httpResult.Result.PriorityFeeEstimate), nil
 }
 
 func GetFeeInfoFromTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*type_.FeeInfo, error) {

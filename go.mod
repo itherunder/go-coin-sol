@@ -5,7 +5,6 @@ go 1.21
 require (
 	github.com/gagliardetto/binary v0.8.0
 	github.com/gagliardetto/solana-go v1.12.0
-	github.com/pefish/go-decimal v0.4.5
 	github.com/pefish/go-format v0.5.1
 	github.com/pefish/go-http v0.8.7
 	github.com/pefish/go-interface v0.1.5

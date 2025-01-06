@@ -34,7 +34,7 @@ func TestGetFeeInfoFromTx(t *testing.T) {
 }
 
 func TestGetComputeUnitPriceFromHelius(t *testing.T) {
-	return
+	// return
 	r, err := GetComputeUnitPriceFromHelius(
 		&i_logger.DefaultLogger,
 		os.Getenv("KEY"),
