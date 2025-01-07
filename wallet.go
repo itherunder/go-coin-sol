@@ -267,25 +267,16 @@ func (t *Wallet) SendByJitoAndConfirmTransaction(
 	t.logger.InfoF("交易发送成功 <%d>。<%s>", go_time.CurrentTimestamp(), signature.String())
 
 	newCtx, _ := context.WithTimeout(ctx, 90*time.Second) // 150 个 slot 链上就会超时，每个 slot 是 400ms - 600ms，也就是 60-90s
-	confirmTimer := time.NewTimer(0)
+	sendTimer := time.NewTimer(0)
+	confirmTimer := time.NewTimer(time.Second)
 	for {
 		select {
-		case <-confirmTimer.C:
-			_, err := rpcClient.SendTransactionWithOpts(ctx, tx, rpc.TransactionOpts{
+		case <-sendTimer.C:
+			rpcClient.SendTransactionWithOpts(ctx, tx, rpc.TransactionOpts{
 				SkipPreflight: true,
 			})
-			if err != nil {
-				if strings.Contains(err.Error(), "Blockhash not found") {
-					confirmTimer.Reset(500 * time.Millisecond)
-					continue
-				}
-				if strings.Contains(err.Error(), "Program failed to complete") ||
-					strings.Contains(err.Error(), "custom program error") {
-					return nil, 0, err
-				}
-				// t.logger.Error(err.Error())
-			}
-
+			sendTimer.Reset(500 * time.Millisecond)
+		case <-confirmTimer.C:
 			getTransactionResult, err := t.rpcClient.GetTransaction(
 				ctx,
 				tx.Signatures[0],
@@ -334,6 +325,7 @@ func (t *Wallet) SendAndConfirmTransaction(
 			})
 		}(url)
 	}
+
 	newCtx, _ := context.WithTimeout(ctx, 90*time.Second) // 150 个 slot 链上就会超时，每个 slot 是 400ms - 600ms，也就是 60-90s
 	confirmTimer := time.NewTimer(0)
 	for {
