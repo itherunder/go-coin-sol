@@ -83,7 +83,7 @@ func TestWallet_NewAddress(t *testing.T) {
 }
 
 func TestWallet_SwapRaydium(t *testing.T) {
-	return
+	// return
 	privObj, err := solana.PrivateKeyFromBase58(os.Getenv("PRIV"))
 	go_test_.Equal(t, nil, err)
 	tokenAddress := solana.MustPublicKeyFromBase58("2qEHjDLDLbuBgRYvsxhc5D6uDWAivNFZGan56P1tpump")

@@ -14,7 +14,7 @@ import (
 )
 
 func TestGetFeeInfoFromTx(t *testing.T) {
-	return
+	// return
 	endpoint := rpc.MainNetBeta_RPC
 	client := rpc.New(endpoint)
 	getTransactionResult, err := client.GetTransaction(
