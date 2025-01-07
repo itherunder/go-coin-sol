@@ -46,67 +46,6 @@ func TestParseSwapTx(t *testing.T) {
 	}
 }
 
-func TestParseSwapByLogs(t *testing.T) {
-	// return
-	url := rpc.MainNetBeta_RPC
-	envUrl := os.Getenv("URL")
-	if envUrl != "" {
-		url = envUrl
-	}
-	client := rpc.New(url)
-	getTransactionResult, err := client.GetTransaction(
-		context.TODO(),
-		solana.MustSignatureFromBase58("3FhAfwZts7di6LwtTY86rVGprB1hvsMtNrpfmt95UxfvH4LSZsn2fjMxuekmm7sx6ZKvxuwzWQhYc7yZdrb2r2f9"),
-		&rpc.GetTransactionOpts{
-			Commitment:                     rpc.CommitmentConfirmed,
-			MaxSupportedTransactionVersion: constant.MaxSupportedTransactionVersion_0,
-		},
-	)
-	go_test_.Equal(t, nil, err)
-	swaps, err := ParseSwapByLogs(getTransactionResult.Meta.LogMessages)
-	go_test_.Equal(t, nil, err)
-	for _, swapData := range swaps {
-		fmt.Printf(
-			"[Swap] <%s> <SOLAmount: %d> <TokenAmount: %d> <ReserveSOLAmount: %d> <ReserveTokenAmount: %d>\n",
-			swapData.Type,
-			swapData.SOLAmountWithDecimals,
-			swapData.TokenAmountWithDecimals,
-			swapData.ReserveSOLAmountWithDecimals,
-			swapData.ReserveTokenAmountWithDecimals,
-		)
-	}
-}
-
-func TestParseCreateByLogs(t *testing.T) {
-	// return
-	url := rpc.MainNetBeta_RPC
-	envUrl := os.Getenv("URL")
-	if envUrl != "" {
-		url = envUrl
-	}
-	client := rpc.New(url)
-	getTransactionResult, err := client.GetTransaction(
-		context.TODO(),
-		solana.MustSignatureFromBase58("F5ahQP2qDcktN7MKW3mQJJY7dM279naRNPVZE9z9fnTyUPjsNX7kKok7vUYZe5LjuyYVgkXwYpZXMxZxfiVyAaf"),
-		&rpc.GetTransactionOpts{
-			Commitment:                     rpc.CommitmentConfirmed,
-			MaxSupportedTransactionVersion: constant.MaxSupportedTransactionVersion_0,
-		},
-	)
-	go_test_.Equal(t, nil, err)
-	d, err := ParseCreateByLogs(getTransactionResult.Meta.LogMessages)
-	go_test_.Equal(t, nil, err)
-	if d != nil {
-		fmt.Printf(
-			"<%s> <TokenAddress: %s> <UserAddress: %s> <URI: %s>\n",
-			d.Symbol,
-			d.TokenAddress,
-			d.UserAddress,
-			d.URI,
-		)
-	}
-}
-
 func TestParseTx(t *testing.T) {
 	// return
 	url := rpc.MainNetBeta_RPC

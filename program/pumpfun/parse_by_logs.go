@@ -9,6 +9,7 @@ import (
 	solana "github.com/gagliardetto/solana-go"
 	pumpfun_constant "github.com/pefish/go-coin-sol/program/pumpfun/constant"
 	pumpfun_type "github.com/pefish/go-coin-sol/program/pumpfun/type"
+	raydium_constant "github.com/pefish/go-coin-sol/program/raydium/constant"
 	type_ "github.com/pefish/go-coin-sol/type"
 	util "github.com/pefish/go-coin-sol/util"
 )
@@ -176,6 +177,31 @@ func IsRemoveLiqByLogs(logs []string) (bool, error) {
 		}
 
 		if log == "Program log: Instruction: Withdraw" {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+func IsAddLiqByLogs(logs []string) (bool, error) {
+	stack := util.NewStack()
+	for _, log := range logs {
+		pushPrefix := fmt.Sprintf("Program %s invoke", raydium_constant.Raydium_Liquidity_Pool_V4)
+		popLog := fmt.Sprintf("Program %s success", raydium_constant.Raydium_Liquidity_Pool_V4)
+		if strings.HasPrefix(log, pushPrefix) {
+			stack.Push(log)
+			continue
+		}
+		if log == popLog {
+			stack.Pop()
+			continue
+		}
+		if stack.Size() == 0 {
+			continue
+		}
+
+		if log == "Program log: Instruction: MintTo" {
 			return true, nil
 		}
 	}
