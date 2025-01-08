@@ -29,8 +29,7 @@ func TestParseCreateByLogs(t *testing.T) {
 		},
 	)
 	go_test_.Equal(t, nil, err)
-	d, err := ParseCreateByLogs(getTransactionResult.Meta.LogMessages)
-	go_test_.Equal(t, nil, err)
+	d := ParseCreateByLogs(getTransactionResult.Meta.LogMessages)
 	if d != nil {
 		fmt.Printf(
 			"<%s> <TokenAddress: %s> <UserAddress: %s> <URI: %s>\n",
@@ -59,8 +58,7 @@ func TestParseSwapByLogs(t *testing.T) {
 		},
 	)
 	go_test_.Equal(t, nil, err)
-	swaps, err := ParseSwapByLogs(getTransactionResult.Meta.LogMessages)
-	go_test_.Equal(t, nil, err)
+	swaps := ParseSwapByLogs(getTransactionResult.Meta.LogMessages)
 	for _, swapData := range swaps {
 		fmt.Printf(
 			"[Swap] <%s> <SOLAmount: %d> <TokenAmount: %d> <ReserveSOLAmount: %d> <ReserveTokenAmount: %d>\n",
@@ -90,8 +88,7 @@ func TestIsRemoveLiqByLogs(t *testing.T) {
 		},
 	)
 	go_test_.Equal(t, nil, err)
-	is, err := IsRemoveLiqByLogs(getTransactionResult.Meta.LogMessages)
-	go_test_.Equal(t, nil, err)
+	is := IsRemoveLiqByLogs(getTransactionResult.Meta.LogMessages)
 	fmt.Println(is)
 }
 
@@ -112,7 +109,6 @@ func TestIsAddLiqByLogs(t *testing.T) {
 		},
 	)
 	go_test_.Equal(t, nil, err)
-	is, err := IsAddLiqByLogs(getTransactionResult.Meta.LogMessages)
-	go_test_.Equal(t, nil, err)
+	is := IsAddLiqByLogs(getTransactionResult.Meta.LogMessages)
 	fmt.Println(is)
 }

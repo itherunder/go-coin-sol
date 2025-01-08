@@ -14,12 +14,15 @@ import (
 	util "github.com/pefish/go-coin-sol/util"
 )
 
-func ParseSwapByLogs(logs []string) ([]*pumpfun_type.SwapDataType, error) {
+func ParseSwapByLogs(logs []string) []*pumpfun_type.SwapDataType {
 	swaps := make([]*pumpfun_type.SwapDataType, 0)
 
 	isSwap := false
 	stack := util.NewStack()
 	for _, log := range logs {
+		if strings.Contains(log, "failed") {
+			return nil
+		}
 		pushPrefix := fmt.Sprintf("Program %s invoke", pumpfun_constant.Pumpfun_Program)
 		popLog := fmt.Sprintf("Program %s success", pumpfun_constant.Pumpfun_Program)
 		if strings.HasPrefix(log, pushPrefix) {
@@ -93,13 +96,16 @@ func ParseSwapByLogs(logs []string) ([]*pumpfun_type.SwapDataType, error) {
 		})
 	}
 
-	return swaps, nil
+	return swaps
 }
 
-func ParseCreateByLogs(logs []string) (*pumpfun_type.CreateDataType, error) {
+func ParseCreateByLogs(logs []string) *pumpfun_type.CreateDataType {
 	isCreate := false
 	stack := util.NewStack()
 	for _, log := range logs {
+		if strings.Contains(log, "failed") {
+			return nil
+		}
 		pushPrefix := fmt.Sprintf("Program %s invoke", pumpfun_constant.Pumpfun_Program)
 		popLog := fmt.Sprintf("Program %s success", pumpfun_constant.Pumpfun_Program)
 		if strings.HasPrefix(log, pushPrefix) {
@@ -153,15 +159,18 @@ func ParseCreateByLogs(logs []string) (*pumpfun_type.CreateDataType, error) {
 			UserAddress:         logObj.User,
 			BondingCurveAddress: logObj.BondingCurve,
 			TokenAddress:        logObj.Mint,
-		}, nil
+		}
 	}
 
-	return nil, nil
+	return nil
 }
 
-func IsRemoveLiqByLogs(logs []string) (bool, error) {
+func IsRemoveLiqByLogs(logs []string) bool {
 	stack := util.NewStack()
 	for _, log := range logs {
+		if strings.Contains(log, "failed") {
+			return false
+		}
 		pushPrefix := fmt.Sprintf("Program %s invoke", pumpfun_constant.Pumpfun_Program)
 		popLog := fmt.Sprintf("Program %s success", pumpfun_constant.Pumpfun_Program)
 		if strings.HasPrefix(log, pushPrefix) {
@@ -177,16 +186,20 @@ func IsRemoveLiqByLogs(logs []string) (bool, error) {
 		}
 
 		if log == "Program log: Instruction: Withdraw" {
-			return true, nil
+			return true
 		}
 	}
 
-	return false, nil
+	return false
 }
 
-func IsAddLiqByLogs(logs []string) (bool, error) {
+func IsAddLiqByLogs(logs []string) bool {
 	stack := util.NewStack()
 	for _, log := range logs {
+		if strings.Contains(log, "failed") {
+			return false
+		}
+
 		pushPrefix := fmt.Sprintf("Program %s invoke", raydium_constant.Raydium_Liquidity_Pool_V4)
 		popLog := fmt.Sprintf("Program %s success", raydium_constant.Raydium_Liquidity_Pool_V4)
 		if strings.HasPrefix(log, pushPrefix) {
@@ -202,9 +215,9 @@ func IsAddLiqByLogs(logs []string) (bool, error) {
 		}
 
 		if log == "Program log: Instruction: MintTo" {
-			return true, nil
+			return true
 		}
 	}
 
-	return false, nil
+	return false
 }
