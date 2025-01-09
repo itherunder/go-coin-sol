@@ -266,7 +266,7 @@ func (t *Wallet) SendByJitoAndConfirmTransaction(
 			rpcClient.SendTransactionWithOpts(ctx, tx, rpc.TransactionOpts{
 				SkipPreflight: true,
 			})
-			sendTimer.Reset(500 * time.Millisecond)
+			sendTimer.Reset(time.Second)
 		case <-confirmTimer.C:
 			getTransactionResult, err := t.rpcClient.GetTransaction(
 				ctx,
