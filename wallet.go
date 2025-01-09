@@ -257,15 +257,6 @@ func (t *Wallet) SendByJitoAndConfirmTransaction(
 	err_ error,
 ) {
 	rpcClient := rpc.New("https://tokyo.mainnet.block-engine.jito.wtf/api/v1/transactions")
-	signature, err := rpcClient.
-		SendTransactionWithOpts(ctx, tx, rpc.TransactionOpts{
-			SkipPreflight: true,
-		})
-	if err != nil {
-		return nil, 0, err
-	}
-	t.logger.InfoF("交易发送成功 <%d>。<%s>", go_time.CurrentTimestamp(), signature.String())
-
 	newCtx, _ := context.WithTimeout(ctx, 90*time.Second) // 150 个 slot 链上就会超时，每个 slot 是 400ms - 600ms，也就是 60-90s
 	sendTimer := time.NewTimer(0)
 	confirmTimer := time.NewTimer(time.Second)
