@@ -15,14 +15,15 @@ import (
 )
 
 func ParseSwapByLogs(logs []string) []*pumpfun_type.SwapDataType {
+	if strings.Contains(strings.Join(logs, ""), "failed") {
+		return nil
+	}
+
 	swaps := make([]*pumpfun_type.SwapDataType, 0)
 
 	isSwap := false
 	stack := util.NewStack()
 	for _, log := range logs {
-		if strings.Contains(log, "failed") {
-			return nil
-		}
 		pushPrefix := fmt.Sprintf("Program %s invoke", pumpfun_constant.Pumpfun_Program)
 		popLog := fmt.Sprintf("Program %s success", pumpfun_constant.Pumpfun_Program)
 		if strings.HasPrefix(log, pushPrefix) {
@@ -100,12 +101,13 @@ func ParseSwapByLogs(logs []string) []*pumpfun_type.SwapDataType {
 }
 
 func ParseCreateByLogs(logs []string) *pumpfun_type.CreateDataType {
+	if strings.Contains(strings.Join(logs, ""), "failed") {
+		return nil
+	}
+
 	isCreate := false
 	stack := util.NewStack()
 	for _, log := range logs {
-		if strings.Contains(log, "failed") {
-			return nil
-		}
 		pushPrefix := fmt.Sprintf("Program %s invoke", pumpfun_constant.Pumpfun_Program)
 		popLog := fmt.Sprintf("Program %s success", pumpfun_constant.Pumpfun_Program)
 		if strings.HasPrefix(log, pushPrefix) {
@@ -166,11 +168,12 @@ func ParseCreateByLogs(logs []string) *pumpfun_type.CreateDataType {
 }
 
 func IsRemoveLiqByLogs(logs []string) bool {
+	if strings.Contains(strings.Join(logs, ""), "failed") {
+		return false
+	}
+
 	stack := util.NewStack()
 	for _, log := range logs {
-		if strings.Contains(log, "failed") {
-			return false
-		}
 		pushPrefix := fmt.Sprintf("Program %s invoke", pumpfun_constant.Pumpfun_Program)
 		popLog := fmt.Sprintf("Program %s success", pumpfun_constant.Pumpfun_Program)
 		if strings.HasPrefix(log, pushPrefix) {
@@ -194,11 +197,12 @@ func IsRemoveLiqByLogs(logs []string) bool {
 }
 
 func IsAddLiqByLogs(logs []string) bool {
+	if strings.Contains(strings.Join(logs, ""), "failed") {
+		return false
+	}
+
 	stack := util.NewStack()
 	for _, log := range logs {
-		if strings.Contains(log, "failed") {
-			return false
-		}
 
 		pushPrefix := fmt.Sprintf("Program %s invoke", raydium_constant.Raydium_Liquidity_Pool_V4)
 		popLog := fmt.Sprintf("Program %s success", raydium_constant.Raydium_Liquidity_Pool_V4)

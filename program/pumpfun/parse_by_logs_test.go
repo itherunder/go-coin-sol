@@ -22,7 +22,7 @@ func TestParseCreateByLogs(t *testing.T) {
 	client := rpc.New(url)
 	getTransactionResult, err := client.GetTransaction(
 		context.TODO(),
-		solana.MustSignatureFromBase58("F5ahQP2qDcktN7MKW3mQJJY7dM279naRNPVZE9z9fnTyUPjsNX7kKok7vUYZe5LjuyYVgkXwYpZXMxZxfiVyAaf"),
+		solana.MustSignatureFromBase58("3eFnYcDuT9hTD38kF7DSQE9DurRPePsrj4D6vvLQE2Pq33kBfgEvHYDUYxjtAmVsSzm1xDkzWBGSAAFd6Bpx9y5n"),
 		&rpc.GetTransactionOpts{
 			Commitment:                     rpc.CommitmentConfirmed,
 			MaxSupportedTransactionVersion: constant.MaxSupportedTransactionVersion_0,
