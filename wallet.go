@@ -267,7 +267,7 @@ func (t *Wallet) SendByJitoAndConfirmTransaction(
 				SkipPreflight: true,
 			})
 			if err != nil {
-				t.logger.Warn(err)
+				t.logger.WarnF("交易发送失败. <%s>", err.Error())
 			}
 			sendTimer.Reset(time.Second)
 		case <-confirmTimer.C:
