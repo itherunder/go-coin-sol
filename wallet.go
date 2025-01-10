@@ -267,6 +267,10 @@ func (t *Wallet) SendByJitoAndConfirmTransaction(
 				SkipPreflight: true,
 			})
 			if err != nil {
+				if strings.Contains(err.Error(), "already processed transaction") {
+					sendTimer.Stop()
+					continue
+				}
 				t.logger.WarnF("交易发送失败. <%s>", err.Error())
 			}
 			sendTimer.Reset(time.Second)
