@@ -263,9 +263,12 @@ func (t *Wallet) SendByJitoAndConfirmTransaction(
 	for {
 		select {
 		case <-sendTimer.C:
-			rpcClient.SendTransactionWithOpts(ctx, tx, rpc.TransactionOpts{
+			_, err := rpcClient.SendTransactionWithOpts(ctx, tx, rpc.TransactionOpts{
 				SkipPreflight: true,
 			})
+			if err != nil {
+				t.logger.Warn(err)
+			}
 			sendTimer.Reset(time.Second)
 		case <-confirmTimer.C:
 			getTransactionResult, err := t.rpcClient.GetTransaction(
