@@ -7,6 +7,7 @@ import (
 	bin "github.com/gagliardetto/binary"
 	"github.com/gagliardetto/solana-go"
 	pumpfun_constant "github.com/pefish/go-coin-sol/program/pumpfun/constant"
+	"github.com/pkg/errors"
 )
 
 type SellInstruction struct {
@@ -28,11 +29,11 @@ func NewSellBaseInInstruction(
 		tokenAddress,
 	)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "")
 	}
 	methodBytes, err := hex.DecodeString("33e685a4017f83ad")
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "")
 	}
 	params := new(bytes.Buffer)
 	err = bin.NewBorshEncoder(params).Encode(struct {
@@ -43,7 +44,7 @@ func NewSellBaseInInstruction(
 		MinSolReceiveAmountWithDecimals: minSolReceiveAmountWithDecimals,
 	})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "")
 	}
 	return &SellInstruction{
 		accounts: []*solana.AccountMeta{

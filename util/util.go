@@ -13,6 +13,7 @@ import (
 	type_ "github.com/pefish/go-coin-sol/type"
 	go_http "github.com/pefish/go-http"
 	i_logger "github.com/pefish/go-interface/i-logger"
+	"github.com/pkg/errors"
 )
 
 func FindInnerInstructions(meta *rpc.TransactionMeta, index uint64) []solana.CompiledInstruction {
@@ -57,7 +58,7 @@ func GetComputeUnitPriceFromHelius(
 		&httpResult,
 	)
 	if err != nil {
-		return 0, err
+		return 0, errors.Wrap(err, "")
 	}
 	return uint64(httpResult.Result.PriorityFeeEstimate), nil
 }
@@ -97,7 +98,7 @@ func GetFeeInfoFromTx(meta *rpc.TransactionMeta, transaction *solana.Transaction
 		}
 		err := bin.NewBorshDecoder(setComputeUnitLimitInstru.Data).Decode(&params)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "")
 		}
 		computeUnitLimit = int(params.Units)
 	}
@@ -109,7 +110,7 @@ func GetFeeInfoFromTx(meta *rpc.TransactionMeta, transaction *solana.Transaction
 		}
 		err := bin.NewBorshDecoder(setComputeUnitPriceInstru.Data).Decode(&params)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "")
 		}
 		computeUnitPrice = int(params.MicroLamports)
 

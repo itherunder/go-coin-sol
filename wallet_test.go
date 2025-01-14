@@ -9,6 +9,7 @@ import (
 	"os"
 	"testing"
 
+	bin "github.com/gagliardetto/binary"
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
 	constant "github.com/pefish/go-coin-sol/constant"
@@ -191,4 +192,23 @@ func TestWallet_TokenBalance(t *testing.T) {
 	)
 	go_test_.Equal(t, nil, err)
 	fmt.Println(info.AmountWithDecimals)
+}
+
+func TestWallet_ParseRaydiumAddLiqRayLog(t *testing.T) {
+	b, err := base64.StdEncoding.DecodeString("AAAAAAAAAAAABglkAAAAAAAAAICWmAAAAAAAAAgBqSy8AAA2IBZlEgAAAGoftr4VXUHxXQSto4B86dMJI9cALHyyo/r6yWIFQ4d9")
+	go_test_.Equal(t, nil, err)
+	var logObj struct {
+		LogType      uint8            `json:"log_type"`
+		Timestamp    uint64           `json:"time"`
+		PcDecimals   uint8            `json:"pc_decimals"`
+		CoinDecimals uint8            `json:"coin_decimals"`
+		PcLotSize    uint64           `json:"pc_lot_size"`
+		CoinLotSize  uint64           `json:"coin_lot_size"`
+		PcAmount     uint64           `json:"pc_amount"`
+		CoinAmount   uint64           `json:"coin_amount"`
+		Market       solana.PublicKey `json:"market"`
+	}
+	err = bin.NewBorshDecoder(b).Decode(&logObj)
+	go_test_.Equal(t, nil, err)
+	fmt.Println(logObj)
 }

@@ -54,7 +54,7 @@ func (t *Wallet) RPCClient() *rpc.Client {
 func (t *Wallet) NewWSClient(ctx context.Context) (*ws.Client, error) {
 	wsClient, err := ws.Connect(ctx, t.wssUrl)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "")
 	}
 	return wsClient, nil
 }
@@ -73,7 +73,7 @@ func (t *Wallet) TokenBalance(
 		tokenAddress,
 	)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "")
 	}
 	data, err := associated_token_account.GetAssociatedTokenAccountData(
 		t.rpcClient,
@@ -86,7 +86,7 @@ func (t *Wallet) TokenBalance(
 				Decimals:           0,
 			}, nil
 		}
-		return nil, err
+		return nil, errors.Wrap(err, "")
 	}
 	if data == nil {
 		return &type_.TokenAmountInfo{
@@ -96,7 +96,7 @@ func (t *Wallet) TokenBalance(
 	}
 	amountWithDecimals, err := strconv.ParseUint(data.Parsed.Info.TokenAmount.Amount, 10, 64)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "")
 	}
 	return &type_.TokenAmountInfo{
 		AmountWithDecimals: amountWithDecimals,
@@ -190,7 +190,7 @@ func (t *Wallet) BuildTx(
 	if latestBlockhash == nil {
 		recent, err := t.rpcClient.GetLatestBlockhash(context.Background(), rpc.CommitmentFinalized)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "")
 		}
 		latestBlockhash = &recent.Value.Blockhash
 	}
@@ -203,7 +203,7 @@ func (t *Wallet) BuildTx(
 		solana.TransactionPayer(userAddress),
 	)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "")
 	}
 	tx.Message.SetVersion(solana.MessageVersionV0)
 
@@ -216,7 +216,7 @@ func (t *Wallet) BuildTx(
 		},
 	)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "")
 	}
 	return tx, nil
 }
@@ -243,7 +243,7 @@ func (t *Wallet) GetJitoTipInfo() (*JitoTipInfo, error) {
 		&httpResult,
 	)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "")
 	}
 	return httpResult[0], nil
 }

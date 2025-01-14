@@ -162,7 +162,7 @@ func ParseCreateTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (
 		}
 		err := bin.NewBorshDecoder(instruction.Data).Decode(&params)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "")
 		}
 		feeInfo, err := util.GetFeeInfoFromTx(meta, transaction)
 		if err != nil {
@@ -250,7 +250,7 @@ func ParseAddLiqTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (
 		}
 		err := bin.NewBorshDecoder(instruction.Data).Decode(&params)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "")
 		}
 
 		feeInfo, err := util.GetFeeInfoFromTx(meta, transaction)
@@ -294,7 +294,7 @@ func URIInfo(logger i_logger.ILogger, uri string) (*TokenMetadata, error) {
 		Url: uri,
 	}, &httpResult)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "")
 	}
 	return &httpResult, nil
 }
@@ -323,7 +323,7 @@ func GetBondingCurveData(
 			tokenAddress.Bytes(),
 		}, pumpfun_constant.Pumpfun_Program)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "")
 		}
 		bondingCurveAddress = &bondingCurveAddress_
 	}
@@ -339,7 +339,7 @@ func GetBondingCurveData(
 	}
 	err := rpcClient.GetAccountDataBorshInto(context.Background(), *bondingCurveAddress, &data)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "")
 	}
 	return &BondingCurveDataType{
 		BondingCurveAddress:             bondingCurveAddress.String(),
@@ -369,7 +369,7 @@ func GetSwapInstructions(
 
 	userAssociatedTokenAddress, _, err := solana.FindAssociatedTokenAddress(userAddress, tokenAddress)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "")
 	}
 	if swapType == type_.SwapType_Buy {
 		instructions = append(instructions, associated_token_account_instruction.NewCreateIdempotentInstruction(
@@ -385,7 +385,7 @@ func GetSwapInstructions(
 		tokenAddress.Bytes(),
 	}, pumpfun_constant.Pumpfun_Program)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "")
 	}
 	var swapInstruction solana.Instruction
 	if swapType == type_.SwapType_Buy {

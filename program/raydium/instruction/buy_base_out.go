@@ -8,6 +8,7 @@ import (
 	"github.com/gagliardetto/solana-go"
 	raydium_constant "github.com/pefish/go-coin-sol/program/raydium/constant"
 	raydium_type "github.com/pefish/go-coin-sol/program/raydium/type"
+	"github.com/pkg/errors"
 )
 
 type BuyInstruction struct {
@@ -27,7 +28,7 @@ func NewBuyBaseOutInstruction(
 ) (*BuyInstruction, error) {
 	methodBytes, err := hex.DecodeString("0b")
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "")
 	}
 	params := new(bytes.Buffer)
 	err = bin.NewBorshEncoder(params).Encode(struct {
@@ -38,7 +39,7 @@ func NewBuyBaseOutInstruction(
 		TokenAmountWithDecimals:      tokenAmountWithDecimals,
 	})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "")
 	}
 	return &BuyInstruction{
 		accounts: []*solana.AccountMeta{
