@@ -444,3 +444,15 @@ func GetSwapInstructions(
 
 	return instructions, nil
 }
+
+func DeriveBondingCurveAddress(tokenAddress solana.PublicKey) (solana.PublicKey, error) {
+	bondingCurveAddress, _, err := solana.FindProgramAddress([][]byte{
+		[]byte("bonding-curve"),
+		tokenAddress.Bytes(),
+	}, pumpfun_constant.Pumpfun_Program)
+	if err != nil {
+		return solana.PublicKey{}, errors.Wrap(err, "")
+	}
+
+	return bondingCurveAddress, nil
+}
