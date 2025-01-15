@@ -2,6 +2,7 @@ package go_coin_sol
 
 import (
 	"context"
+	"encoding/json"
 	"strconv"
 	"strings"
 	"time"
@@ -372,4 +373,40 @@ func (t *Wallet) SendAndConfirmTransaction(
 		}
 	}
 
+}
+
+type TokenDataType struct {
+	Parsed struct {
+		Info struct {
+			Decimals        uint64 `json:"decimals"`
+			FreezeAuthority string `json:"freezeAuthority"`
+			IsInitialized   bool   `json:"isInitialized"`
+			MintAuthority   string `json:"mintAuthority"`
+			Supply          string `json:"supply"`
+		} `json:"info"`
+		Type string `json:"type"`
+	} `json:"parsed"`
+	Program string `json:"program"`
+	Space   uint64 `json:"space"`
+}
+
+func (t *Wallet) GetTokenData(
+	tokenAddress solana.PublicKey,
+) (*TokenDataType, error) {
+	var data TokenDataType
+	r, err := t.rpcClient.GetAccountInfoWithOpts(
+		context.Background(),
+		tokenAddress,
+		&rpc.GetAccountInfoOpts{
+			Encoding: solana.EncodingJSONParsed,
+		},
+	)
+	if err != nil {
+		return nil, errors.Wrap(err, "")
+	}
+	err = json.Unmarshal(r.Value.Data.GetRawJSON(), &data)
+	if err != nil {
+		return nil, errors.Wrap(err, "")
+	}
+	return &data, nil
 }

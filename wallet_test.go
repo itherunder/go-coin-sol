@@ -212,3 +212,9 @@ func TestWallet_ParseRaydiumAddLiqRayLog(t *testing.T) {
 	go_test_.Equal(t, nil, err)
 	fmt.Println(logObj)
 }
+
+func TestGetTokenData(t *testing.T) {
+	r, err := WalletInstance.GetTokenData(solana.MustPublicKeyFromBase58("PELGx59WwJXY83tbr85XGyVoHU7MHTJB8wP2PRiLmM9"))
+	go_test_.Equal(t, nil, err)
+	fmt.Println(r)
+}
