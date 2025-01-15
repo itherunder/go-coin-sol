@@ -2,7 +2,6 @@ package raydium
 
 import (
 	"encoding/hex"
-	"fmt"
 	"strconv"
 
 	bin "github.com/gagliardetto/binary"
@@ -263,7 +262,7 @@ func ParseSwapTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*r
 		var tokenAddress solana.PublicKey
 		var userTokenBalanceWithDecimals uint64
 
-		fmt.Println(userTokenAssociatedAccount.String(), userAddress)
+		// fmt.Println(userTokenAssociatedAccount.String(), userAddress)
 		var tokenBalanceInfo *rpc.TokenBalance
 		for _, postTokenBalanceInfo := range meta.PostTokenBalances {
 			if postTokenBalanceInfo.Owner.Equals(userAddress) &&
