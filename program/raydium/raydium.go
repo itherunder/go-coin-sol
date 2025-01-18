@@ -40,7 +40,7 @@ func GetSwapInstructions(
 		solana.SolMint,
 	)
 	if err != nil {
-		return nil, errors.Wrap(err, "")
+		return nil, errors.Wrapf(err, "<userAddress: %s>", userAddress)
 	}
 
 	userTokenAssociatedAccount, _, err := solana.FindAssociatedTokenAddress(
@@ -48,7 +48,7 @@ func GetSwapInstructions(
 		tokenAddress,
 	)
 	if err != nil {
-		return nil, errors.Wrap(err, "")
+		return nil, errors.Wrapf(err, "<userAddress: %s> <tokenAddress: %s>", userAddress, tokenAddress)
 	}
 
 	if swapType == type_.SwapType_Buy {
@@ -165,18 +165,18 @@ func GetReserves(
 		},
 	)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "")
+		return nil, nil, errors.Wrapf(err, "<poolCoinTokenAccount: %s> <poolPcTokenAccount: %s>", poolCoinTokenAccount, poolPcTokenAccount)
 	}
 	if datas[0] == nil || datas[1] == nil {
 		return nil, nil, errors.New("raydium 账户没查到信息")
 	}
 	solAmountWithDecimals, err := strconv.ParseUint(datas[0].Parsed.Info.TokenAmount.Amount, 10, 64)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "")
+		return nil, nil, errors.Wrapf(err, "<amount: %s>", datas[0].Parsed.Info.TokenAmount.Amount)
 	}
 	tokenAmountWithDecimals, err := strconv.ParseUint(datas[1].Parsed.Info.TokenAmount.Amount, 10, 64)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "")
+		return nil, nil, errors.Wrapf(err, "<amount: %s>", datas[1].Parsed.Info.TokenAmount.Amount)
 	}
 	return &type_.TokenAmountInfo{
 			AmountWithDecimals: solAmountWithDecimals,
@@ -231,7 +231,7 @@ func ParseSwapTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*r
 		}
 		err := bin.NewBorshDecoder(transfer1Instruction.Data).Decode(&transfer1InstructionData)
 		if err != nil {
-			return nil, errors.Wrap(err, "")
+			return nil, errors.Wrapf(err, "<data: %s>", transfer1Instruction.Data.String())
 		}
 
 		var transfer2InstructionData struct {
@@ -240,7 +240,7 @@ func ParseSwapTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*r
 		}
 		err = bin.NewBorshDecoder(transfer2Instruction.Data).Decode(&transfer2InstructionData)
 		if err != nil {
-			return nil, errors.Wrap(err, "")
+			return nil, errors.Wrapf(err, "<data: %s>", transfer2Instruction.Data.String())
 		}
 		var swapType type_.SwapType
 		var solAmountWithDecimals uint64

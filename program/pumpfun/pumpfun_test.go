@@ -97,3 +97,16 @@ func TestURIInfo(t *testing.T) {
 	go_test_.Equal(t, nil, err)
 	fmt.Println("aa", r.Twitter)
 }
+
+func TestGetBondingCurveData(t *testing.T) {
+	url := rpc.MainNetBeta_RPC
+	envUrl := os.Getenv("URL")
+	if envUrl != "" {
+		url = envUrl
+	}
+	client := rpc.New(url)
+	tokenAddressObj := solana.MustPublicKeyFromBase58("7PAaQ8UxYYPksnyxcKFP44Pm4FwFCix4ammGf5P3bK79")
+	r, err := GetBondingCurveData(client, &tokenAddressObj, nil)
+	go_test_.Equal(t, nil, err)
+	fmt.Println(r)
+}

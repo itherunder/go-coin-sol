@@ -323,7 +323,7 @@ func GetBondingCurveData(
 			tokenAddress.Bytes(),
 		}, pumpfun_constant.Pumpfun_Program)
 		if err != nil {
-			return nil, errors.Wrap(err, "")
+			return nil, errors.Wrapf(err, "<tokenAddress: %s>", tokenAddress.String())
 		}
 		bondingCurveAddress = &bondingCurveAddress_
 	}
@@ -339,7 +339,7 @@ func GetBondingCurveData(
 	}
 	err := rpcClient.GetAccountDataBorshInto(context.Background(), *bondingCurveAddress, &data)
 	if err != nil {
-		return nil, errors.Wrap(err, "")
+		return nil, errors.Wrapf(err, "<bondingCurveAddress: %s>", bondingCurveAddress.String())
 	}
 	return &BondingCurveDataType{
 		BondingCurveAddress:             bondingCurveAddress.String(),
@@ -369,7 +369,7 @@ func GetSwapInstructions(
 
 	userAssociatedTokenAddress, _, err := solana.FindAssociatedTokenAddress(userAddress, tokenAddress)
 	if err != nil {
-		return nil, errors.Wrap(err, "")
+		return nil, errors.Wrapf(err, "<userAddress: %s> <tokenAddress: %s>", userAddress, tokenAddress)
 	}
 	if swapType == type_.SwapType_Buy {
 		instructions = append(instructions, associated_token_account_instruction.NewCreateIdempotentInstruction(
@@ -385,7 +385,7 @@ func GetSwapInstructions(
 		tokenAddress.Bytes(),
 	}, pumpfun_constant.Pumpfun_Program)
 	if err != nil {
-		return nil, errors.Wrap(err, "")
+		return nil, errors.Wrapf(err, "<tokenAddress: %s>", tokenAddress)
 	}
 	var swapInstruction solana.Instruction
 	if swapType == type_.SwapType_Buy {
@@ -451,7 +451,7 @@ func DeriveBondingCurveAddress(tokenAddress solana.PublicKey) (solana.PublicKey,
 		tokenAddress.Bytes(),
 	}, pumpfun_constant.Pumpfun_Program)
 	if err != nil {
-		return solana.PublicKey{}, errors.Wrap(err, "")
+		return solana.PublicKey{}, errors.Wrapf(err, "<tokenAddress: %s>", tokenAddress)
 	}
 
 	return bondingCurveAddress, nil

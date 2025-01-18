@@ -3,6 +3,7 @@ package raydium
 import (
 	"context"
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/gagliardetto/solana-go"
@@ -13,11 +14,15 @@ import (
 
 func TestParseSwapTx(t *testing.T) {
 	// return
-	endpoint := rpc.MainNetBeta_RPC
-	client := rpc.New(endpoint)
+	url := rpc.MainNetBeta_RPC
+	envUrl := os.Getenv("URL")
+	if envUrl != "" {
+		url = envUrl
+	}
+	client := rpc.New(url)
 	getTransactionResult, err := client.GetTransaction(
 		context.TODO(),
-		solana.MustSignatureFromBase58("5eUYrCrWVYpnAE1NHsDw9aPgzbtMofe8GXPZc3rDD8Xm3qnQqoMP9piYwdb8q3NeXDeyXnSgqWuaPBvsQ4VTooTP"),
+		solana.MustSignatureFromBase58("5bB3AAZxXD1HDBJFCyg8DQKxBVSvZ8dSoGBBGV23DajBkiRHTTBDBgZRaFfsqasJPfSj4R4ybZwvPSWVcFQNvLFv"),
 		&rpc.GetTransactionOpts{
 			Commitment:                     rpc.CommitmentConfirmed,
 			MaxSupportedTransactionVersion: constant.MaxSupportedTransactionVersion_0,
