@@ -194,6 +194,10 @@ func (t *Wallet) SendTxByJito(
 				},
 			)
 			if err != nil || getTransactionResult == nil {
+				rpcClient.SendTransactionWithOpts(ctx, tx, rpc.TransactionOpts{
+					SkipPreflight: true,
+				})
+				// t.logger.InfoF("未确认...")
 				confirmTimer.Reset(2 * time.Second)
 				continue
 			}
