@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gagliardetto/solana-go"
@@ -144,7 +145,7 @@ func (t *Wallet) SendTxByJito(
 	instructions []solana.Instruction,
 	unitPrice uint64,
 	unitLimit uint64,
-	jitoUrl string,
+	jitoUrls []string,
 	jitoTipAmountWithDecimals uint64,
 	jitoAccount solana.PublicKey,
 ) (
@@ -170,13 +171,24 @@ func (t *Wallet) SendTxByJito(
 	}
 	t.logger.InfoF("交易构建成功 <timestamp: %d> <txid: %s>", go_time.CurrentTimestamp(), tx.Signatures[0].String())
 
-	rpcClient := rpc.New(fmt.Sprintf("%s/api/v1/transactions", jitoUrl))
-	_, err = rpcClient.SendTransactionWithOpts(ctx, tx, rpc.TransactionOpts{
-		SkipPreflight: true,
-	})
-	if err != nil {
-		return nil, nil, 0, errors.Errorf("交易发送失败 <txid: %s>. <%s>", tx.Signatures[0].String(), err.Error())
+	var wg sync.WaitGroup
+	for _, jitoUrl := range jitoUrls {
+		wg.Add(1)
+		go func(jitoUrl string) {
+			defer wg.Done()
+			rpcClient := rpc.New(fmt.Sprintf("%s/api/v1/transactions", jitoUrl))
+			_, err = rpcClient.SendTransactionWithOpts(ctx, tx, rpc.TransactionOpts{
+				SkipPreflight: true,
+			})
+			if err != nil {
+				// t.logger.ErrorF("交易发送失败 <txid: %s> <jitoUrl: %s>. <%s>", tx.Signatures[0].String(), jitoUrl, err.Error())
+				return
+			}
+			// t.logger.InfoF("交易发送成功 <txid: %s> <jitoUrl: %s>", tx.Signatures[0].String(), jitoUrl)
+		}(jitoUrl)
+
 	}
+	wg.Wait()
 	sendedTimestamp := go_time.CurrentTimestamp()
 	t.logger.InfoF("交易发送成功 <timestamp: %d> <txid: %s>", sendedTimestamp, tx.Signatures[0].String())
 
@@ -194,7 +206,7 @@ func (t *Wallet) SendTxByJito(
 				},
 			)
 			if err != nil || getTransactionResult == nil {
-				rpcClient.SendTransactionWithOpts(ctx, tx, rpc.TransactionOpts{
+				rpc.New(fmt.Sprintf("%s/api/v1/transactions", jitoUrls[0])).SendTransactionWithOpts(ctx, tx, rpc.TransactionOpts{
 					SkipPreflight: true,
 				})
 				// t.logger.InfoF("未确认...")

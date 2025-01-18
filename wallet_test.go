@@ -136,7 +136,7 @@ func TestWallet_DecodeProgramDataInLog(t *testing.T) {
 	// )
 }
 
-func TestWallet_SendTxByJito(t *testing.T) {
+func TestWallet_SendTxByJito_Sell(t *testing.T) {
 	// return
 	privObj, err := solana.PrivateKeyFromBase58(os.Getenv("PRIV"))
 	go_test_.Equal(t, nil, err)
@@ -175,8 +175,60 @@ func TestWallet_SendTxByJito(t *testing.T) {
 		swapInstructions,
 		0,
 		0,
-		"https://tokyo.mainnet.block-engine.jito.wtf",
-		uint64(0.00002*math.Pow(10, constant.SOL_Decimals)),
+		[]string{
+			"https://tokyo.mainnet.block-engine.jito.wtf",
+			"https://mainnet.block-engine.jito.wtf",
+		},
+		uint64(0.000026*math.Pow(10, constant.SOL_Decimals)),
+		solana.MustPublicKeyFromBase58("DttWaMuVvTiduZRnguLF7jNxTgiMBZ1hyAumKUiL2KRL"),
+	)
+	go_test_.Equal(t, nil, err)
+}
+
+func TestWallet_SendTxByJito_Buy(t *testing.T) {
+	// return
+	privObj, err := solana.PrivateKeyFromBase58(os.Getenv("PRIV"))
+	go_test_.Equal(t, nil, err)
+	tokenAddress := solana.MustPublicKeyFromBase58("2qEHjDLDLbuBgRYvsxhc5D6uDWAivNFZGan56P1tpump")
+	raydiumSwapKeys := raydium_type_.RaydiumSwapKeys{
+		AmmAddress:                  solana.MustPublicKeyFromBase58("4AZRPNEfCJ7iw28rJu5aUyeQhYcvdcNm8cswyL51AY9i"),
+		PoolCoinTokenAccountAddress: solana.MustPublicKeyFromBase58("AEwsZFbKVzf2MqADSHHhwqyWmTWYzruTG1HkMw8Mjq5"),
+		PoolPcTokenAccountAddress:   solana.MustPublicKeyFromBase58("2zxMeSRkYa462Zo7v5K7kFKtvpRC4MpvuC1HwA88sCR3"),
+	}
+	solAmount, tokenAmount, err := raydium.GetReserves(
+		WalletInstance.rpcClient,
+		raydiumSwapKeys.PoolCoinTokenAccountAddress,
+		raydiumSwapKeys.PoolPcTokenAccountAddress,
+	)
+	go_test_.Equal(t, nil, err)
+
+	swapInstructions, err := raydium.GetSwapInstructions(
+		privObj.PublicKey(),
+		type_.SwapType_Buy,
+		tokenAddress,
+		uint64(2*math.Pow(10, pumpfun_constant.Pumpfun_Token_Decimals)),
+		raydiumSwapKeys,
+		false,
+		solAmount.AmountWithDecimals,
+		tokenAmount.AmountWithDecimals,
+		50,
+	)
+	go_test_.Equal(t, nil, err)
+	recent, err := WalletInstance.rpcClient.GetLatestBlockhash(context.Background(), rpc.CommitmentFinalized)
+	go_test_.Equal(t, nil, err)
+	latestBlockhash := &recent.Value.Blockhash
+	_, _, _, err = WalletInstance.SendTxByJito(
+		context.Background(),
+		privObj,
+		latestBlockhash,
+		swapInstructions,
+		0,
+		0,
+		[]string{
+			"https://tokyo.mainnet.block-engine.jito.wtf",
+			"https://mainnet.block-engine.jito.wtf",
+		},
+		uint64(0.000026*math.Pow(10, constant.SOL_Decimals)),
 		solana.MustPublicKeyFromBase58("DttWaMuVvTiduZRnguLF7jNxTgiMBZ1hyAumKUiL2KRL"),
 	)
 	go_test_.Equal(t, nil, err)
