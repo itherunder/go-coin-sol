@@ -276,8 +276,8 @@ func (t *Wallet) SendByJitoAndConfirmTransaction(
 				sendTimer.Reset(time.Second)
 				continue
 			}
-			t.logger.InfoF("交易已发送。<%s>", tx.Signatures[0].String())
-			sendTimer.Stop()
+			// t.logger.InfoF("交易已发送。<%s>", tx.Signatures[0].String())
+			sendTimer.Reset(500 * time.Millisecond)
 			continue
 		case <-confirmTimer.C:
 			getTransactionResult, err := t.rpcClient.GetTransaction(
