@@ -33,7 +33,6 @@ type Wallet struct {
 }
 
 func New(
-	ctx context.Context,
 	logger i_logger.ILogger,
 	httpsUrl string,
 	wssUrl string,
