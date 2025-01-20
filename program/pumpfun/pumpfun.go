@@ -8,6 +8,8 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"runtime"
+	"strings"
 	"time"
 
 	bin "github.com/gagliardetto/binary"
@@ -553,4 +555,40 @@ func GenerateTokenURI(data *GenerateTokenURIDataType) (*GenerateTokenURIResult, 
 	}
 
 	return &r, nil
+}
+
+func GenePumpfunWallet(timeout time.Duration) (*solana.Wallet, error) {
+	resultChan := make(chan *solana.Wallet)
+
+	newCtx, cancel := context.WithCancel(context.Background())
+	for i := 0; i < runtime.NumCPU(); i++ {
+		go func() {
+			for {
+				select {
+				case <-newCtx.Done():
+					return
+				default:
+					w := solana.NewWallet()
+					if !strings.HasSuffix(w.PublicKey().String(), "pump") {
+						continue
+					}
+					select {
+					case resultChan <- w:
+						cancel() // 取消其他任务
+					case <-newCtx.Done():
+						// 如果任务完成时已经取消，不做任何操作
+					}
+				}
+			}
+
+		}()
+	}
+
+	// 监听结果和错误
+	select {
+	case result := <-resultChan:
+		return result, nil
+	case <-time.After(timeout):
+		return nil, errors.New("timeout")
+	}
 }

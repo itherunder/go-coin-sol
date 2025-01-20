@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"testing"
+	"time"
 
 	solana "github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
@@ -124,4 +125,11 @@ func TestGenerateTokenURI(t *testing.T) {
 	})
 	go_test_.Equal(t, nil, err)
 	fmt.Printf("%#v\n", r)
+}
+
+func TestGenePumpfunWallet(t *testing.T) {
+	// return
+	r, err := GenePumpfunWallet(2 * time.Minute)
+	go_test_.Equal(t, nil, err)
+	fmt.Println(r.PublicKey().String())
 }
