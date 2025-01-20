@@ -36,7 +36,7 @@ func New(
 	logger i_logger.ILogger,
 	httpsUrl string,
 	wssUrl string,
-) (*Wallet, error) {
+) *Wallet {
 	if httpsUrl == "" {
 		httpsUrl = rpc.MainNetBeta_RPC
 	}
@@ -48,7 +48,7 @@ func New(
 		logger:    logger,
 		rpcClient: rpcClient,
 		wssUrl:    wssUrl,
-	}, nil
+	}
 }
 
 func (t *Wallet) RPCClient() *rpc.Client {
