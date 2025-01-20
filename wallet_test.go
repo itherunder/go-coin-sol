@@ -15,6 +15,7 @@ import (
 	constant "github.com/pefish/go-coin-sol/constant"
 	"github.com/pefish/go-coin-sol/program/pumpfun"
 	pumpfun_constant "github.com/pefish/go-coin-sol/program/pumpfun/constant"
+	pumpfun_instruction "github.com/pefish/go-coin-sol/program/pumpfun/instruction"
 	"github.com/pefish/go-coin-sol/program/raydium"
 	raydium_constant "github.com/pefish/go-coin-sol/program/raydium/constant"
 	raydium_type_ "github.com/pefish/go-coin-sol/program/raydium/type"
@@ -52,6 +53,7 @@ func TestWallet_SwapPumpfun(t *testing.T) {
 	go_test_.Equal(t, nil, err)
 
 	swapInstructions, err := pumpfun.GetSwapInstructions(
+		rpc.MainNetBeta,
 		privObj.PublicKey(),
 		type_.SwapType_Buy,
 		tokenAddress,
@@ -65,6 +67,7 @@ func TestWallet_SwapPumpfun(t *testing.T) {
 	meta, tx, _, err := WalletInstance.SendTx(
 		context.Background(),
 		privObj,
+		nil,
 		nil,
 		swapInstructions,
 		0,
@@ -115,6 +118,7 @@ func TestWallet_SwapRaydium(t *testing.T) {
 	_, _, _, err = WalletInstance.SendTx(
 		context.Background(),
 		privObj,
+		nil,
 		nil,
 		swapInstructions,
 		1000000,
@@ -171,6 +175,7 @@ func TestWallet_SendTxByJito_Sell(t *testing.T) {
 	_, _, _, err = WalletInstance.SendTxByJito(
 		context.Background(),
 		privObj,
+		nil,
 		latestBlockhash,
 		swapInstructions,
 		0,
@@ -220,6 +225,7 @@ func TestWallet_SendTxByJito_Buy(t *testing.T) {
 	_, _, _, err = WalletInstance.SendTxByJito(
 		context.Background(),
 		privObj,
+		nil,
 		latestBlockhash,
 		swapInstructions,
 		0,
@@ -266,11 +272,12 @@ func TestWallet_SendTxByJitoBundle(t *testing.T) {
 	recent, err := WalletInstance.rpcClient.GetLatestBlockhash(context.Background(), rpc.CommitmentFinalized)
 	go_test_.Equal(t, nil, err)
 	latestBlockhash := &recent.Value.Blockhash
-	swapTx, err := WalletInstance.BuildTx(privObj, latestBlockhash, swapInstructions, 0, 0)
+	swapTx, err := WalletInstance.BuildTx(privObj, nil, latestBlockhash, swapInstructions, 0, 0)
 	go_test_.Equal(t, nil, err)
 	_, _, err = WalletInstance.SendTxByJitoBundle(
 		context.Background(),
 		privObj,
+		nil,
 		latestBlockhash,
 		[]*solana.Transaction{
 			swapTx,
@@ -321,4 +328,57 @@ func TestGetTokenData(t *testing.T) {
 	r, err := WalletInstance.GetTokenData(solana.MustPublicKeyFromBase58("PELGx59WwJXY83tbr85XGyVoHU7MHTJB8wP2PRiLmM9"))
 	go_test_.Equal(t, nil, err)
 	fmt.Println(r)
+}
+
+func TestCreatePumpfunToken(t *testing.T) {
+	// return
+	privObj, err := solana.PrivateKeyFromBase58(os.Getenv("PRIV"))
+	go_test_.Equal(t, nil, err)
+	tokenAddressWallet := solana.NewWallet()
+
+	bondingCurveAddress, err := pumpfun.DeriveBondingCurveAddress(tokenAddressWallet.PublicKey())
+	go_test_.Equal(t, nil, err)
+	createInstruction, err := pumpfun_instruction.NewCreateInstruction(
+		privObj.PublicKey(),
+		tokenAddressWallet.PublicKey(),
+		bondingCurveAddress,
+		"haha",
+		"HAHA",
+		"https://ipfs.io/ipfs/QmdxfAvJ8gZr3XcdUnB3XwMFYcLsoTLE2efsLvsrwUBx7u",
+	)
+	go_test_.Equal(t, nil, err)
+	swapInstructions, err := pumpfun.GetSwapInstructions(
+		rpc.DevNet,
+		privObj.PublicKey(),
+		type_.SwapType_Buy,
+		tokenAddressWallet.PublicKey(),
+		10000000000,
+		false,
+		30000000000,
+		1000000000000000,
+		50,
+	)
+	go_test_.Equal(t, nil, err)
+	recent, err := WalletInstance.rpcClient.GetLatestBlockhash(context.Background(), rpc.CommitmentFinalized)
+	go_test_.Equal(t, nil, err)
+	latestBlockhash := &recent.Value.Blockhash
+	instructions := []solana.Instruction{
+		createInstruction,
+	}
+	instructions = append(instructions, swapInstructions...)
+	_, _, _, err = WalletInstance.SendTx(
+		context.Background(),
+		privObj,
+		map[solana.PublicKey]*solana.PrivateKey{
+			privObj.PublicKey():            &privObj,
+			tokenAddressWallet.PublicKey(): &tokenAddressWallet.PrivateKey,
+		},
+		latestBlockhash,
+		instructions,
+		0,
+		0,
+		true,
+		nil,
+	)
+	go_test_.Equal(t, nil, err)
 }

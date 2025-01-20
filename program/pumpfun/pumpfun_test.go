@@ -110,3 +110,18 @@ func TestGetBondingCurveData(t *testing.T) {
 	go_test_.Equal(t, nil, err)
 	fmt.Println(r)
 }
+
+func TestGenerateTokenURI(t *testing.T) {
+	// return
+	r, err := GenerateTokenURI(&GenerateTokenURIDataType{
+		Name:        "testcoin",
+		Symbol:      "TEST",
+		Description: "test test.",
+		File:        nil,
+		Twitter:     "https://x.com",
+		Website:     "https://x.com",
+		Telegram:    "https://tg.com",
+	})
+	go_test_.Equal(t, nil, err)
+	fmt.Printf("%#v\n", r)
+}

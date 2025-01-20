@@ -6,25 +6,23 @@ import (
 
 	bin "github.com/gagliardetto/binary"
 	"github.com/gagliardetto/solana-go"
-	"github.com/gagliardetto/solana-go/rpc"
 	pumpfun_constant "github.com/pefish/go-coin-sol/program/pumpfun/constant"
 	"github.com/pkg/errors"
 )
 
-type SellInstruction struct {
+type CreateInstruction struct {
 	accounts  []*solana.AccountMeta
 	data      []byte
 	programID solana.PublicKey
 }
 
-func NewSellBaseInInstruction(
-	network rpc.Cluster,
+func NewCreateInstruction(
 	userAddress solana.PublicKey,
 	tokenAddress solana.PublicKey,
 	bondingCurveAddress solana.PublicKey,
-	userAssociatedTokenAddress solana.PublicKey,
-	tokenAmountWithDecimals uint64,
-	minSolReceiveAmountWithDecimals uint64,
+	name string,
+	symbol string,
+	uri string,
 ) (*SellInstruction, error) {
 	bondingCurveAssociatedTokenAddress, _, err := solana.FindAssociatedTokenAddress(
 		bondingCurveAddress,
@@ -33,35 +31,45 @@ func NewSellBaseInInstruction(
 	if err != nil {
 		return nil, errors.Wrap(err, "")
 	}
-	methodBytes, err := hex.DecodeString("33e685a4017f83ad")
+	methodBytes, err := hex.DecodeString("181ec828051c0777")
 	if err != nil {
 		return nil, errors.Wrap(err, "")
 	}
 	params := new(bytes.Buffer)
 	err = bin.NewBorshEncoder(params).Encode(struct {
-		TokenAmountWithDecimals         uint64
-		MinSolReceiveAmountWithDecimals uint64
+		Name   string
+		Symbol string
+		URI    string
 	}{
-		TokenAmountWithDecimals:         tokenAmountWithDecimals,
-		MinSolReceiveAmountWithDecimals: minSolReceiveAmountWithDecimals,
+		Name:   name,
+		Symbol: symbol,
+		URI:    uri,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "")
 	}
+
+	metadataAssociatedAddress, _, err := solana.FindProgramAddress(
+		[][]byte{
+			[]byte("metadata"),
+			solana.TokenMetadataProgramID.Bytes(),
+			tokenAddress.Bytes(),
+		},
+		solana.TokenMetadataProgramID,
+	)
+	if err != nil {
+		return nil, errors.Wrap(err, "")
+	}
+
 	return &SellInstruction{
 		accounts: []*solana.AccountMeta{
 			{
-				PublicKey:  pumpfun_constant.Global,
-				IsSigner:   false,
-				IsWritable: false,
-			},
-			{
-				PublicKey:  pumpfun_constant.Fee_Receiver[network],
-				IsSigner:   false,
+				PublicKey:  tokenAddress,
+				IsSigner:   true,
 				IsWritable: true,
 			},
 			{
-				PublicKey:  tokenAddress,
+				PublicKey:  pumpfun_constant.Pumpfun_Token_Mint_Authority,
 				IsSigner:   false,
 				IsWritable: false,
 			},
@@ -76,29 +84,42 @@ func NewSellBaseInInstruction(
 				IsWritable: true,
 			},
 			{
-				PublicKey:  userAssociatedTokenAddress,
+				PublicKey:  pumpfun_constant.Global,
+				IsSigner:   false,
+				IsWritable: false,
+			},
+			{
+				PublicKey:  solana.TokenMetadataProgramID,
+				IsSigner:   false,
+				IsWritable: false,
+			},
+			{
+				PublicKey:  metadataAssociatedAddress,
 				IsSigner:   false,
 				IsWritable: true,
 			},
 			{
 				PublicKey:  userAddress,
-				IsSigner:   false,
+				IsSigner:   true,
 				IsWritable: true,
 			},
-
 			{
 				PublicKey:  solana.SystemProgramID,
 				IsSigner:   false,
 				IsWritable: false,
 			},
-
+			{
+				PublicKey:  solana.TokenProgramID,
+				IsSigner:   false,
+				IsWritable: false,
+			},
 			{
 				PublicKey:  solana.SPLAssociatedTokenAccountProgramID,
 				IsSigner:   false,
 				IsWritable: false,
 			},
 			{
-				PublicKey:  solana.TokenProgramID,
+				PublicKey:  solana.SysVarRentPubkey,
 				IsSigner:   false,
 				IsWritable: false,
 			},
@@ -118,14 +139,14 @@ func NewSellBaseInInstruction(
 	}, nil
 }
 
-func (t *SellInstruction) Accounts() []*solana.AccountMeta {
+func (t *CreateInstruction) Accounts() []*solana.AccountMeta {
 	return t.accounts
 }
 
-func (t *SellInstruction) ProgramID() solana.PublicKey {
+func (t *CreateInstruction) ProgramID() solana.PublicKey {
 	return t.programID
 }
 
-func (t *SellInstruction) Data() ([]byte, error) {
+func (t *CreateInstruction) Data() ([]byte, error) {
 	return t.data, nil
 }

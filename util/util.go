@@ -9,7 +9,6 @@ import (
 	bin "github.com/gagliardetto/binary"
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
-	constant "github.com/pefish/go-coin-sol/constant"
 	type_ "github.com/pefish/go-coin-sol/type"
 	go_http "github.com/pefish/go-http"
 	i_logger "github.com/pefish/go-interface/i-logger"
@@ -79,7 +78,7 @@ func GetFeeInfoFromTx(meta *rpc.TransactionMeta, transaction *solana.Transaction
 	var setComputeUnitPriceInstru solana.CompiledInstruction
 	for _, instruction := range transaction.Message.Instructions {
 		programPKey := accountKeys[instruction.ProgramIDIndex]
-		if !programPKey.Equals(constant.Compute_Budget) {
+		if !programPKey.Equals(solana.ComputeBudget) {
 			continue
 		}
 		methodId := hex.EncodeToString(instruction.Data)[:2]

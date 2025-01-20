@@ -6,7 +6,7 @@ import (
 
 	bin "github.com/gagliardetto/binary"
 	"github.com/gagliardetto/solana-go"
-	constant "github.com/pefish/go-coin-sol/constant"
+	"github.com/gagliardetto/solana-go/rpc"
 	pumpfun_constant "github.com/pefish/go-coin-sol/program/pumpfun/constant"
 	"github.com/pkg/errors"
 )
@@ -18,6 +18,7 @@ type BuyInstruction struct {
 }
 
 func NewBuyBaseOutInstruction(
+	network rpc.Cluster,
 	userAddress solana.PublicKey,
 	tokenAddress solana.PublicKey,
 	bondingCurveAddress solana.PublicKey,
@@ -55,7 +56,7 @@ func NewBuyBaseOutInstruction(
 				IsWritable: false,
 			},
 			{
-				PublicKey:  pumpfun_constant.Fee_Receiver,
+				PublicKey:  pumpfun_constant.Fee_Receiver[network],
 				IsSigner:   false,
 				IsWritable: true,
 			},
@@ -97,7 +98,7 @@ func NewBuyBaseOutInstruction(
 				IsWritable: false,
 			},
 			{
-				PublicKey:  constant.Rent,
+				PublicKey:  solana.SysVarRentPubkey,
 				IsSigner:   false,
 				IsWritable: false,
 			},

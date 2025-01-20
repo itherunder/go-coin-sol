@@ -1,8 +1,13 @@
 package pumpfun
 
 import (
+	"bytes"
 	"context"
 	"encoding/hex"
+	"encoding/json"
+	"io"
+	"mime/multipart"
+	"net/http"
 	"time"
 
 	bin "github.com/gagliardetto/binary"
@@ -353,6 +358,7 @@ func GetBondingCurveData(
 }
 
 func GetSwapInstructions(
+	network rpc.Cluster,
 	userAddress solana.PublicKey,
 	swapType type_.SwapType,
 	tokenAddress solana.PublicKey,
@@ -360,11 +366,8 @@ func GetSwapInstructions(
 	isCloseUserAssociatedTokenAddress bool,
 	virtualSolReserveWithDecimals uint64,
 	virtualTokenReserveWithDecimals uint64,
-	slippage int64,
+	slippage int64, // 0 代表不设置滑点
 ) ([]solana.Instruction, error) {
-	if slippage == 0 {
-		slippage = 50 // 0.5%
-	}
 	instructions := make([]solana.Instruction, 0)
 
 	userAssociatedTokenAddress, _, err := solana.FindAssociatedTokenAddress(userAddress, tokenAddress)
@@ -389,13 +392,14 @@ func GetSwapInstructions(
 	}
 	var swapInstruction solana.Instruction
 	if swapType == type_.SwapType_Buy {
-		if slippage == -1 {
+		if slippage == 0 {
 			return nil, errors.New("购买必须设置滑点")
 		}
 		maxCostSolAmountWithDecimals := uint64(
 			float64(slippage+10000) * 1.01 * float64(virtualSolReserveWithDecimals) * float64(tokenAmountWithDecimals) / float64(virtualTokenReserveWithDecimals) / 10000,
 		) // pumpfun 收取 1% 手续费
 		instruction, err := pumpfun_instruction.NewBuyBaseOutInstruction(
+			network,
 			userAddress,
 			tokenAddress,
 			bondingCurveAddress,
@@ -409,13 +413,14 @@ func GetSwapInstructions(
 		swapInstruction = instruction
 	} else {
 		minReceiveSolAmountWithDecimals := uint64(0)
-		if slippage != -1 {
+		if slippage != 0 {
 			// 应该收到的 sol 数量
 			minReceiveSolAmountWithDecimals = uint64(
 				0.99 * float64(10000-slippage) * float64(virtualSolReserveWithDecimals) * float64(tokenAmountWithDecimals) / float64(virtualTokenReserveWithDecimals) / 10000,
 			)
 		}
 		instruction, err := pumpfun_instruction.NewSellBaseInInstruction(
+			network,
 			userAddress,
 			tokenAddress,
 			bondingCurveAddress,
@@ -455,4 +460,97 @@ func DeriveBondingCurveAddress(tokenAddress solana.PublicKey) (solana.PublicKey,
 	}
 
 	return bondingCurveAddress, nil
+}
+
+type GenerateTokenURIDataType struct {
+	Name        string
+	Symbol      string
+	Description string
+	File        []byte
+	Twitter     string
+	Telegram    string
+	Website     string
+}
+
+type GenerateTokenURIResult struct {
+	Matedata    TokenMetadata `json:"metadata"`
+	MetadataUri string        `json:"metadataUri"`
+}
+
+func GenerateTokenURI(data *GenerateTokenURIDataType) (*GenerateTokenURIResult, error) {
+	buf := &bytes.Buffer{}
+
+	mpw := multipart.NewWriter(buf)
+
+	err := mpw.WriteField("name", data.Name)
+	if err != nil {
+		return nil, errors.Wrap(err, "")
+	}
+	err = mpw.WriteField("symbol", data.Symbol)
+	if err != nil {
+		return nil, errors.Wrap(err, "")
+	}
+	err = mpw.WriteField("description", data.Description)
+	if err != nil {
+		return nil, errors.Wrap(err, "")
+	}
+	err = mpw.WriteField("twitter", data.Twitter)
+	if err != nil {
+		return nil, errors.Wrap(err, "")
+	}
+	err = mpw.WriteField("telegram", data.Telegram)
+	if err != nil {
+		return nil, errors.Wrap(err, "")
+	}
+	err = mpw.WriteField("website", data.Website)
+	if err != nil {
+		return nil, errors.Wrap(err, "")
+	}
+	err = mpw.WriteField("showName", "true")
+	if err != nil {
+		return nil, errors.Wrap(err, "")
+	}
+	fWriter, err := mpw.CreateFormFile("file", "image.png")
+	if err != nil {
+		return nil, errors.Wrap(err, "")
+	}
+	_, err = fWriter.Write(data.File)
+	if err != nil {
+		return nil, errors.Wrap(err, "")
+	}
+
+	// Close the multipart writer before creating the request
+	err = mpw.Close()
+	if err != nil {
+		return nil, errors.Wrap(err, "")
+	}
+
+	// set up the request
+	client := &http.Client{}
+	req, err := http.NewRequest("POST", "https://pump.fun/api/ipfs", buf)
+	if err != nil {
+		return nil, errors.Wrap(err, "")
+	}
+
+	req.Header.Add("Content-Type", mpw.FormDataContentType()) // detect the form data content type
+	req.Header.Add("Accept", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, errors.Wrap(err, "")
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, errors.Wrap(err, "")
+	}
+
+	var r GenerateTokenURIResult
+	err = json.Unmarshal(body, &r)
+	if err != nil {
+		return nil, errors.Wrap(err, "")
+	}
+
+	return &r, nil
 }

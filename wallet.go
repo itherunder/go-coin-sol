@@ -112,6 +112,7 @@ func (t *Wallet) TokenBalance(
 func (t *Wallet) SendTx(
 	ctx context.Context,
 	privObj solana.PrivateKey,
+	signers map[solana.PublicKey]*solana.PrivateKey,
 	latestBlockhash *solana.Hash,
 	instructions []solana.Instruction,
 	unitPrice uint64,
@@ -124,7 +125,14 @@ func (t *Wallet) SendTx(
 	timestamp_ uint64,
 	err_ error,
 ) {
-	tx, err := t.BuildTx(privObj, latestBlockhash, instructions, unitPrice, unitLimit)
+	tx, err := t.BuildTx(
+		privObj,
+		signers,
+		latestBlockhash,
+		instructions,
+		unitPrice,
+		unitLimit,
+	)
 	if err != nil {
 		return nil, nil, 0, err
 	}
@@ -141,6 +149,7 @@ func (t *Wallet) SendTx(
 func (t *Wallet) SendTxByJito(
 	ctx context.Context,
 	privObj solana.PrivateKey,
+	signers map[solana.PublicKey]*solana.PrivateKey,
 	latestBlockhash *solana.Hash,
 	instructions []solana.Instruction,
 	unitPrice uint64,
@@ -165,7 +174,14 @@ func (t *Wallet) SendTxByJito(
 			Build(),
 	)
 
-	tx, err := t.BuildTx(privObj, latestBlockhash, instructions, unitPrice, unitLimit)
+	tx, err := t.BuildTx(
+		privObj,
+		signers,
+		latestBlockhash,
+		instructions,
+		unitPrice,
+		unitLimit,
+	)
 	if err != nil {
 		return nil, nil, 0, err
 	}
@@ -240,6 +256,7 @@ func (t *Wallet) SendTxByJito(
 func (t *Wallet) SendTxByJitoBundle(
 	ctx context.Context,
 	payFeePrivObj solana.PrivateKey,
+	signers map[solana.PublicKey]*solana.PrivateKey,
 	latestBlockhash *solana.Hash,
 	txs []*solana.Transaction,
 	jitoUrl string,
@@ -250,14 +267,21 @@ func (t *Wallet) SendTxByJitoBundle(
 	timestamp_ uint64,
 	err_ error,
 ) {
-	sendFeeTx, err := t.BuildTx(payFeePrivObj, latestBlockhash, []solana.Instruction{
-		system.
-			NewTransferInstructionBuilder().
-			SetFundingAccount(payFeePrivObj.PublicKey()).
-			SetRecipientAccount(jitoAccount).
-			SetLamports(jitoTipAmountWithDecimals).
-			Build(),
-	}, 0, 0)
+	sendFeeTx, err := t.BuildTx(
+		payFeePrivObj,
+		signers,
+		latestBlockhash,
+		[]solana.Instruction{
+			system.
+				NewTransferInstructionBuilder().
+				SetFundingAccount(payFeePrivObj.PublicKey()).
+				SetRecipientAccount(jitoAccount).
+				SetLamports(jitoTipAmountWithDecimals).
+				Build(),
+		},
+		0,
+		0,
+	)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -351,6 +375,7 @@ func (t *Wallet) SendTxByJitoBundle(
 
 func (t *Wallet) BuildTx(
 	privObj solana.PrivateKey,
+	signers map[solana.PublicKey]*solana.PrivateKey,
 	latestBlockhash *solana.Hash,
 	instructions []solana.Instruction,
 	unitPrice uint64,
@@ -383,16 +408,18 @@ func (t *Wallet) BuildTx(
 	}
 	tx.Message.SetVersion(solana.MessageVersionV0)
 
+	if signers == nil {
+		signers = map[solana.PublicKey]*solana.PrivateKey{
+			userAddress: &privObj,
+		}
+	}
 	_, err = tx.Sign(
 		func(key solana.PublicKey) *solana.PrivateKey {
-			if key.Equals(userAddress) {
-				return &privObj
-			}
-			return nil
+			return signers[key]
 		},
 	)
 	if err != nil {
-		return nil, errors.Wrap(err, "")
+		return nil, errors.Wrap(err, "Sign error.")
 	}
 	return tx, nil
 }
