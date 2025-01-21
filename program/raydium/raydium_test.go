@@ -22,7 +22,7 @@ func TestParseSwapTx(t *testing.T) {
 	client := rpc.New(url)
 	getTransactionResult, err := client.GetTransaction(
 		context.TODO(),
-		solana.MustSignatureFromBase58("28qwqwrnbKxKn9Ek5Wi4t5HaYpH3G9XVYS5jE28FqgomU2eZPpRBSZkXZ6KapdyRBXTB26Z31deUkpbc69YMnSQm"),
+		solana.MustSignatureFromBase58("5vjz1hiVuEBiW5w3EiZgk4TQWMGiEoK5qNaobpntFzeaVB4wTt7htR4hGr3csnfSaTixUdG2uq2LGAhvvSSPd37B"),
 		&rpc.GetTransactionOpts{
 			Commitment:                     rpc.CommitmentConfirmed,
 			MaxSupportedTransactionVersion: constant.MaxSupportedTransactionVersion_0,
@@ -35,7 +35,7 @@ func TestParseSwapTx(t *testing.T) {
 	go_test_.Equal(t, nil, err)
 	for _, swap := range r.Swaps {
 		fmt.Printf(
-			"<UserAddress: %s> <%s> <TokenAddress: %s> <%d sol> <TokenAmount: %d> <UserBalance: %d -> %d> <UserTokenBalance: %d>\n",
+			"<UserAddress: %s> <%s> <TokenAddress: %s> <%d sol> <TokenAmount: %d> <UserBalance: %d -> %d> <UserTokenBalance: %d -> %d>\n",
 			swap.UserAddress,
 			swap.Type,
 			swap.TokenAddress,
@@ -43,6 +43,7 @@ func TestParseSwapTx(t *testing.T) {
 			swap.TokenAmountWithDecimals,
 			swap.BeforeUserBalanceWithDecimals,
 			swap.UserBalanceWithDecimals,
+			swap.BeforeUserTokenBalanceWithDecimals,
 			swap.UserTokenBalanceWithDecimals,
 		)
 	}

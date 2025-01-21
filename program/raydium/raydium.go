@@ -220,7 +220,8 @@ func ParseSwapTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*r
 			continue
 		}
 
-		poolCoinTokenAccount := accountKeys[instruction.Accounts[len(instruction.Accounts)-13]]
+		poolCoinTokenAccount := accountKeys[instruction.Accounts[len(instruction.Accounts)-13]] // wsol
+		poolPCTokenAccount := accountKeys[instruction.Accounts[len(instruction.Accounts)-12]]   // token
 
 		transfer1Instruction := allInstructions[index+1]
 		transfer2Instruction := allInstructions[index+2]
@@ -245,63 +246,74 @@ func ParseSwapTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*r
 		var swapType type_.SwapType
 		var solAmountWithDecimals uint64
 		var tokenAmountWithDecimals uint64
-		var userTokenAssociatedAccount solana.PublicKey
 		if accountKeys[transfer1Instruction.Accounts[1]].Equals(poolCoinTokenAccount) {
 			swapType = type_.SwapType_Buy
 			solAmountWithDecimals = transfer1InstructionData.Amount
 			tokenAmountWithDecimals = transfer2InstructionData.Amount
-			userTokenAssociatedAccount = accountKeys[instruction.Accounts[16]]
 		} else {
 			swapType = type_.SwapType_Sell
 			solAmountWithDecimals = transfer2InstructionData.Amount
 			tokenAmountWithDecimals = transfer1InstructionData.Amount
-			userTokenAssociatedAccount = accountKeys[instruction.Accounts[15]]
 		}
 
 		userAddress := accountKeys[0]
+		// 得到 token address
 		var tokenAddress solana.PublicKey
-		var userTokenBalanceWithDecimals uint64
-
 		// fmt.Println(userTokenAssociatedAccount.String(), userAddress)
 		var tokenBalanceInfo *rpc.TokenBalance
-		for _, postTokenBalanceInfo := range meta.PostTokenBalances {
-			if postTokenBalanceInfo.Owner.Equals(userAddress) &&
-				accountKeys[postTokenBalanceInfo.AccountIndex].Equals(userTokenAssociatedAccount) {
-				tokenBalanceInfo = &postTokenBalanceInfo
+		for _, tokenBalanceInfo_ := range meta.PreTokenBalances {
+			if tokenBalanceInfo_.Owner.Equals(raydium_constant.Raydium_Authority_V4) &&
+				accountKeys[tokenBalanceInfo_.AccountIndex].Equals(poolPCTokenAccount) {
+				tokenBalanceInfo = &tokenBalanceInfo_
 				break
 			}
 		}
 		if tokenBalanceInfo == nil {
-			for _, postTokenBalanceInfo := range meta.PreTokenBalances {
-				if postTokenBalanceInfo.Owner.Equals(userAddress) &&
-					accountKeys[postTokenBalanceInfo.AccountIndex].Equals(userTokenAssociatedAccount) {
-					tokenBalanceInfo = &postTokenBalanceInfo
-					break
-				}
-			}
-			if tokenBalanceInfo == nil {
-				return nil, errors.Errorf("没有找到 token 相关的 balance info. <txid: %s>", transaction.Signatures[0].String())
-			}
-		} else {
-			userTokenBalanceWithDecimals, _ = strconv.ParseUint(tokenBalanceInfo.UiTokenAmount.Amount, 10, 64)
+			return nil, errors.Errorf("没有找到 token 相关的 balance info. <txid: %s>", transaction.Signatures[0].String())
 		}
 		tokenAddress = tokenBalanceInfo.Mint
+		// 得到交易前后 token 的余额
+		userTokenAssociatedAccount, _, err := solana.FindAssociatedTokenAddress(
+			userAddress,
+			tokenAddress,
+		)
+		if err != nil {
+			return nil, errors.Wrapf(err, "<userAddress: %s> <tokenAddress: %s>", userAddress, tokenAddress)
+		}
+		// fmt.Println(userTokenAssociatedAccount.String())
+		beforeUserTokenBalanceWithDecimals := uint64(0)
+		userTokenBalanceWithDecimals := uint64(0)
+		for _, tokenBalanceInfo_ := range meta.PreTokenBalances {
+			if tokenBalanceInfo_.Owner.Equals(userAddress) &&
+				accountKeys[tokenBalanceInfo_.AccountIndex].Equals(userTokenAssociatedAccount) {
+				beforeUserTokenBalanceWithDecimals, _ = strconv.ParseUint(tokenBalanceInfo_.UiTokenAmount.Amount, 10, 64)
+				break
+			}
+		}
+		for _, tokenBalanceInfo_ := range meta.PostTokenBalances {
+			if tokenBalanceInfo_.Owner.Equals(userAddress) &&
+				accountKeys[tokenBalanceInfo_.AccountIndex].Equals(userTokenAssociatedAccount) {
+				userTokenBalanceWithDecimals, _ = strconv.ParseUint(tokenBalanceInfo_.UiTokenAmount.Amount, 10, 64)
+				break
+			}
+		}
 
 		swaps = append(swaps, &raydium_type_.SwapDataType{
-			TokenAddress:                  tokenAddress,
-			SOLAmountWithDecimals:         solAmountWithDecimals,
-			TokenAmountWithDecimals:       tokenAmountWithDecimals,
-			Type:                          swapType,
-			UserAddress:                   userAddress,
-			UserBalanceWithDecimals:       meta.PostBalances[0],
-			BeforeUserBalanceWithDecimals: meta.PreBalances[0],
-			UserTokenBalanceWithDecimals:  userTokenBalanceWithDecimals,
+			TokenAddress:                       tokenAddress,
+			SOLAmountWithDecimals:              solAmountWithDecimals,
+			TokenAmountWithDecimals:            tokenAmountWithDecimals,
+			Type:                               swapType,
+			UserAddress:                        userAddress,
+			BeforeUserBalanceWithDecimals:      meta.PreBalances[0],
+			UserBalanceWithDecimals:            meta.PostBalances[0],
+			BeforeUserTokenBalanceWithDecimals: beforeUserTokenBalanceWithDecimals,
+			UserTokenBalanceWithDecimals:       userTokenBalanceWithDecimals,
 			RaydiumSwapKeys: raydium_type_.RaydiumSwapKeys{
 				AmmAddress:                   accountKeys[instruction.Accounts[1]],
 				AmmOpenOrdersAddress:         &accountKeys[instruction.Accounts[3]],
 				AmmTargetOrdersAddress:       &accountKeys[instruction.Accounts[len(instruction.Accounts)-14]],
 				PoolCoinTokenAccountAddress:  poolCoinTokenAccount,
-				PoolPcTokenAccountAddress:    accountKeys[instruction.Accounts[len(instruction.Accounts)-12]],
+				PoolPcTokenAccountAddress:    poolPCTokenAccount,
 				SerumProgramAddress:          &accountKeys[instruction.Accounts[len(instruction.Accounts)-11]],
 				SerumMarketAddress:           &accountKeys[instruction.Accounts[len(instruction.Accounts)-10]],
 				SerumBidsAddress:             &accountKeys[instruction.Accounts[len(instruction.Accounts)-9]],
