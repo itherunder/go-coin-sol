@@ -269,10 +269,9 @@ func TestWallet_SendTxByJitoBundle(t *testing.T) {
 	latestBlockhash := &recent.Value.Blockhash
 	swapTx, err := WalletInstance.BuildTx(privObj, nil, latestBlockhash, swapInstructions, 0, 0)
 	go_test_.Equal(t, nil, err)
-	_, _, err = WalletInstance.SendTxByJitoBundle(
+	_, err = WalletInstance.SendTxByJitoBundle(
 		context.Background(),
 		privObj,
-		nil,
 		latestBlockhash,
 		[]*solana.Transaction{
 			swapTx,

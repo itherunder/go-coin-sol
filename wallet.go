@@ -261,7 +261,6 @@ func (t *Wallet) SendTxByJitoBundle(
 	jitoTipAmountWithDecimals uint64,
 	jitoAccount solana.PublicKey,
 ) (
-	meta_ *rpc.TransactionMeta,
 	timestamp_ uint64,
 	err_ error,
 ) {
@@ -281,7 +280,7 @@ func (t *Wallet) SendTxByJitoBundle(
 		0,
 	)
 	if err != nil {
-		return nil, 0, err
+		return 0, err
 	}
 	serializedSendFeeTx, _ := sendFeeTx.MarshalBinary()
 
@@ -302,13 +301,13 @@ func (t *Wallet) SendTxByJitoBundle(
 		serializedTxs,
 	})
 	if err != nil {
-		return nil, 0, errors.Wrap(err, "")
+		return 0, errors.Wrap(err, "")
 	}
 
 	var bundleId string
 	err = json.Unmarshal(bundleIdRaw, &bundleId)
 	if err != nil {
-		return nil, 0, errors.Wrap(err, "")
+		return 0, errors.Wrap(err, "")
 	}
 	sendedTimestamp := go_time.CurrentTimestamp()
 	t.logger.InfoF("交易发送成功 <timestamp: %d> <txs: %s> <bundle_id: %s>", sendedTimestamp, go_format.ToString(txIds), bundleId)
@@ -342,10 +341,10 @@ func (t *Wallet) SendTxByJitoBundle(
 				},
 			)
 			if err != nil {
-				return nil, 0, errors.Wrap(err, "")
+				return 0, errors.Wrap(err, "")
 			}
 			if getTransactionResult == nil {
-				return nil, 0, errors.Errorf("<txid: %s> not found.", txs[len(txs)-1].Signatures[0])
+				return 0, errors.Errorf("<txid: %s> not found.", txs[len(txs)-1].Signatures[0])
 			}
 			if statusResponse.Value[0].Err.Ok != nil {
 				t.logger.InfoF(
@@ -363,10 +362,10 @@ func (t *Wallet) SendTxByJitoBundle(
 					(int64(*getTransactionResult.BlockTime*1000)-sendedTimestamp)/1000,
 				)
 			}
-			return getTransactionResult.Meta, uint64(*getTransactionResult.BlockTime * 1000), nil
+			return uint64(*getTransactionResult.BlockTime * 1000), nil
 
 		case <-newCtx.Done():
-			return nil, 0, errors.New("确认超时")
+			return 0, errors.New("确认超时")
 		}
 	}
 }
