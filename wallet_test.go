@@ -32,16 +32,11 @@ func init() {
 	if envUrl != "" {
 		url = envUrl
 	}
-	instance, err := New(
-		context.Background(),
+	WalletInstance = New(
 		&i_logger.DefaultLogger,
 		url,
 		"",
 	)
-	if err != nil {
-		panic(err)
-	}
-	WalletInstance = instance
 }
 
 func TestWallet_SwapPumpfun(t *testing.T) {

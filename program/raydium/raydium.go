@@ -231,7 +231,7 @@ func ParseSwapTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*r
 		}
 		err := bin.NewBorshDecoder(transfer1Instruction.Data).Decode(&transfer1InstructionData)
 		if err != nil {
-			return nil, errors.Wrapf(err, "<data: %s>", transfer1Instruction.Data.String())
+			return nil, errors.Wrapf(err, "<txid: %s> <data: %s>", transaction.Signatures[0].String(), transfer1Instruction.Data.String())
 		}
 
 		var transfer2InstructionData struct {
@@ -240,7 +240,7 @@ func ParseSwapTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*r
 		}
 		err = bin.NewBorshDecoder(transfer2Instruction.Data).Decode(&transfer2InstructionData)
 		if err != nil {
-			return nil, errors.Wrapf(err, "<data: %s>", transfer2Instruction.Data.String())
+			return nil, errors.Wrapf(err, "<txid: %s> <data: %s>", transaction.Signatures[0].String(), transfer2Instruction.Data.String())
 		}
 		var swapType type_.SwapType
 		var solAmountWithDecimals uint64
@@ -280,7 +280,7 @@ func ParseSwapTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*r
 				}
 			}
 			if tokenBalanceInfo == nil {
-				return nil, errors.New("没有找到 token 相关的 balance info")
+				return nil, errors.Errorf("没有找到 token 相关的 balance info. <txid: %s>", transaction.Signatures[0].String())
 			}
 		} else {
 			userTokenBalanceWithDecimals, _ = strconv.ParseUint(tokenBalanceInfo.UiTokenAmount.Amount, 10, 64)
