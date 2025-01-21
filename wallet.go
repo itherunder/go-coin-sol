@@ -255,7 +255,6 @@ func (t *Wallet) SendTxByJito(
 func (t *Wallet) SendTxByJitoBundle(
 	ctx context.Context,
 	payFeePrivObj solana.PrivateKey,
-	signers map[solana.PublicKey]*solana.PrivateKey,
 	latestBlockhash *solana.Hash,
 	txs []*solana.Transaction,
 	jitoUrl string,
@@ -268,7 +267,7 @@ func (t *Wallet) SendTxByJitoBundle(
 ) {
 	sendFeeTx, err := t.BuildTx(
 		payFeePrivObj,
-		signers,
+		nil,
 		latestBlockhash,
 		[]solana.Instruction{
 			system.
