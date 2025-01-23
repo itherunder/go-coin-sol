@@ -53,12 +53,6 @@ func TestParseSwapTx(t *testing.T) {
 
 func TestParseTx(t *testing.T) {
 	// return
-	url := rpc.MainNetBeta_RPC
-	envUrl := os.Getenv("URL")
-	if envUrl != "" {
-		url = envUrl
-	}
-	client := rpc.New(url)
 	getTransactionResult, err := client.GetTransaction(
 		context.TODO(),
 		solana.MustSignatureFromBase58("4jj1WgBN8QYP7pDiazyVXwiwnJQnBVKJM7NpXHEMJiqnu6HfYitBgtEd9hnxtYkpvMjTDsUbgqtFWxnw63J42UdP"),
@@ -104,12 +98,6 @@ func TestURIInfo(t *testing.T) {
 }
 
 func TestGetBondingCurveData(t *testing.T) {
-	url := rpc.MainNetBeta_RPC
-	envUrl := os.Getenv("URL")
-	if envUrl != "" {
-		url = envUrl
-	}
-	client := rpc.New(url)
 	tokenAddressObj := solana.MustPublicKeyFromBase58("7PAaQ8UxYYPksnyxcKFP44Pm4FwFCix4ammGf5P3bK79")
 	r, err := GetBondingCurveData(client, &tokenAddressObj, nil)
 	go_test_.Equal(t, nil, err)
