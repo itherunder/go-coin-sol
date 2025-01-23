@@ -229,6 +229,34 @@ func ParseRemoveLiqTx(meta *rpc.TransactionMeta, transaction *solana.Transaction
 	return nil, nil
 }
 
+func ParseRemoveLiqTxByParsedTx(meta *rpc.ParsedTransactionMeta, parsedTransaction *rpc.ParsedTransaction) (*pumpfun_type.RemoveLiqTxDataType, error) {
+	if !parsedTransaction.Message.AccountKeys[0].PublicKey.Equals(pumpfun_constant.Pumpfun_Raydium_Migration) {
+		return nil, nil
+	}
+	for _, parsedInstruction := range parsedTransaction.Message.Instructions {
+		if !parsedInstruction.ProgramId.Equals(pumpfun_constant.Pumpfun_Program) {
+			continue
+		}
+		if hex.EncodeToString(parsedInstruction.Data)[:16] != "b712469c946da122" {
+			continue
+		}
+		feeInfo, err := util.GetFeeInfoFromParsedTx(meta, parsedTransaction)
+		if err != nil {
+			return nil, err
+		}
+
+		return &pumpfun_type.RemoveLiqTxDataType{
+			TxId:                parsedTransaction.Signatures[0].String(),
+			BondingCurveAddress: parsedInstruction.Accounts[3],
+			TokenAddress:        parsedInstruction.Accounts[2],
+			FeeInfo:             feeInfo,
+		}, nil
+
+	}
+
+	return nil, nil
+}
+
 func ParseAddLiqTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*pumpfun_type.AddLiqTxDataType, error) {
 	accountKeys := transaction.Message.AccountKeys
 	if meta.LoadedAddresses.Writable != nil {
@@ -270,6 +298,49 @@ func ParseAddLiqTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (
 			AMMAddress:                  accountKeys[instruction.Accounts[4]],
 			PoolCoinTokenAccount:        accountKeys[instruction.Accounts[10]],
 			PoolPcTokenAccount:          accountKeys[instruction.Accounts[11]],
+			InitSOLAmountWithDecimals:   params.InitCoinAmount,
+			InitTokenAmountWithDecimals: params.InitPcAmount,
+			FeeInfo:                     feeInfo,
+		}, nil
+
+	}
+
+	return nil, nil
+}
+
+func ParseAddLiqTxByParsedTx(meta *rpc.ParsedTransactionMeta, parsedTransaction *rpc.ParsedTransaction) (*pumpfun_type.AddLiqTxDataType, error) {
+	if !parsedTransaction.Message.AccountKeys[0].PublicKey.Equals(pumpfun_constant.Pumpfun_Raydium_Migration) {
+		return nil, nil
+	}
+	for _, parsedInstruction := range parsedTransaction.Message.Instructions {
+		if !parsedInstruction.ProgramId.Equals(raydium_constant.Raydium_Liquidity_Pool_V4) {
+			continue
+		}
+		if hex.EncodeToString(parsedInstruction.Data)[:2] != "01" {
+			continue
+		}
+		var params struct {
+			Discriminator  uint8  `json:"discriminator"`
+			Nonce          uint8  `json:"nonce"`
+			OpenTime       uint64 `json:"openTime"`
+			InitPcAmount   uint64 `json:"initPcAmount"`
+			InitCoinAmount uint64 `json:"initCoinAmount"`
+		}
+		err := bin.NewBorshDecoder(parsedInstruction.Data).Decode(&params)
+		if err != nil {
+			return nil, errors.Wrap(err, "")
+		}
+
+		feeInfo, err := util.GetFeeInfoFromParsedTx(meta, parsedTransaction)
+		if err != nil {
+			return nil, err
+		}
+		return &pumpfun_type.AddLiqTxDataType{
+			TxId:                        parsedTransaction.Signatures[0].String(),
+			TokenAddress:                parsedInstruction.Accounts[9],
+			AMMAddress:                  parsedInstruction.Accounts[4],
+			PoolCoinTokenAccount:        parsedInstruction.Accounts[10],
+			PoolPcTokenAccount:          parsedInstruction.Accounts[11],
 			InitSOLAmountWithDecimals:   params.InitCoinAmount,
 			InitTokenAmountWithDecimals: params.InitPcAmount,
 			FeeInfo:                     feeInfo,

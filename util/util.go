@@ -123,3 +123,56 @@ func GetFeeInfoFromTx(meta *rpc.TransactionMeta, transaction *solana.Transaction
 		ComputeUnitPrice:        uint64(computeUnitPrice),
 	}, nil
 }
+
+func GetFeeInfoFromParsedTx(meta *rpc.ParsedTransactionMeta, parsedTransaction *rpc.ParsedTransaction) (*type_.FeeInfo, error) {
+	priorityFeeWithDecimals := uint64(0)
+	computeUnitPrice := 0
+
+	var setComputeUnitLimitInstru *rpc.ParsedInstruction
+	var setComputeUnitPriceInstru *rpc.ParsedInstruction
+	for _, parsedInstruction := range parsedTransaction.Message.Instructions {
+		if !parsedInstruction.ProgramId.Equals(solana.ComputeBudget) {
+			continue
+		}
+		methodId := hex.EncodeToString(parsedInstruction.Data)[:2]
+		if methodId == "02" {
+			setComputeUnitLimitInstru = parsedInstruction
+		}
+		if methodId == "03" {
+			setComputeUnitPriceInstru = parsedInstruction
+		}
+	}
+	computeUnitLimit := 200000
+	if setComputeUnitLimitInstru != nil {
+		var params struct {
+			Id    uint8  `json:"id"`
+			Units uint32 `json:"units"`
+		}
+		err := bin.NewBorshDecoder(setComputeUnitLimitInstru.Data).Decode(&params)
+		if err != nil {
+			return nil, errors.Wrap(err, "")
+		}
+		computeUnitLimit = int(params.Units)
+	}
+
+	if setComputeUnitPriceInstru != nil {
+		var params struct {
+			Id            uint8  `json:"id"`
+			MicroLamports uint64 `json:"microLamports"`
+		}
+		err := bin.NewBorshDecoder(setComputeUnitPriceInstru.Data).Decode(&params)
+		if err != nil {
+			return nil, errors.Wrap(err, "")
+		}
+		computeUnitPrice = int(params.MicroLamports)
+
+		priorityFeeWithDecimals = uint64((computeUnitPrice * computeUnitLimit) / int(math.Pow(10, 6)))
+	}
+
+	return &type_.FeeInfo{
+		BaseFeeWithDecimals:     meta.Fee - priorityFeeWithDecimals,
+		PriorityFeeWithDecimals: priorityFeeWithDecimals,
+		TotalFeeWithDecimals:    meta.Fee,
+		ComputeUnitPrice:        uint64(computeUnitPrice),
+	}, nil
+}
