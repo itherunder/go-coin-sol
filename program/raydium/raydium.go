@@ -28,11 +28,8 @@ func GetSwapInstructions(
 	isClose bool,
 	solReserveWithDecimals uint64,
 	tokenReserveWithDecimals uint64,
-	slippage int64,
+	slippage uint64, // 0 代表不设置滑点
 ) ([]solana.Instruction, error) {
-	if slippage == 0 {
-		slippage = 50 // 0.5%
-	}
 	instructions := make([]solana.Instruction, 0)
 
 	userWSOLAssociatedAccount, _, err := solana.FindAssociatedTokenAddress(
@@ -52,7 +49,7 @@ func GetSwapInstructions(
 	}
 
 	if swapType == type_.SwapType_Buy {
-		if slippage == -1 {
+		if slippage == 0 {
 			return nil, errors.New("购买必须设置滑点")
 		}
 		maxCostSolAmountWithDecimals := uint64(
@@ -96,7 +93,7 @@ func GetSwapInstructions(
 		)
 	} else {
 		minReceiveSolAmountWithDecimals := uint64(0)
-		if slippage != -1 {
+		if slippage != 0 {
 			// 应该收到的 sol 数量
 			minReceiveSolAmountWithDecimals = uint64(
 				0.995 * float64(10000-slippage) * float64(solReserveWithDecimals) * float64(tokenAmountWithDecimals) / float64(tokenReserveWithDecimals) / 10000,

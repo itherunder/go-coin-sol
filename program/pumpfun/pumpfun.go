@@ -439,7 +439,7 @@ func GetSwapInstructions(
 	isCloseUserAssociatedTokenAddress bool,
 	virtualSolReserveWithDecimals uint64,
 	virtualTokenReserveWithDecimals uint64,
-	slippage int64, // 0 代表不设置滑点
+	slippage uint64, // 0 代表不设置滑点
 ) ([]solana.Instruction, error) {
 	instructions := make([]solana.Instruction, 0)
 
