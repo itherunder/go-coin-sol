@@ -372,7 +372,7 @@ func ParseSwapTxByParsedTx(meta *rpc.ParsedTransactionMeta, transaction *rpc.Par
 		var swapType type_.SwapType
 		var solAmountWithDecimals uint64
 		var tokenAmountWithDecimals uint64
-		if transfer1Data.Source.Equals(poolCoinTokenAccount) {
+		if transfer1Data.Destination.Equals(poolCoinTokenAccount) {
 			swapType = type_.SwapType_Buy
 			solAmountWithDecimals = transfer1Data.AmountWithDecimals
 			tokenAmountWithDecimals = transfer2Data.AmountWithDecimals
