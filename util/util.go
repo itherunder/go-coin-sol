@@ -2,8 +2,10 @@ package util
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"math"
+	"strconv"
 	"time"
 
 	bin "github.com/gagliardetto/binary"
@@ -18,6 +20,15 @@ import (
 func FindInnerInstructions(meta *rpc.TransactionMeta, index uint64) []solana.CompiledInstruction {
 	for _, innerInstruction := range meta.InnerInstructions {
 		if innerInstruction.Index == uint16(index) {
+			return innerInstruction.Instructions
+		}
+	}
+	return nil
+}
+
+func FindInnerInstructionsFromParsedMeta(meta *rpc.ParsedTransactionMeta, index uint64) []*rpc.ParsedInstruction {
+	for _, innerInstruction := range meta.InnerInstructions {
+		if innerInstruction.Index == index {
 			return innerInstruction.Instructions
 		}
 	}
@@ -174,5 +185,40 @@ func GetFeeInfoFromParsedTx(meta *rpc.ParsedTransactionMeta, parsedTransaction *
 		PriorityFeeWithDecimals: priorityFeeWithDecimals,
 		TotalFeeWithDecimals:    meta.Fee,
 		ComputeUnitPrice:        uint64(computeUnitPrice),
+	}, nil
+}
+
+type TransferInstructionDataType struct {
+	Source             solana.PublicKey
+	Destination        solana.PublicKey
+	AmountWithDecimals uint64
+	Authority          solana.PublicKey
+}
+
+func DecodeTransferParsedInstruction(transferInstruction *rpc.ParsedInstruction) (*TransferInstructionDataType, error) {
+	d, _ := transferInstruction.Parsed.MarshalJSON()
+	var transferData struct {
+		Info struct {
+			Source      string `json:"source"`
+			Destination string `json:"destination"`
+			Amount      string `json:"amount"`
+			Authority   string `json:"authority"`
+		} `json:"info"`
+		Type string `json:"type"`
+	}
+	err := json.Unmarshal(d, &transferData)
+	if err != nil {
+		return nil, errors.Wrap(err, "")
+	}
+	if transferData.Type != "transfer" {
+		return nil, errors.Errorf("不是 transfer 指令, %#v", transferData)
+	}
+	amountWithDecimals, _ := strconv.ParseUint(transferData.Info.Amount, 10, 64)
+
+	return &TransferInstructionDataType{
+		Source:             solana.MustPublicKeyFromBase58(transferData.Info.Source),
+		Destination:        solana.MustPublicKeyFromBase58(transferData.Info.Destination),
+		AmountWithDecimals: amountWithDecimals,
+		Authority:          solana.MustPublicKeyFromBase58(transferData.Info.Authority),
 	}, nil
 }

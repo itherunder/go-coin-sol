@@ -60,10 +60,10 @@ func NewBuyBaseOutInstruction(
 			},
 			{
 				PublicKey: func() solana.PublicKey {
-					if raydiumSwapKeys.AmmOpenOrdersAddress == nil {
+					if raydiumSwapKeys.AmmOpenOrdersAddress.IsZero() {
 						return solana.SolMint
 					} else {
-						return *raydiumSwapKeys.AmmOpenOrdersAddress
+						return raydiumSwapKeys.AmmOpenOrdersAddress
 					}
 				}(),
 				IsSigner:   false,
@@ -71,10 +71,10 @@ func NewBuyBaseOutInstruction(
 			},
 			{
 				PublicKey: func() solana.PublicKey {
-					if raydiumSwapKeys.AmmTargetOrdersAddress == nil {
+					if raydiumSwapKeys.AmmTargetOrdersAddress.IsZero() {
 						return solana.SolMint
 					} else {
-						return *raydiumSwapKeys.AmmTargetOrdersAddress
+						return raydiumSwapKeys.AmmTargetOrdersAddress
 					}
 				}(),
 				IsSigner:   false,
@@ -94,10 +94,10 @@ func NewBuyBaseOutInstruction(
 
 			{
 				PublicKey: func() solana.PublicKey {
-					if raydiumSwapKeys.SerumProgramAddress == nil {
+					if raydiumSwapKeys.SerumProgramAddress.IsZero() {
 						return solana.SolMint
 					} else {
-						return *raydiumSwapKeys.SerumProgramAddress
+						return raydiumSwapKeys.SerumProgramAddress
 					}
 				}(),
 				IsSigner:   false,
@@ -105,10 +105,10 @@ func NewBuyBaseOutInstruction(
 			},
 			{
 				PublicKey: func() solana.PublicKey {
-					if raydiumSwapKeys.SerumMarketAddress == nil {
+					if raydiumSwapKeys.SerumMarketAddress.IsZero() {
 						return solana.SolMint
 					} else {
-						return *raydiumSwapKeys.SerumMarketAddress
+						return raydiumSwapKeys.SerumMarketAddress
 					}
 				}(),
 				IsSigner:   false,
@@ -116,10 +116,10 @@ func NewBuyBaseOutInstruction(
 			},
 			{
 				PublicKey: func() solana.PublicKey {
-					if raydiumSwapKeys.SerumBidsAddress == nil {
+					if raydiumSwapKeys.SerumBidsAddress.IsZero() {
 						return solana.SolMint
 					} else {
-						return *raydiumSwapKeys.SerumBidsAddress
+						return raydiumSwapKeys.SerumBidsAddress
 					}
 				}(),
 				IsSigner:   false,
@@ -127,10 +127,10 @@ func NewBuyBaseOutInstruction(
 			},
 			{
 				PublicKey: func() solana.PublicKey {
-					if raydiumSwapKeys.SerumAsksAddress == nil {
+					if raydiumSwapKeys.SerumAsksAddress.IsZero() {
 						return solana.SolMint
 					} else {
-						return *raydiumSwapKeys.SerumAsksAddress
+						return raydiumSwapKeys.SerumAsksAddress
 					}
 				}(),
 				IsSigner:   false,
@@ -138,10 +138,10 @@ func NewBuyBaseOutInstruction(
 			},
 			{
 				PublicKey: func() solana.PublicKey {
-					if raydiumSwapKeys.SerumEventQueueAddress == nil {
+					if raydiumSwapKeys.SerumEventQueueAddress.IsZero() {
 						return solana.SolMint
 					} else {
-						return *raydiumSwapKeys.SerumEventQueueAddress
+						return raydiumSwapKeys.SerumEventQueueAddress
 					}
 				}(),
 				IsSigner:   false,
@@ -149,10 +149,10 @@ func NewBuyBaseOutInstruction(
 			},
 			{
 				PublicKey: func() solana.PublicKey {
-					if raydiumSwapKeys.SerumCoinVaultAccountAddress == nil {
+					if raydiumSwapKeys.SerumCoinVaultAccountAddress.IsZero() {
 						return solana.SolMint
 					} else {
-						return *raydiumSwapKeys.SerumCoinVaultAccountAddress
+						return raydiumSwapKeys.SerumCoinVaultAccountAddress
 					}
 				}(),
 				IsSigner:   false,
@@ -160,10 +160,10 @@ func NewBuyBaseOutInstruction(
 			},
 			{
 				PublicKey: func() solana.PublicKey {
-					if raydiumSwapKeys.SerumPcVaultAccountAddress == nil {
+					if raydiumSwapKeys.SerumPcVaultAccountAddress.IsZero() {
 						return solana.SolMint
 					} else {
-						return *raydiumSwapKeys.SerumPcVaultAccountAddress
+						return raydiumSwapKeys.SerumPcVaultAccountAddress
 					}
 				}(),
 				IsSigner:   false,
@@ -171,10 +171,10 @@ func NewBuyBaseOutInstruction(
 			},
 			{
 				PublicKey: func() solana.PublicKey {
-					if raydiumSwapKeys.SerumVaultSignerAddress == nil {
+					if raydiumSwapKeys.SerumVaultSignerAddress.IsZero() {
 						return solana.SolMint
 					} else {
-						return *raydiumSwapKeys.SerumVaultSignerAddress
+						return raydiumSwapKeys.SerumVaultSignerAddress
 					}
 				}(),
 				IsSigner:   false,

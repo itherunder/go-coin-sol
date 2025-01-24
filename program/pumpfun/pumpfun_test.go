@@ -26,6 +26,7 @@ func init() {
 }
 
 func TestParseSwapTx(t *testing.T) {
+	// return
 	getTransactionResult, err := client.GetTransaction(
 		context.TODO(),
 		solana.MustSignatureFromBase58("3FhAfwZts7di6LwtTY86rVGprB1hvsMtNrpfmt95UxfvH4LSZsn2fjMxuekmm7sx6ZKvxuwzWQhYc7yZdrb2r2f9"),
@@ -41,53 +42,41 @@ func TestParseSwapTx(t *testing.T) {
 	go_test_.Equal(t, nil, err)
 	for _, swapData := range r.Swaps {
 		fmt.Printf(
-			"[Swap] <%s> <SOLAmount: %d> <TokenAmount: %d> <ReserveSOLAmount: %d> <ReserveTokenAmount: %d>\n",
+			"[Swap] <UserAddress: %s> <%s> <SOLAmount: %d> <TokenAmount: %d> <TokenAddress: %s> <ReserveSOLAmount: %d> <ReserveTokenAmount: %d>\n",
+			swapData.UserAddress,
 			swapData.Type,
 			swapData.SOLAmountWithDecimals,
 			swapData.TokenAmountWithDecimals,
+			swapData.TokenAddress,
 			swapData.ReserveSOLAmountWithDecimals,
 			swapData.ReserveTokenAmountWithDecimals,
 		)
 	}
 }
 
-func TestParseTx(t *testing.T) {
-	// return
-	getTransactionResult, err := client.GetTransaction(
+func TestParseSwapTxByParsedTx(t *testing.T) {
+	getTransactionResult, err := client.GetParsedTransaction(
 		context.TODO(),
-		solana.MustSignatureFromBase58("4jj1WgBN8QYP7pDiazyVXwiwnJQnBVKJM7NpXHEMJiqnu6HfYitBgtEd9hnxtYkpvMjTDsUbgqtFWxnw63J42UdP"),
-		&rpc.GetTransactionOpts{
+		solana.MustSignatureFromBase58("3FhAfwZts7di6LwtTY86rVGprB1hvsMtNrpfmt95UxfvH4LSZsn2fjMxuekmm7sx6ZKvxuwzWQhYc7yZdrb2r2f9"),
+		&rpc.GetParsedTransactionOpts{
 			Commitment:                     rpc.CommitmentConfirmed,
 			MaxSupportedTransactionVersion: constant.MaxSupportedTransactionVersion_0,
 		},
 	)
 	go_test_.Equal(t, nil, err)
-	tx, err := getTransactionResult.Transaction.GetTransaction()
+	r, err := ParseSwapTxByParsedTx(getTransactionResult.Meta, getTransactionResult.Transaction)
 	go_test_.Equal(t, nil, err)
-	r, err := ParseTx(getTransactionResult.Meta, tx)
-	go_test_.Equal(t, nil, err)
-	if r.CreateTxData != nil {
-		fmt.Printf("[Create] <%s> <%s>\n", r.CreateTxData.Name, r.CreateTxData.Symbol)
-	}
-
-	if r.RemoveLiqTxData != nil {
-		fmt.Printf("[RemoveLiq] %+v\n", r.RemoveLiqTxData)
-	}
-
-	if r.AddLiqTxData != nil {
-		fmt.Printf("[AddLiq] %+v\n", r.AddLiqTxData)
-	}
-
-	if r.SwapTxData != nil {
-		for _, swapData := range r.SwapTxData.Swaps {
-			fmt.Printf(
-				"[Swap] <%s> <SOLAmount: %d> <TokenAmount: %d> <UserBalance: %d>\n",
-				swapData.Type,
-				swapData.SOLAmountWithDecimals,
-				swapData.TokenAmountWithDecimals,
-				r.SwapTxData.UserBalanceWithDecimals,
-			)
-		}
+	for _, swapData := range r.Swaps {
+		fmt.Printf(
+			"[Swap] <UserAddress: %s> <%s> <SOLAmount: %d> <TokenAmount: %d> <TokenAddress: %s> <ReserveSOLAmount: %d> <ReserveTokenAmount: %d>\n",
+			swapData.UserAddress,
+			swapData.Type,
+			swapData.SOLAmountWithDecimals,
+			swapData.TokenAmountWithDecimals,
+			swapData.TokenAddress,
+			swapData.ReserveSOLAmountWithDecimals,
+			swapData.ReserveTokenAmountWithDecimals,
+		)
 	}
 }
 

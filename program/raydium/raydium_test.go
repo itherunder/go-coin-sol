@@ -12,14 +12,19 @@ import (
 	go_test_ "github.com/pefish/go-test"
 )
 
-func TestParseSwapTx(t *testing.T) {
-	// return
+var client *rpc.Client
+
+func init() {
 	url := rpc.MainNetBeta_RPC
 	envUrl := os.Getenv("URL")
 	if envUrl != "" {
 		url = envUrl
 	}
-	client := rpc.New(url)
+	client = rpc.New(url)
+}
+
+func TestParseSwapTx(t *testing.T) {
+	// return
 	getTransactionResult, err := client.GetTransaction(
 		context.TODO(),
 		solana.MustSignatureFromBase58("5vjz1hiVuEBiW5w3EiZgk4TQWMGiEoK5qNaobpntFzeaVB4wTt7htR4hGr3csnfSaTixUdG2uq2LGAhvvSSPd37B"),
@@ -32,6 +37,36 @@ func TestParseSwapTx(t *testing.T) {
 	tx, err := getTransactionResult.Transaction.GetTransaction()
 	go_test_.Equal(t, nil, err)
 	r, err := ParseSwapTx(getTransactionResult.Meta, tx)
+	go_test_.Equal(t, nil, err)
+	for _, swap := range r.Swaps {
+		fmt.Printf(
+			"<UserAddress: %s> <%s> <TokenAddress: %s> <%d sol> <TokenAmount: %d> <UserBalance: %d -> %d> <UserTokenBalance: %d -> %d>\n",
+			swap.UserAddress,
+			swap.Type,
+			swap.TokenAddress,
+			swap.SOLAmountWithDecimals,
+			swap.TokenAmountWithDecimals,
+			swap.BeforeUserBalanceWithDecimals,
+			swap.UserBalanceWithDecimals,
+			swap.BeforeUserTokenBalanceWithDecimals,
+			swap.UserTokenBalanceWithDecimals,
+		)
+	}
+
+}
+
+func TestParseSwapTxByParsedTx(t *testing.T) {
+	// return
+	getTransactionResult, err := client.GetParsedTransaction(
+		context.TODO(),
+		solana.MustSignatureFromBase58("5vjz1hiVuEBiW5w3EiZgk4TQWMGiEoK5qNaobpntFzeaVB4wTt7htR4hGr3csnfSaTixUdG2uq2LGAhvvSSPd37B"),
+		&rpc.GetParsedTransactionOpts{
+			Commitment:                     rpc.CommitmentConfirmed,
+			MaxSupportedTransactionVersion: constant.MaxSupportedTransactionVersion_0,
+		},
+	)
+	go_test_.Equal(t, nil, err)
+	r, err := ParseSwapTxByParsedTx(getTransactionResult.Meta, getTransactionResult.Transaction)
 	go_test_.Equal(t, nil, err)
 	for _, swap := range r.Swaps {
 		fmt.Printf(

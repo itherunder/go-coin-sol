@@ -28,35 +28,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-func ParseTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*pumpfun_type.ParseTxResult, error) {
-	swapData, err := ParseSwapTx(meta, transaction)
-	if err != nil {
-		return nil, err
-	}
-
-	createData, err := ParseCreateTx(meta, transaction)
-	if err != nil {
-		return nil, err
-	}
-
-	removeLiqData, err := ParseRemoveLiqTx(meta, transaction)
-	if err != nil {
-		return nil, err
-	}
-
-	addLiqData, err := ParseAddLiqTx(meta, transaction)
-	if err != nil {
-		return nil, err
-	}
-
-	return &pumpfun_type.ParseTxResult{
-		SwapTxData:      swapData,
-		CreateTxData:    createData,
-		RemoveLiqTxData: removeLiqData,
-		AddLiqTxData:    addLiqData,
-	}, nil
-}
-
 func ParseSwapTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*pumpfun_type.SwapTxDataType, error) {
 	swaps := make([]*pumpfun_type.SwapDataType, 0)
 	accountKeys := transaction.Message.AccountKeys
@@ -133,6 +104,86 @@ func ParseSwapTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*p
 	}
 
 	feeInfo, err := util.GetFeeInfoFromTx(meta, transaction)
+	if err != nil {
+		return nil, err
+	}
+	return &pumpfun_type.SwapTxDataType{
+		TxId:                          transaction.Signatures[0].String(),
+		Swaps:                         swaps,
+		FeeInfo:                       feeInfo,
+		UserBalanceWithDecimals:       meta.PostBalances[0],
+		BeforeUserBalanceWithDecimals: meta.PreBalances[0],
+	}, nil
+}
+
+func ParseSwapTxByParsedTx(meta *rpc.ParsedTransactionMeta, transaction *rpc.ParsedTransaction) (*pumpfun_type.SwapTxDataType, error) {
+	swaps := make([]*pumpfun_type.SwapDataType, 0)
+
+	allInstructions := make([]*rpc.ParsedInstruction, 0)
+	for index, instruction := range transaction.Message.Instructions {
+		allInstructions = append(allInstructions, instruction)
+		innerInstructions := util.FindInnerInstructionsFromParsedMeta(meta, uint64(index))
+		if innerInstructions == nil {
+			continue
+		}
+		allInstructions = append(allInstructions, innerInstructions...)
+	}
+
+	for _, instruction := range allInstructions {
+		if !instruction.ProgramId.Equals(pumpfun_constant.Pumpfun_Program) {
+			continue
+		}
+		if len(instruction.Accounts) != 1 || !instruction.Accounts[0].Equals(pumpfun_constant.Pumpfun_Event_Authority) {
+			continue
+		}
+		// 记录事件的指令
+		dataHexString := hex.EncodeToString(instruction.Data)
+		if dataHexString[:16] != "e445a52e51cb9a1d" {
+			continue
+		}
+		if len(dataHexString) > 350 {
+			continue
+		}
+		var log struct {
+			Id                   uint64           `json:"id"`
+			Mint                 solana.PublicKey `json:"mint"`
+			SOLAmount            uint64           `json:"solAmount"`
+			TokenAmount          uint64           `json:"tokenAmount"`
+			IsBuy                bool             `json:"isBuy"`
+			User                 solana.PublicKey `json:"user"`
+			Timestamp            int64            `json:"timestamp"`
+			VirtualSolReserves   uint64           `json:"virtualSolReserves"`
+			VirtualTokenReserves uint64           `json:"virtualTokenReserves"`
+		}
+		err := bin.NewBorshDecoder(instruction.Data[8:]).Decode(&log)
+		if err != nil {
+			// 说明记录的不是 swap 信息
+			continue
+		}
+		if log.VirtualSolReserves == 0 ||
+			log.VirtualTokenReserves == 0 ||
+			log.Timestamp == 0 {
+			continue
+		}
+		swaps = append(swaps, &pumpfun_type.SwapDataType{
+			TokenAddress:            log.Mint,
+			SOLAmountWithDecimals:   log.SOLAmount,
+			TokenAmountWithDecimals: log.TokenAmount,
+			Type: func() type_.SwapType {
+				if log.IsBuy {
+					return type_.SwapType_Buy
+				} else {
+					return type_.SwapType_Sell
+				}
+			}(),
+			UserAddress:                    log.User,
+			Timestamp:                      uint64(log.Timestamp * 1000),
+			ReserveSOLAmountWithDecimals:   log.VirtualSolReserves,
+			ReserveTokenAmountWithDecimals: log.VirtualTokenReserves,
+		})
+	}
+
+	feeInfo, err := util.GetFeeInfoFromParsedTx(meta, transaction)
 	if err != nil {
 		return nil, err
 	}
