@@ -196,6 +196,9 @@ type TransferInstructionDataType struct {
 }
 
 func DecodeTransferParsedInstruction(transferInstruction *rpc.ParsedInstruction) (*TransferInstructionDataType, error) {
+	if transferInstruction.Parsed == nil {
+		return nil, errors.New("Parsed 内容不存在，可能不是 transfer 指令")
+	}
 	d, _ := transferInstruction.Parsed.MarshalJSON()
 	var transferData struct {
 		Info struct {

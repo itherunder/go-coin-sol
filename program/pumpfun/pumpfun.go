@@ -308,7 +308,11 @@ func ParseRemoveLiqTxByParsedTx(meta *rpc.ParsedTransactionMeta, parsedTransacti
 	return nil, nil
 }
 
-func ParseAddLiqTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*pumpfun_type.AddLiqTxDataType, error) {
+func ParseAddLiqTx(
+	network rpc.Cluster,
+	meta *rpc.TransactionMeta,
+	transaction *solana.Transaction,
+) (*pumpfun_type.AddLiqTxDataType, error) {
 	accountKeys := transaction.Message.AccountKeys
 	if meta.LoadedAddresses.Writable != nil {
 		accountKeys = append(accountKeys, meta.LoadedAddresses.Writable...)
@@ -321,7 +325,7 @@ func ParseAddLiqTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (
 	}
 	for _, instruction := range transaction.Message.Instructions {
 		programPKey := accountKeys[instruction.ProgramIDIndex]
-		if !programPKey.Equals(raydium_constant.Raydium_Liquidity_Pool_V4) {
+		if !programPKey.Equals(raydium_constant.Raydium_Liquidity_Pool_V4[network]) {
 			continue
 		}
 		if hex.EncodeToString(instruction.Data)[:2] != "01" {
@@ -343,14 +347,24 @@ func ParseAddLiqTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (
 		if err != nil {
 			return nil, err
 		}
+
+		coinIsSOL := accountKeys[instruction.Accounts[8]].Equals(solana.SolMint)
+
 		return &pumpfun_type.AddLiqTxDataType{
-			TxId:                        transaction.Signatures[0].String(),
-			TokenAddress:                accountKeys[instruction.Accounts[9]],
+			TxId: transaction.Signatures[0].String(),
+			TokenAddress: func() solana.PublicKey {
+				if coinIsSOL {
+					return accountKeys[instruction.Accounts[9]]
+				} else {
+					return accountKeys[instruction.Accounts[8]]
+				}
+			}(),
 			AMMAddress:                  accountKeys[instruction.Accounts[4]],
 			PoolCoinTokenAccount:        accountKeys[instruction.Accounts[10]],
 			PoolPcTokenAccount:          accountKeys[instruction.Accounts[11]],
 			InitSOLAmountWithDecimals:   params.InitCoinAmount,
 			InitTokenAmountWithDecimals: params.InitPcAmount,
+			CoinIsSOL:                   coinIsSOL,
 			FeeInfo:                     feeInfo,
 		}, nil
 
@@ -359,12 +373,16 @@ func ParseAddLiqTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (
 	return nil, nil
 }
 
-func ParseAddLiqTxByParsedTx(meta *rpc.ParsedTransactionMeta, parsedTransaction *rpc.ParsedTransaction) (*pumpfun_type.AddLiqTxDataType, error) {
+func ParseAddLiqTxByParsedTx(
+	network rpc.Cluster,
+	meta *rpc.ParsedTransactionMeta,
+	parsedTransaction *rpc.ParsedTransaction,
+) (*pumpfun_type.AddLiqTxDataType, error) {
 	if !parsedTransaction.Message.AccountKeys[0].PublicKey.Equals(pumpfun_constant.Pumpfun_Raydium_Migration) {
 		return nil, nil
 	}
 	for _, parsedInstruction := range parsedTransaction.Message.Instructions {
-		if !parsedInstruction.ProgramId.Equals(raydium_constant.Raydium_Liquidity_Pool_V4) {
+		if !parsedInstruction.ProgramId.Equals(raydium_constant.Raydium_Liquidity_Pool_V4[network]) {
 			continue
 		}
 		if hex.EncodeToString(parsedInstruction.Data)[:2] != "01" {
@@ -386,14 +404,24 @@ func ParseAddLiqTxByParsedTx(meta *rpc.ParsedTransactionMeta, parsedTransaction 
 		if err != nil {
 			return nil, err
 		}
+
+		coinIsSOL := parsedInstruction.Accounts[8].Equals(solana.SolMint)
+
 		return &pumpfun_type.AddLiqTxDataType{
-			TxId:                        parsedTransaction.Signatures[0].String(),
-			TokenAddress:                parsedInstruction.Accounts[9],
+			TxId: parsedTransaction.Signatures[0].String(),
+			TokenAddress: func() solana.PublicKey {
+				if coinIsSOL {
+					return parsedInstruction.Accounts[9]
+				} else {
+					return parsedInstruction.Accounts[8]
+				}
+			}(),
 			AMMAddress:                  parsedInstruction.Accounts[4],
 			PoolCoinTokenAccount:        parsedInstruction.Accounts[10],
 			PoolPcTokenAccount:          parsedInstruction.Accounts[11],
 			InitSOLAmountWithDecimals:   params.InitCoinAmount,
 			InitTokenAmountWithDecimals: params.InitPcAmount,
+			CoinIsSOL:                   coinIsSOL,
 			FeeInfo:                     feeInfo,
 		}, nil
 

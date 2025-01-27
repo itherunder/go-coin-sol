@@ -6,6 +6,7 @@ import (
 
 	bin "github.com/gagliardetto/binary"
 	"github.com/gagliardetto/solana-go"
+	"github.com/gagliardetto/solana-go/rpc"
 	raydium_constant "github.com/pefish/go-coin-sol/program/raydium/constant"
 	raydium_type "github.com/pefish/go-coin-sol/program/raydium/type"
 	"github.com/pkg/errors"
@@ -18,6 +19,7 @@ type BuyInstruction struct {
 }
 
 func NewBuyBaseOutInstruction(
+	network rpc.Cluster,
 	userAddress solana.PublicKey,
 	tokenAddress solana.PublicKey,
 	userWSOLAssociatedAccount solana.PublicKey,
@@ -54,7 +56,7 @@ func NewBuyBaseOutInstruction(
 				IsWritable: true,
 			},
 			{
-				PublicKey:  raydium_constant.Raydium_Authority_V4,
+				PublicKey:  raydium_constant.Raydium_Authority_V4[network],
 				IsSigner:   false,
 				IsWritable: false,
 			},
@@ -197,7 +199,7 @@ func NewBuyBaseOutInstruction(
 			},
 		},
 		data:      append(methodBytes, params.Bytes()...),
-		programID: raydium_constant.Raydium_Liquidity_Pool_V4,
+		programID: raydium_constant.Raydium_Liquidity_Pool_V4[network],
 	}, nil
 }
 

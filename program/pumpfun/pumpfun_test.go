@@ -146,7 +146,7 @@ func TestParseAddLiqTxByParsedTx(t *testing.T) {
 		},
 	)
 	go_test_.Equal(t, nil, err)
-	r, err := ParseAddLiqTxByParsedTx(getTransactionResult.Meta, getTransactionResult.Transaction)
+	r, err := ParseAddLiqTxByParsedTx(rpc.MainNetBeta, getTransactionResult.Meta, getTransactionResult.Transaction)
 	go_test_.Equal(t, nil, err)
 	go_test_.Equal(t, false, r == nil)
 	fmt.Printf(

@@ -20,6 +20,7 @@ import (
 )
 
 func GetSwapInstructions(
+	network rpc.Cluster,
 	userAddress solana.PublicKey,
 	swapType type_.SwapType,
 	tokenAddress solana.PublicKey,
@@ -56,7 +57,12 @@ func GetSwapInstructions(
 			float64(slippage+10000) * 1.005 * float64(solReserveWithDecimals) * float64(tokenAmountWithDecimals) / float64(tokenReserveWithDecimals) / 10000,
 		) // raydium 收取 0.25% 交易手续费
 
+		if maxCostSolAmountWithDecimals == 0 {
+			return nil, errors.New("购买数量太小")
+		}
+
 		swapInstruction, err := instruction.NewBuyBaseOutInstruction(
+			network,
 			userAddress,
 			tokenAddress,
 			userWSOLAssociatedAccount,
@@ -101,6 +107,7 @@ func GetSwapInstructions(
 		}
 
 		swapInstruction, err := instruction.NewSellBaseInInstruction(
+			network,
 			userAddress,
 			tokenAddress,
 			userWSOLAssociatedAccount,
@@ -149,6 +156,7 @@ func GetReserves(
 	rpcClient *rpc.Client,
 	poolCoinTokenAccount solana.PublicKey,
 	poolPcTokenAccount solana.PublicKey,
+	coinIsSOL bool,
 ) (
 	reserveSol_ *type_.TokenAmountInfo,
 	reserveToken_ *type_.TokenAmountInfo,
@@ -167,26 +175,44 @@ func GetReserves(
 	if datas[0] == nil || datas[1] == nil {
 		return nil, nil, errors.New("raydium 账户没查到信息")
 	}
-	solAmountWithDecimals, err := strconv.ParseUint(datas[0].Parsed.Info.TokenAmount.Amount, 10, 64)
+	coinAmountWithDecimals, err := strconv.ParseUint(datas[0].Parsed.Info.TokenAmount.Amount, 10, 64)
 	if err != nil {
 		return nil, nil, errors.Wrapf(err, "<amount: %s>", datas[0].Parsed.Info.TokenAmount.Amount)
 	}
-	tokenAmountWithDecimals, err := strconv.ParseUint(datas[1].Parsed.Info.TokenAmount.Amount, 10, 64)
+	pcAmountWithDecimals, err := strconv.ParseUint(datas[1].Parsed.Info.TokenAmount.Amount, 10, 64)
 	if err != nil {
 		return nil, nil, errors.Wrapf(err, "<amount: %s>", datas[1].Parsed.Info.TokenAmount.Amount)
 	}
-	return &type_.TokenAmountInfo{
-			AmountWithDecimals: solAmountWithDecimals,
-			Decimals:           datas[0].Parsed.Info.TokenAmount.Decimals,
-		},
-		&type_.TokenAmountInfo{
-			AmountWithDecimals: tokenAmountWithDecimals,
-			Decimals:           datas[1].Parsed.Info.TokenAmount.Decimals,
-		},
-		nil
+	if coinIsSOL {
+		return &type_.TokenAmountInfo{
+				AmountWithDecimals: coinAmountWithDecimals,
+				Decimals:           datas[0].Parsed.Info.TokenAmount.Decimals,
+			},
+			&type_.TokenAmountInfo{
+				AmountWithDecimals: pcAmountWithDecimals,
+				Decimals:           datas[1].Parsed.Info.TokenAmount.Decimals,
+			},
+			nil
+	} else {
+		return &type_.TokenAmountInfo{
+				AmountWithDecimals: pcAmountWithDecimals,
+				Decimals:           datas[1].Parsed.Info.TokenAmount.Decimals,
+			},
+			&type_.TokenAmountInfo{
+				AmountWithDecimals: coinAmountWithDecimals,
+				Decimals:           datas[0].Parsed.Info.TokenAmount.Decimals,
+			},
+			nil
+	}
+
 }
 
-func ParseSwapTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*raydium_type_.SwapTxDataType, error) {
+func ParseSwapTx(
+	network rpc.Cluster,
+	meta *rpc.TransactionMeta,
+	transaction *solana.Transaction,
+	coinIsSOL bool,
+) (*raydium_type_.SwapTxDataType, error) {
 	swaps := make([]*raydium_type_.SwapDataType, 0)
 
 	accountKeys := transaction.Message.AccountKeys
@@ -209,7 +235,7 @@ func ParseSwapTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*r
 
 	for index, instruction := range allInstructions {
 		programPKey := accountKeys[instruction.ProgramIDIndex]
-		if !programPKey.Equals(raydium_constant.Raydium_Liquidity_Pool_V4) {
+		if !programPKey.Equals(raydium_constant.Raydium_Liquidity_Pool_V4[network]) {
 			continue
 		}
 		methodId := hex.EncodeToString(instruction.Data)[:2]
@@ -217,8 +243,18 @@ func ParseSwapTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*r
 			continue
 		}
 
-		poolCoinTokenAccount := accountKeys[instruction.Accounts[len(instruction.Accounts)-13]] // wsol
-		poolPCTokenAccount := accountKeys[instruction.Accounts[len(instruction.Accounts)-12]]   // token
+		poolCoinTokenAccount := accountKeys[instruction.Accounts[len(instruction.Accounts)-13]]
+		poolPCTokenAccount := accountKeys[instruction.Accounts[len(instruction.Accounts)-12]]
+
+		var solVaultAccount solana.PublicKey
+		var tokenVaultAccount solana.PublicKey
+		if coinIsSOL {
+			solVaultAccount = poolCoinTokenAccount
+			tokenVaultAccount = poolPCTokenAccount
+		} else {
+			solVaultAccount = poolPCTokenAccount
+			tokenVaultAccount = poolCoinTokenAccount
+		}
 
 		transfer1Instruction := allInstructions[index+1]
 		transfer2Instruction := allInstructions[index+2]
@@ -243,7 +279,7 @@ func ParseSwapTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*r
 		var swapType type_.SwapType
 		var solAmountWithDecimals uint64
 		var tokenAmountWithDecimals uint64
-		if accountKeys[transfer1Instruction.Accounts[1]].Equals(poolCoinTokenAccount) {
+		if accountKeys[transfer1Instruction.Accounts[1]].Equals(solVaultAccount) {
 			swapType = type_.SwapType_Buy
 			solAmountWithDecimals = transfer1InstructionData.Amount
 			tokenAmountWithDecimals = transfer2InstructionData.Amount
@@ -259,8 +295,8 @@ func ParseSwapTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*r
 		// fmt.Println(userTokenAssociatedAccount.String(), userAddress)
 		var tokenBalanceInfo *rpc.TokenBalance
 		for _, tokenBalanceInfo_ := range meta.PreTokenBalances {
-			if tokenBalanceInfo_.Owner.Equals(raydium_constant.Raydium_Authority_V4) &&
-				accountKeys[tokenBalanceInfo_.AccountIndex].Equals(poolPCTokenAccount) {
+			if tokenBalanceInfo_.Owner.Equals(raydium_constant.Raydium_Authority_V4[network]) &&
+				accountKeys[tokenBalanceInfo_.AccountIndex].Equals(tokenVaultAccount) {
 				tokenBalanceInfo = &tokenBalanceInfo_
 				break
 			}
@@ -335,7 +371,12 @@ func ParseSwapTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*r
 	}, nil
 }
 
-func ParseSwapTxByParsedTx(meta *rpc.ParsedTransactionMeta, transaction *rpc.ParsedTransaction) (*raydium_type_.SwapTxDataType, error) {
+func ParseSwapTxByParsedTx(
+	network rpc.Cluster,
+	meta *rpc.ParsedTransactionMeta,
+	transaction *rpc.ParsedTransaction,
+	coinIsSOL bool, // pumpfun 创建流动性时 coin 是 wsol
+) (*raydium_type_.SwapTxDataType, error) {
 	swaps := make([]*raydium_type_.SwapDataType, 0)
 
 	allInstructions := make([]*rpc.ParsedInstruction, 0)
@@ -349,7 +390,7 @@ func ParseSwapTxByParsedTx(meta *rpc.ParsedTransactionMeta, transaction *rpc.Par
 	}
 
 	for index, instruction := range allInstructions {
-		if !instruction.ProgramId.Equals(raydium_constant.Raydium_Liquidity_Pool_V4) {
+		if !instruction.ProgramId.Equals(raydium_constant.Raydium_Liquidity_Pool_V4[network]) {
 			continue
 		}
 		methodId := hex.EncodeToString(instruction.Data)[:2]
@@ -357,8 +398,18 @@ func ParseSwapTxByParsedTx(meta *rpc.ParsedTransactionMeta, transaction *rpc.Par
 			continue
 		}
 
-		poolCoinTokenAccount := instruction.Accounts[len(instruction.Accounts)-13] // wsol
-		poolPCTokenAccount := instruction.Accounts[len(instruction.Accounts)-12]   // token
+		poolCoinTokenAccount := instruction.Accounts[len(instruction.Accounts)-13]
+		poolPCTokenAccount := instruction.Accounts[len(instruction.Accounts)-12]
+
+		var solVaultAccount solana.PublicKey
+		var tokenVaultAccount solana.PublicKey
+		if coinIsSOL {
+			solVaultAccount = poolCoinTokenAccount
+			tokenVaultAccount = poolPCTokenAccount
+		} else {
+			solVaultAccount = poolPCTokenAccount
+			tokenVaultAccount = poolCoinTokenAccount
+		}
 
 		transfer1Data, err := util.DecodeTransferParsedInstruction(allInstructions[index+1])
 		if err != nil {
@@ -372,7 +423,7 @@ func ParseSwapTxByParsedTx(meta *rpc.ParsedTransactionMeta, transaction *rpc.Par
 		var swapType type_.SwapType
 		var solAmountWithDecimals uint64
 		var tokenAmountWithDecimals uint64
-		if transfer1Data.Destination.Equals(poolCoinTokenAccount) {
+		if transfer1Data.Destination.Equals(solVaultAccount) {
 			swapType = type_.SwapType_Buy
 			solAmountWithDecimals = transfer1Data.AmountWithDecimals
 			tokenAmountWithDecimals = transfer2Data.AmountWithDecimals
@@ -388,8 +439,8 @@ func ParseSwapTxByParsedTx(meta *rpc.ParsedTransactionMeta, transaction *rpc.Par
 		// fmt.Println(userTokenAssociatedAccount.String(), userAddress)
 		var tokenBalanceInfo *rpc.TokenBalance
 		for _, tokenBalanceInfo_ := range meta.PreTokenBalances {
-			if tokenBalanceInfo_.Owner.Equals(raydium_constant.Raydium_Authority_V4) &&
-				transaction.Message.AccountKeys[tokenBalanceInfo_.AccountIndex].PublicKey.Equals(poolPCTokenAccount) {
+			if tokenBalanceInfo_.Owner.Equals(raydium_constant.Raydium_Authority_V4[network]) &&
+				transaction.Message.AccountKeys[tokenBalanceInfo_.AccountIndex].PublicKey.Equals(tokenVaultAccount) {
 				tokenBalanceInfo = &tokenBalanceInfo_
 				break
 			}

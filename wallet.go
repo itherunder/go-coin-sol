@@ -376,13 +376,15 @@ func (t *Wallet) BuildTx(
 	latestBlockhash *solana.Hash,
 	instructions []solana.Instruction,
 	unitPrice uint64,
-	unitLimit uint64,
+	unitLimit uint64, // 0 则使用默认
 ) (*solana.Transaction, error) {
 	userAddress := privObj.PublicKey()
 
 	feeInstructions := make([]solana.Instruction, 0)
 	if unitPrice != 0 {
-		feeInstructions = append(feeInstructions, computebudget.NewSetComputeUnitLimitInstruction(uint32(unitLimit)).Build())
+		if unitLimit != 0 {
+			feeInstructions = append(feeInstructions, computebudget.NewSetComputeUnitLimitInstruction(uint32(unitLimit)).Build())
+		}
 		feeInstructions = append(feeInstructions, computebudget.NewSetComputeUnitPriceInstruction(unitPrice).Build())
 	}
 	if latestBlockhash == nil {

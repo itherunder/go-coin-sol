@@ -61,6 +61,7 @@ type AddLiqTxDataType struct {
 	AMMAddress                  solana.PublicKey `json:"amm_address"`
 	PoolCoinTokenAccount        solana.PublicKey `json:"pool_coin_token_account"`
 	PoolPcTokenAccount          solana.PublicKey `json:"pool_pc_token_account"`
+	CoinIsSOL                   bool             `json:"coin_is_sol"`
 
 	FeeInfo *type_.FeeInfo `json:"fee_info"`
 }
