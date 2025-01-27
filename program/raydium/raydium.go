@@ -211,7 +211,6 @@ func ParseSwapTx(
 	network rpc.Cluster,
 	meta *rpc.TransactionMeta,
 	transaction *solana.Transaction,
-	coinIsSOL bool,
 ) (*raydium_type_.SwapTxDataType, error) {
 	swaps := make([]*raydium_type_.SwapDataType, 0)
 
@@ -246,16 +245,6 @@ func ParseSwapTx(
 		poolCoinTokenAccount := accountKeys[instruction.Accounts[len(instruction.Accounts)-13]]
 		poolPCTokenAccount := accountKeys[instruction.Accounts[len(instruction.Accounts)-12]]
 
-		var solVaultAccount solana.PublicKey
-		var tokenVaultAccount solana.PublicKey
-		if coinIsSOL {
-			solVaultAccount = poolCoinTokenAccount
-			tokenVaultAccount = poolPCTokenAccount
-		} else {
-			solVaultAccount = poolPCTokenAccount
-			tokenVaultAccount = poolCoinTokenAccount
-		}
-
 		transfer1Instruction := allInstructions[index+1]
 		transfer2Instruction := allInstructions[index+2]
 
@@ -276,6 +265,27 @@ func ParseSwapTx(
 		if err != nil {
 			return nil, errors.Wrapf(err, "<txid: %s> <data: %s>", transaction.Signatures[0].String(), transfer2Instruction.Data.String())
 		}
+
+		coinIsSOL := false
+		for _, tokenBalanceInfo_ := range meta.PreTokenBalances {
+			if tokenBalanceInfo_.Owner.Equals(raydium_constant.Raydium_Authority_V4[network]) &&
+				accountKeys[tokenBalanceInfo_.AccountIndex].Equals(poolCoinTokenAccount) &&
+				tokenBalanceInfo_.Mint.Equals(solana.SolMint) {
+				coinIsSOL = true
+				break
+			}
+		}
+
+		var solVaultAccount solana.PublicKey
+		var tokenVaultAccount solana.PublicKey
+		if coinIsSOL {
+			solVaultAccount = poolCoinTokenAccount
+			tokenVaultAccount = poolPCTokenAccount
+		} else {
+			solVaultAccount = poolPCTokenAccount
+			tokenVaultAccount = poolCoinTokenAccount
+		}
+
 		var swapType type_.SwapType
 		var solAmountWithDecimals uint64
 		var tokenAmountWithDecimals uint64
@@ -375,7 +385,6 @@ func ParseSwapTxByParsedTx(
 	network rpc.Cluster,
 	meta *rpc.ParsedTransactionMeta,
 	transaction *rpc.ParsedTransaction,
-	coinIsSOL bool, // pumpfun 创建流动性时 coin 是 wsol
 ) (*raydium_type_.SwapTxDataType, error) {
 	swaps := make([]*raydium_type_.SwapDataType, 0)
 
@@ -401,6 +410,25 @@ func ParseSwapTxByParsedTx(
 		poolCoinTokenAccount := instruction.Accounts[len(instruction.Accounts)-13]
 		poolPCTokenAccount := instruction.Accounts[len(instruction.Accounts)-12]
 
+		transfer1Data, err := util.DecodeTransferParsedInstruction(allInstructions[index+1])
+		if err != nil {
+			return nil, err
+		}
+		transfer2Data, err := util.DecodeTransferParsedInstruction(allInstructions[index+2])
+		if err != nil {
+			return nil, err
+		}
+
+		coinIsSOL := false
+		for _, tokenBalanceInfo_ := range meta.PreTokenBalances {
+			if tokenBalanceInfo_.Owner.Equals(raydium_constant.Raydium_Authority_V4[network]) &&
+				transaction.Message.AccountKeys[tokenBalanceInfo_.AccountIndex].PublicKey.Equals(poolCoinTokenAccount) &&
+				tokenBalanceInfo_.Mint.Equals(solana.SolMint) {
+				coinIsSOL = true
+				break
+			}
+		}
+
 		var solVaultAccount solana.PublicKey
 		var tokenVaultAccount solana.PublicKey
 		if coinIsSOL {
@@ -409,15 +437,6 @@ func ParseSwapTxByParsedTx(
 		} else {
 			solVaultAccount = poolPCTokenAccount
 			tokenVaultAccount = poolCoinTokenAccount
-		}
-
-		transfer1Data, err := util.DecodeTransferParsedInstruction(allInstructions[index+1])
-		if err != nil {
-			return nil, err
-		}
-		transfer2Data, err := util.DecodeTransferParsedInstruction(allInstructions[index+2])
-		if err != nil {
-			return nil, err
 		}
 
 		var swapType type_.SwapType

@@ -39,7 +39,7 @@ func TestParseSwapTx(t *testing.T) {
 	go_test_.Equal(t, nil, err)
 	tx, err := getTransactionResult.Transaction.GetTransaction()
 	go_test_.Equal(t, nil, err)
-	r, err := ParseSwapTx(rpc.MainNetBeta, getTransactionResult.Meta, tx, true)
+	r, err := ParseSwapTx(rpc.MainNetBeta, getTransactionResult.Meta, tx)
 	go_test_.Equal(t, nil, err)
 	for _, swap := range r.Swaps {
 		fmt.Printf(
@@ -69,7 +69,7 @@ func TestParseSwapTxByParsedTx(t *testing.T) {
 		},
 	)
 	go_test_.Equal(t, nil, err)
-	r, err := ParseSwapTxByParsedTx(rpc.MainNetBeta, getTransactionResult.Meta, getTransactionResult.Transaction, false)
+	r, err := ParseSwapTxByParsedTx(rpc.MainNetBeta, getTransactionResult.Meta, getTransactionResult.Transaction)
 	go_test_.Equal(t, nil, err)
 	for _, swap := range r.Swaps {
 		fmt.Printf(
