@@ -17,6 +17,8 @@ require (
 	github.com/pkg/errors v0.9.1
 )
 
+replace github.com/gagliardetto/solana-go v1.12.0 => github.com/pefish/solana-go v0.0.1
+
 require (
 	filippo.io/edwards25519 v1.0.0-rc.1 // indirect
 	github.com/andres-erbsen/clock v0.0.0-20160526145045-9e14626cd129 // indirect

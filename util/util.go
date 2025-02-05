@@ -20,7 +20,15 @@ import (
 func FindInnerInstructions(meta *rpc.TransactionMeta, index uint64) []solana.CompiledInstruction {
 	for _, innerInstruction := range meta.InnerInstructions {
 		if innerInstruction.Index == uint16(index) {
-			return innerInstruction.Instructions
+			results := make([]solana.CompiledInstruction, 0)
+			for _, instruction := range innerInstruction.Instructions {
+				results = append(results, solana.CompiledInstruction{
+					ProgramIDIndex: instruction.ProgramIDIndex,
+					Accounts:       instruction.Accounts,
+					Data:           instruction.Data,
+				})
+			}
+			return results
 		}
 	}
 	return nil

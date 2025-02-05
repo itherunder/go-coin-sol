@@ -55,8 +55,8 @@ func (t *Wallet) RPCClient() *rpc.Client {
 	return t.rpcClient
 }
 
-func (t *Wallet) NewWSClient(ctx context.Context) (*ws.Client, error) {
-	wsClient, err := ws.Connect(ctx, t.wssUrl)
+func (t *Wallet) NewWSClient(ctx context.Context, opt *ws.Options) (*ws.Client, error) {
+	wsClient, err := ws.ConnectWithOptions(ctx, t.wssUrl, opt)
 	if err != nil {
 		return nil, errors.Wrap(err, "")
 	}
