@@ -7,6 +7,7 @@ import (
 
 	bin "github.com/gagliardetto/binary"
 	solana "github.com/gagliardetto/solana-go"
+	"github.com/gagliardetto/solana-go/rpc"
 	pumpfun_constant "github.com/pefish/go-coin-sol/program/pumpfun/constant"
 	pumpfun_type "github.com/pefish/go-coin-sol/program/pumpfun/type"
 	raydium_constant "github.com/pefish/go-coin-sol/program/raydium/constant"
@@ -196,7 +197,7 @@ func IsRemoveLiqByLogs(logs []string) bool {
 	return false
 }
 
-func IsAddLiqByLogs(logs []string) bool {
+func IsAddLiqByLogs(network rpc.Cluster, logs []string) bool {
 	if strings.Contains(strings.Join(logs, ""), "failed") {
 		return false
 	}
@@ -204,8 +205,8 @@ func IsAddLiqByLogs(logs []string) bool {
 	stack := util.NewStack()
 	for _, log := range logs {
 
-		pushPrefix := fmt.Sprintf("Program %s invoke", raydium_constant.Raydium_Liquidity_Pool_V4)
-		popLog := fmt.Sprintf("Program %s success", raydium_constant.Raydium_Liquidity_Pool_V4)
+		pushPrefix := fmt.Sprintf("Program %s invoke", raydium_constant.Raydium_Liquidity_Pool_V4[network])
+		popLog := fmt.Sprintf("Program %s success", raydium_constant.Raydium_Liquidity_Pool_V4[network])
 		if strings.HasPrefix(log, pushPrefix) {
 			stack.Push(log)
 			continue
