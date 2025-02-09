@@ -32,6 +32,7 @@ type SwapDataType struct {
 	BeforeUserTokenBalanceWithDecimals uint64           `json:"before_user_token_balance_with_decimals"`
 	UserTokenBalanceWithDecimals       uint64           `json:"user_token_balance_with_decimals"`
 	RaydiumSwapKeys                    RaydiumSwapKeys  `json:"raydium_swap_keys,omitempty"`
+	CoinIsSOL                          bool             `json:"coin_is_sol"`
 }
 
 type SwapTxDataType struct {

@@ -368,6 +368,7 @@ func ParseSwapTx(
 				SerumPcVaultAccountAddress:   accountKeys[instruction.Accounts[len(instruction.Accounts)-5]],
 				SerumVaultSignerAddress:      accountKeys[instruction.Accounts[len(instruction.Accounts)-4]],
 			},
+			CoinIsSOL: coinIsSOL,
 		})
 	}
 
@@ -521,6 +522,7 @@ func ParseSwapTxByParsedTx(
 				SerumPcVaultAccountAddress:   instruction.Accounts[len(instruction.Accounts)-5],
 				SerumVaultSignerAddress:      instruction.Accounts[len(instruction.Accounts)-4],
 			},
+			CoinIsSOL: coinIsSOL,
 		})
 	}
 
