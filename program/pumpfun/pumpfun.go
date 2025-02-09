@@ -20,7 +20,7 @@ import (
 	pumpfun_constant "github.com/pefish/go-coin-sol/program/pumpfun/constant"
 	pumpfun_instruction "github.com/pefish/go-coin-sol/program/pumpfun/instruction"
 	pumpfun_type "github.com/pefish/go-coin-sol/program/pumpfun/type"
-	raydium_constant "github.com/pefish/go-coin-sol/program/raydium/constant"
+	raydium_amm_constant "github.com/pefish/go-coin-sol/program/raydium-amm/constant"
 	type_ "github.com/pefish/go-coin-sol/type"
 	util "github.com/pefish/go-coin-sol/util"
 	go_http "github.com/pefish/go-http"
@@ -325,7 +325,7 @@ func ParseAddLiqTx(
 	}
 	for _, instruction := range transaction.Message.Instructions {
 		programPKey := accountKeys[instruction.ProgramIDIndex]
-		if !programPKey.Equals(raydium_constant.Raydium_Liquidity_Pool_V4[network]) {
+		if !programPKey.Equals(raydium_amm_constant.Raydium_Liquidity_Pool_V4[network]) {
 			continue
 		}
 		if hex.EncodeToString(instruction.Data)[:2] != "01" {
@@ -382,7 +382,7 @@ func ParseAddLiqTxByParsedTx(
 		return nil, nil
 	}
 	for _, parsedInstruction := range parsedTransaction.Message.Instructions {
-		if !parsedInstruction.ProgramId.Equals(raydium_constant.Raydium_Liquidity_Pool_V4[network]) {
+		if !parsedInstruction.ProgramId.Equals(raydium_amm_constant.Raydium_Liquidity_Pool_V4[network]) {
 			continue
 		}
 		if hex.EncodeToString(parsedInstruction.Data)[:2] != "01" {

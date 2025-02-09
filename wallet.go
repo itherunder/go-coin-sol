@@ -237,7 +237,7 @@ func (t *Wallet) SendTxByJito(
 					(int64(*getTransactionResult.BlockTime*1000)-sendedTimestamp)/1000,
 					getTransactionResult.Meta.Err,
 				)
-				return getTransactionResult.Meta, tx, uint64(*getTransactionResult.BlockTime * 1000), errors.New(go_format.ToString(getTransactionResult.Meta.Err))
+				return getTransactionResult.Meta, tx, uint64(*getTransactionResult.BlockTime * 1000), errors.Errorf("<txid: %s> <err: %s>", tx.Signatures[0], go_format.ToString(getTransactionResult.Meta.Err))
 			}
 			t.logger.InfoF(
 				"交易已确认[执行成功] <timestamp: %d> <txid: %s> <历时: %ds>",
@@ -354,14 +354,14 @@ func (t *Wallet) SendTxByJitoBundle(
 					(int64(*getTransactionResult.BlockTime*1000)-sendedTimestamp)/1000,
 					statusResponse.Value[0].Err.Ok,
 				)
-			} else {
-				t.logger.InfoF(
-					"交易已确认[执行成功] <timestamp: %d> <txs: %s> <历时: %ds>",
-					*getTransactionResult.BlockTime*1000,
-					go_format.ToString(txIds),
-					(int64(*getTransactionResult.BlockTime*1000)-sendedTimestamp)/1000,
-				)
+				return uint64(*getTransactionResult.BlockTime * 1000), errors.Errorf("<txid: %s> <err: %s>", go_format.ToString(txIds), go_format.ToString(statusResponse.Value[0].Err.Ok))
 			}
+			t.logger.InfoF(
+				"交易已确认[执行成功] <timestamp: %d> <txs: %s> <历时: %ds>",
+				*getTransactionResult.BlockTime*1000,
+				go_format.ToString(txIds),
+				(int64(*getTransactionResult.BlockTime*1000)-sendedTimestamp)/1000,
+			)
 			return uint64(*getTransactionResult.BlockTime * 1000), nil
 
 		case <-newCtx.Done():
@@ -507,7 +507,7 @@ func (t *Wallet) SendAndConfirmTransaction(
 
 			if getTransactionResult.Meta.Err != nil {
 				t.logger.InfoF("交易已确认[执行失败] <%d>。<%s>", *getTransactionResult.BlockTime*1000, tx.Signatures[0].String())
-				return getTransactionResult.Meta, uint64(*getTransactionResult.BlockTime * 1000), errors.New(go_format.ToString(getTransactionResult.Meta.Err))
+				return getTransactionResult.Meta, uint64(*getTransactionResult.BlockTime * 1000), errors.Errorf("<txid: %s> <err: %s>", tx.Signatures[0], go_format.ToString(getTransactionResult.Meta.Err))
 			}
 			t.logger.InfoF("交易已确认[执行成功] <%d>。<%s>", *getTransactionResult.BlockTime*1000, tx.Signatures[0].String())
 			return getTransactionResult.Meta, uint64(*getTransactionResult.BlockTime * 1000), nil

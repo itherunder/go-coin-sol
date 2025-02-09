@@ -49,3 +49,8 @@ func TestGetComputeUnitPriceFromHelius(t *testing.T) {
 	go_test_.Equal(t, nil, err)
 	fmt.Println(r)
 }
+
+func TestGetDiscriminator(t *testing.T) {
+	r := GetDiscriminator("global", "swap_v2")
+	fmt.Println(r)
+}

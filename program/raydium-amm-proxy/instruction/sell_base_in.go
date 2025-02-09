@@ -6,9 +6,9 @@ import (
 	bin "github.com/gagliardetto/binary"
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
-	raydium_proxy_constant "github.com/pefish/go-coin-sol/program/raydium-proxy/constant"
-	raydium_constant "github.com/pefish/go-coin-sol/program/raydium/constant"
-	raydium_type "github.com/pefish/go-coin-sol/program/raydium/type"
+	raydium_proxy_constant "github.com/pefish/go-coin-sol/program/raydium-amm-proxy/constant"
+	raydium_constant "github.com/pefish/go-coin-sol/program/raydium-amm/constant"
+	raydium_type "github.com/pefish/go-coin-sol/program/raydium-amm/type"
 	"github.com/pkg/errors"
 )
 

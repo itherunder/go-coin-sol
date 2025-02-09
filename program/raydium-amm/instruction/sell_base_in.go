@@ -7,43 +7,43 @@ import (
 	bin "github.com/gagliardetto/binary"
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
-	raydium_constant "github.com/pefish/go-coin-sol/program/raydium/constant"
-	raydium_type "github.com/pefish/go-coin-sol/program/raydium/type"
+	raydium_constant "github.com/pefish/go-coin-sol/program/raydium-amm/constant"
+	raydium_type "github.com/pefish/go-coin-sol/program/raydium-amm/type"
 	"github.com/pkg/errors"
 )
 
-type BuyInstruction struct {
+type SellInstruction struct {
 	accounts  []*solana.AccountMeta
 	data      []byte
 	programID solana.PublicKey
 }
 
-func NewBuyBaseOutInstruction(
+func NewSellBaseInInstruction(
 	network rpc.Cluster,
 	userAddress solana.PublicKey,
 	tokenAddress solana.PublicKey,
 	userWSOLAssociatedAccount solana.PublicKey,
 	userTokenAssociatedAccount solana.PublicKey,
 	tokenAmountWithDecimals uint64,
-	maxCostSolAmountWithDecimals uint64,
+	minReceiveSOLAmountWithDecimals uint64,
 	raydiumSwapKeys raydium_type.RaydiumSwapKeys,
-) (*BuyInstruction, error) {
-	methodBytes, err := hex.DecodeString("0b")
+) (*SellInstruction, error) {
+	methodBytes, err := hex.DecodeString("09")
 	if err != nil {
 		return nil, errors.Wrap(err, "")
 	}
 	params := new(bytes.Buffer)
 	err = bin.NewBorshEncoder(params).Encode(struct {
-		MaxCostSolAmountWithDecimals uint64
-		TokenAmountWithDecimals      uint64
+		TokenAmountWithDecimals uint64
+		MinReceiveSOLAmount     uint64
 	}{
-		MaxCostSolAmountWithDecimals: maxCostSolAmountWithDecimals,
-		TokenAmountWithDecimals:      tokenAmountWithDecimals,
+		TokenAmountWithDecimals: tokenAmountWithDecimals,
+		MinReceiveSOLAmount:     minReceiveSOLAmountWithDecimals,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "")
 	}
-	return &BuyInstruction{
+	return &SellInstruction{
 		accounts: []*solana.AccountMeta{
 			{
 				PublicKey:  solana.TokenProgramID,
@@ -183,12 +183,12 @@ func NewBuyBaseOutInstruction(
 				IsWritable: false,
 			},
 			{
-				PublicKey:  userWSOLAssociatedAccount,
+				PublicKey:  userTokenAssociatedAccount,
 				IsSigner:   false,
 				IsWritable: true,
 			},
 			{
-				PublicKey:  userTokenAssociatedAccount,
+				PublicKey:  userWSOLAssociatedAccount,
 				IsSigner:   false,
 				IsWritable: true,
 			},
@@ -203,14 +203,14 @@ func NewBuyBaseOutInstruction(
 	}, nil
 }
 
-func (t *BuyInstruction) Accounts() []*solana.AccountMeta {
+func (t *SellInstruction) Accounts() []*solana.AccountMeta {
 	return t.accounts
 }
 
-func (t *BuyInstruction) ProgramID() solana.PublicKey {
+func (t *SellInstruction) ProgramID() solana.PublicKey {
 	return t.programID
 }
 
-func (t *BuyInstruction) Data() ([]byte, error) {
+func (t *SellInstruction) Data() ([]byte, error) {
 	return t.data, nil
 }

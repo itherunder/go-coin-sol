@@ -13,13 +13,16 @@ import (
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
 	constant "github.com/pefish/go-coin-sol/constant"
+	"github.com/pefish/go-coin-sol/program/jupiter"
 	"github.com/pefish/go-coin-sol/program/pumpfun"
 	pumpfun_constant "github.com/pefish/go-coin-sol/program/pumpfun/constant"
 	pumpfun_instruction "github.com/pefish/go-coin-sol/program/pumpfun/instruction"
-	"github.com/pefish/go-coin-sol/program/raydium"
-	raydium_proxy "github.com/pefish/go-coin-sol/program/raydium-proxy"
-	raydium_constant "github.com/pefish/go-coin-sol/program/raydium/constant"
-	raydium_type_ "github.com/pefish/go-coin-sol/program/raydium/type"
+	raydium_amm "github.com/pefish/go-coin-sol/program/raydium-amm"
+	raydium_proxy "github.com/pefish/go-coin-sol/program/raydium-amm-proxy"
+	raydium_constant "github.com/pefish/go-coin-sol/program/raydium-amm/constant"
+	raydium_type_ "github.com/pefish/go-coin-sol/program/raydium-amm/type"
+	raydium_clmm "github.com/pefish/go-coin-sol/program/raydium-clmm"
+	raydium_clmm_type "github.com/pefish/go-coin-sol/program/raydium-clmm/type"
 	type_ "github.com/pefish/go-coin-sol/type"
 	i_logger "github.com/pefish/go-interface/i-logger"
 	go_test_ "github.com/pefish/go-test"
@@ -82,7 +85,7 @@ func TestWallet_NewAddress(t *testing.T) {
 	fmt.Println(address, priv)
 }
 
-func TestWallet_SwapRaydium(t *testing.T) {
+func TestWallet_SwapRaydiumAmm(t *testing.T) {
 	// return
 	privObj, err := solana.PrivateKeyFromBase58(os.Getenv("PRIV"))
 	go_test_.Equal(t, nil, err)
@@ -93,7 +96,7 @@ func TestWallet_SwapRaydium(t *testing.T) {
 		PoolCoinTokenAccountAddress: solana.MustPublicKeyFromBase58("AEwsZFbKVzf2MqADSHHhwqyWmTWYzruTG1HkMw8Mjq5"),
 		PoolPcTokenAccountAddress:   solana.MustPublicKeyFromBase58("2zxMeSRkYa462Zo7v5K7kFKtvpRC4MpvuC1HwA88sCR3"),
 	}
-	solAmount, tokenAmount, err := raydium.GetReserves(
+	solAmount, tokenAmount, err := raydium_amm.GetReserves(
 		WalletInstance.rpcClient,
 		raydiumSwapKeys.PoolCoinTokenAccountAddress,
 		raydiumSwapKeys.PoolPcTokenAccountAddress,
@@ -101,7 +104,7 @@ func TestWallet_SwapRaydium(t *testing.T) {
 	)
 	go_test_.Equal(t, nil, err)
 
-	swapInstructions, err := raydium.GetSwapInstructions(
+	swapInstructions, err := raydium_amm.GetSwapInstructions(
 		rpc.MainNetBeta,
 		privObj.PublicKey(),
 		type_.SwapType_Sell,
@@ -128,7 +131,219 @@ func TestWallet_SwapRaydium(t *testing.T) {
 	go_test_.Equal(t, nil, err)
 }
 
-func TestWallet_SwapRaydium_Buy_Devnet(t *testing.T) {
+func TestWallet_SwapJupiter_Buy_Sell(t *testing.T) {
+	// return
+	privObj, err := solana.PrivateKeyFromBase58(os.Getenv("PRIV"))
+	go_test_.Equal(t, nil, err)
+	tokenAddress := solana.MustPublicKeyFromBase58("2qEHjDLDLbuBgRYvsxhc5D6uDWAivNFZGan56P1tpump")
+	// amount := uint64(1 * math.Pow(10, pumpfun_constant.Pumpfun_Token_Decimals))
+
+	swapInstructions, err := jupiter.GetSwapInstructions(
+		&i_logger.DefaultLogger,
+		privObj.PublicKey(),
+		tokenAddress,
+		&jupiter.QuoteType{
+			SwapMode:             "ExactIn",
+			InputMint:            solana.SolMint.String(),
+			InAmount:             "859370",
+			OutputMint:           tokenAddress.String(),
+			OutAmount:            "849371",
+			OtherAmountThreshold: "849371",
+			SlippageBps:          500,
+			PriceImpactPct:       "0",
+			RoutePlan: []jupiter.RoutePlanType{
+				{
+					SwapInfo: jupiter.SwapInfoType{
+						AmmKey:     "4AZRPNEfCJ7iw28rJu5aUyeQhYcvdcNm8cswyL51AY9i",
+						Label:      "Raydium",
+						InputMint:  solana.SolMint.String(),
+						OutputMint: tokenAddress.String(),
+						InAmount:   "859370",
+						OutAmount:  "913700482",
+						FeeAmount:  "1000",
+						FeeMint:    solana.SolMint.String(),
+					},
+					Percent: 100,
+				},
+				{
+					SwapInfo: jupiter.SwapInfoType{
+						AmmKey:     "8oT91ooChsr7aHTHha9oJxKTYwUhZ75tjJ6bhtiggG5Y",
+						Label:      "Raydium CLMM",
+						InputMint:  tokenAddress.String(),
+						OutputMint: solana.SolMint.String(),
+						InAmount:   "913700482",
+						OutAmount:  "849371",
+						FeeAmount:  "1000",
+						FeeMint:    tokenAddress.String(),
+					},
+					Percent: 100,
+				},
+			},
+		},
+		false,
+	)
+	go_test_.Equal(t, nil, err)
+	_, _, _, err = WalletInstance.SendTxByJito(
+		context.Background(),
+		privObj,
+		nil,
+		nil,
+		swapInstructions,
+		0,
+		0,
+		[]string{
+			"https://tokyo.mainnet.block-engine.jito.wtf",
+			"https://mainnet.block-engine.jito.wtf",
+		},
+		uint64(0.0001*math.Pow(10, constant.SOL_Decimals)),
+		solana.MustPublicKeyFromBase58("DttWaMuVvTiduZRnguLF7jNxTgiMBZ1hyAumKUiL2KRL"),
+	)
+	go_test_.Equal(t, nil, err)
+}
+
+func TestWallet_SwapJupiter_Buy(t *testing.T) {
+	// return
+	privObj, err := solana.PrivateKeyFromBase58(os.Getenv("PRIV"))
+	go_test_.Equal(t, nil, err)
+	tokenAddress := solana.MustPublicKeyFromBase58("2qEHjDLDLbuBgRYvsxhc5D6uDWAivNFZGan56P1tpump")
+
+	quote, err := jupiter.GetQuote(
+		&i_logger.DefaultLogger,
+		type_.SwapType_Buy,
+		tokenAddress,
+		uint64(1*math.Pow(10, pumpfun_constant.Pumpfun_Token_Decimals)),
+		50,
+	)
+	go_test_.Equal(t, nil, err)
+
+	swapInstructions, err := jupiter.GetSwapInstructions(
+		&i_logger.DefaultLogger,
+		privObj.PublicKey(),
+		tokenAddress,
+		quote,
+		false,
+	)
+	go_test_.Equal(t, nil, err)
+	_, _, _, err = WalletInstance.SendTxByJito(
+		context.Background(),
+		privObj,
+		nil,
+		nil,
+		swapInstructions,
+		0,
+		0,
+		[]string{
+			"https://tokyo.mainnet.block-engine.jito.wtf",
+			"https://mainnet.block-engine.jito.wtf",
+		},
+		uint64(0.00002*math.Pow(10, constant.SOL_Decimals)),
+		solana.MustPublicKeyFromBase58("DttWaMuVvTiduZRnguLF7jNxTgiMBZ1hyAumKUiL2KRL"),
+	)
+	go_test_.Equal(t, nil, err)
+}
+
+func TestWallet_SwapJupiter_Sell(t *testing.T) {
+	// return
+	privObj, err := solana.PrivateKeyFromBase58(os.Getenv("PRIV"))
+	go_test_.Equal(t, nil, err)
+	tokenAddress := solana.MustPublicKeyFromBase58("2qEHjDLDLbuBgRYvsxhc5D6uDWAivNFZGan56P1tpump")
+
+	quote, err := jupiter.GetQuote(
+		&i_logger.DefaultLogger,
+		type_.SwapType_Sell,
+		tokenAddress,
+		uint64(1*math.Pow(10, pumpfun_constant.Pumpfun_Token_Decimals)),
+		500,
+	)
+	go_test_.Equal(t, nil, err)
+
+	swapInstructions, err := jupiter.GetSwapInstructions(
+		&i_logger.DefaultLogger,
+		privObj.PublicKey(),
+		tokenAddress,
+		quote,
+		true,
+	)
+	go_test_.Equal(t, nil, err)
+	_, _, _, err = WalletInstance.SendTxByJito(
+		context.Background(),
+		privObj,
+		nil,
+		nil,
+		swapInstructions,
+		0,
+		0,
+		[]string{
+			"https://tokyo.mainnet.block-engine.jito.wtf",
+			"https://mainnet.block-engine.jito.wtf",
+		},
+		uint64(0.00002*math.Pow(10, constant.SOL_Decimals)),
+		solana.MustPublicKeyFromBase58("DttWaMuVvTiduZRnguLF7jNxTgiMBZ1hyAumKUiL2KRL"),
+	)
+	go_test_.Equal(t, nil, err)
+}
+
+func TestWallet_SwapRaydiumClmm_Buy(t *testing.T) {
+	// return
+	privObj, err := solana.PrivateKeyFromBase58(os.Getenv("PRIV"))
+	go_test_.Equal(t, nil, err)
+	tokenAddress := solana.MustPublicKeyFromBase58("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v")
+	tokenDecimals := 6
+	swapKeys := raydium_clmm_type.SwapKeys{
+		PoolIdAddress:    solana.MustPublicKeyFromBase58("8sLbNZoA1cfnvMJLPfp98ZLAnFSYCFApfJKMbiXNLwxj"),
+		WSOLVault:        solana.MustPublicKeyFromBase58("6P4tvbzRY6Bh3MiWDHuLqyHywovsRwRpfskPvyeSoHsz"),
+		TokenVault:       solana.MustPublicKeyFromBase58("6mK4Pxs6GhwnessH7CvPivqDYauiHZmAdbEFDpXFk9zt"),
+		ObservationState: solana.MustPublicKeyFromBase58("3MsJXVvievxAbsMsaT6TS4i6oMitD9jazucuq3X234tC"),
+		ExBitmapAccount:  solana.MustPublicKeyFromBase58("DoPuiZfJu7sypqwR4eiU7C5TMcmmiFoU4HaF5SoD8mRy"),
+		RemainAccounts: []solana.PublicKey{
+			solana.MustPublicKeyFromBase58("G9exbQ2QKCkZTviZvUZqG2NQco4cnAwuNCeqEnm18ta6"),
+			solana.MustPublicKeyFromBase58("DRN2L8Tt6Fsz7CCtuAArRjSuPjXKz2tJhnvt6YrDoXFo"),
+			solana.MustPublicKeyFromBase58("7NeQvZ8KrvU3Pbqb4vM5NWmajAVyLMsKyi7NASucybdY"),
+		},
+	}
+	solAmount, tokenAmount, err := raydium_clmm.GetReserves(
+		WalletInstance.rpcClient,
+		swapKeys.PoolIdAddress,
+	)
+	go_test_.Equal(t, nil, err)
+	fmt.Println("solAmount", solAmount.AmountWithDecimals)
+	fmt.Println("tokenAmount", tokenAmount.AmountWithDecimals)
+
+	swapInstructions, err := raydium_clmm.GetSwapInstructions(
+		rpc.MainNetBeta,
+		privObj.PublicKey(),
+		type_.SwapType_Buy,
+		tokenAddress,
+		uint64(1*math.Pow(10, float64(tokenDecimals))),
+		swapKeys,
+		true,
+		solAmount.AmountWithDecimals,
+		tokenAmount.AmountWithDecimals,
+		500,
+	)
+	go_test_.Equal(t, nil, err)
+	recent, err := WalletInstance.rpcClient.GetLatestBlockhash(context.Background(), rpc.CommitmentFinalized)
+	go_test_.Equal(t, nil, err)
+	latestBlockhash := &recent.Value.Blockhash
+	_, _, _, err = WalletInstance.SendTxByJito(
+		context.Background(),
+		privObj,
+		nil,
+		latestBlockhash,
+		swapInstructions,
+		0,
+		0,
+		[]string{
+			"https://tokyo.mainnet.block-engine.jito.wtf",
+			"https://mainnet.block-engine.jito.wtf",
+		},
+		uint64(0.00002*math.Pow(10, constant.SOL_Decimals)),
+		solana.MustPublicKeyFromBase58("DttWaMuVvTiduZRnguLF7jNxTgiMBZ1hyAumKUiL2KRL"),
+	)
+	go_test_.Equal(t, nil, err)
+}
+
+func TestWallet_SwapRaydiumAmm_Buy_Devnet(t *testing.T) {
 	// return
 	privObj, err := solana.PrivateKeyFromBase58(os.Getenv("PRIV"))
 	go_test_.Equal(t, nil, err)
@@ -140,7 +355,7 @@ func TestWallet_SwapRaydium_Buy_Devnet(t *testing.T) {
 		PoolCoinTokenAccountAddress: solana.MustPublicKeyFromBase58("7ZuXkdD9dTYXJr38W2KGdDLjssN61VxkWzANkFLfeQKe"),
 		PoolPcTokenAccountAddress:   solana.MustPublicKeyFromBase58("8ErAcSyRyWg5xDhzR28fpoA8EPDDUqQaqmcz2pSAZX3J"),
 	}
-	solAmount, tokenAmount, err := raydium.GetReserves(
+	solAmount, tokenAmount, err := raydium_amm.GetReserves(
 		WalletInstance.rpcClient,
 		raydiumSwapKeys.PoolCoinTokenAccountAddress,
 		raydiumSwapKeys.PoolPcTokenAccountAddress,
@@ -148,7 +363,7 @@ func TestWallet_SwapRaydium_Buy_Devnet(t *testing.T) {
 	)
 	go_test_.Equal(t, nil, err)
 
-	swapInstructions, err := raydium.GetSwapInstructions(
+	swapInstructions, err := raydium_amm.GetSwapInstructions(
 		rpc.DevNet,
 		privObj.PublicKey(),
 		type_.SwapType_Buy,
@@ -187,7 +402,7 @@ func TestWallet_RaydiumProxy_Buy_Devnet(t *testing.T) {
 		PoolCoinTokenAccountAddress: solana.MustPublicKeyFromBase58("7ZuXkdD9dTYXJr38W2KGdDLjssN61VxkWzANkFLfeQKe"),
 		PoolPcTokenAccountAddress:   solana.MustPublicKeyFromBase58("8ErAcSyRyWg5xDhzR28fpoA8EPDDUqQaqmcz2pSAZX3J"),
 	}
-	solAmount, tokenAmount, err := raydium.GetReserves(
+	solAmount, tokenAmount, err := raydium_amm.GetReserves(
 		WalletInstance.rpcClient,
 		raydiumSwapKeys.PoolCoinTokenAccountAddress,
 		raydiumSwapKeys.PoolPcTokenAccountAddress,
@@ -235,7 +450,7 @@ func TestWallet_RaydiumProxy_Sell_Devnet(t *testing.T) {
 		PoolCoinTokenAccountAddress: solana.MustPublicKeyFromBase58("7ZuXkdD9dTYXJr38W2KGdDLjssN61VxkWzANkFLfeQKe"),
 		PoolPcTokenAccountAddress:   solana.MustPublicKeyFromBase58("8ErAcSyRyWg5xDhzR28fpoA8EPDDUqQaqmcz2pSAZX3J"),
 	}
-	solAmount, tokenAmount, err := raydium.GetReserves(
+	solAmount, tokenAmount, err := raydium_amm.GetReserves(
 		WalletInstance.rpcClient,
 		raydiumSwapKeys.PoolCoinTokenAccountAddress,
 		raydiumSwapKeys.PoolPcTokenAccountAddress,
@@ -271,7 +486,7 @@ func TestWallet_RaydiumProxy_Sell_Devnet(t *testing.T) {
 	go_test_.Equal(t, nil, err)
 }
 
-func TestWallet_SwapRaydium_Sell_Devnet(t *testing.T) {
+func TestWallet_SwapRaydiumAmm_Sell_Devnet(t *testing.T) {
 	// return
 	privObj, err := solana.PrivateKeyFromBase58(os.Getenv("PRIV"))
 	go_test_.Equal(t, nil, err)
@@ -283,7 +498,7 @@ func TestWallet_SwapRaydium_Sell_Devnet(t *testing.T) {
 		PoolCoinTokenAccountAddress: solana.MustPublicKeyFromBase58("7ZuXkdD9dTYXJr38W2KGdDLjssN61VxkWzANkFLfeQKe"),
 		PoolPcTokenAccountAddress:   solana.MustPublicKeyFromBase58("8ErAcSyRyWg5xDhzR28fpoA8EPDDUqQaqmcz2pSAZX3J"),
 	}
-	solAmount, tokenAmount, err := raydium.GetReserves(
+	solAmount, tokenAmount, err := raydium_amm.GetReserves(
 		WalletInstance.rpcClient,
 		raydiumSwapKeys.PoolCoinTokenAccountAddress,
 		raydiumSwapKeys.PoolPcTokenAccountAddress,
@@ -291,7 +506,7 @@ func TestWallet_SwapRaydium_Sell_Devnet(t *testing.T) {
 	)
 	go_test_.Equal(t, nil, err)
 
-	swapInstructions, err := raydium.GetSwapInstructions(
+	swapInstructions, err := raydium_amm.GetSwapInstructions(
 		rpc.DevNet,
 		privObj.PublicKey(),
 		type_.SwapType_Sell,
@@ -340,7 +555,7 @@ func TestWallet_SendTxByJito_Sell(t *testing.T) {
 		PoolCoinTokenAccountAddress: solana.MustPublicKeyFromBase58("AEwsZFbKVzf2MqADSHHhwqyWmTWYzruTG1HkMw8Mjq5"),
 		PoolPcTokenAccountAddress:   solana.MustPublicKeyFromBase58("2zxMeSRkYa462Zo7v5K7kFKtvpRC4MpvuC1HwA88sCR3"),
 	}
-	solAmount, tokenAmount, err := raydium.GetReserves(
+	solAmount, tokenAmount, err := raydium_amm.GetReserves(
 		WalletInstance.rpcClient,
 		raydiumSwapKeys.PoolCoinTokenAccountAddress,
 		raydiumSwapKeys.PoolPcTokenAccountAddress,
@@ -348,7 +563,7 @@ func TestWallet_SendTxByJito_Sell(t *testing.T) {
 	)
 	go_test_.Equal(t, nil, err)
 
-	swapInstructions, err := raydium.GetSwapInstructions(
+	swapInstructions, err := raydium_amm.GetSwapInstructions(
 		rpc.MainNetBeta,
 		privObj.PublicKey(),
 		type_.SwapType_Sell,
@@ -393,7 +608,7 @@ func TestWallet_SendTxByJito_Buy(t *testing.T) {
 		PoolCoinTokenAccountAddress: solana.MustPublicKeyFromBase58("AEwsZFbKVzf2MqADSHHhwqyWmTWYzruTG1HkMw8Mjq5"),
 		PoolPcTokenAccountAddress:   solana.MustPublicKeyFromBase58("2zxMeSRkYa462Zo7v5K7kFKtvpRC4MpvuC1HwA88sCR3"),
 	}
-	solAmount, tokenAmount, err := raydium.GetReserves(
+	solAmount, tokenAmount, err := raydium_amm.GetReserves(
 		WalletInstance.rpcClient,
 		raydiumSwapKeys.PoolCoinTokenAccountAddress,
 		raydiumSwapKeys.PoolPcTokenAccountAddress,
@@ -401,7 +616,7 @@ func TestWallet_SendTxByJito_Buy(t *testing.T) {
 	)
 	go_test_.Equal(t, nil, err)
 
-	swapInstructions, err := raydium.GetSwapInstructions(
+	swapInstructions, err := raydium_amm.GetSwapInstructions(
 		rpc.MainNetBeta,
 		privObj.PublicKey(),
 		type_.SwapType_Buy,
@@ -446,7 +661,7 @@ func TestWallet_SendTxByJitoBundle(t *testing.T) {
 		PoolCoinTokenAccountAddress: solana.MustPublicKeyFromBase58("AEwsZFbKVzf2MqADSHHhwqyWmTWYzruTG1HkMw8Mjq5"),
 		PoolPcTokenAccountAddress:   solana.MustPublicKeyFromBase58("2zxMeSRkYa462Zo7v5K7kFKtvpRC4MpvuC1HwA88sCR3"),
 	}
-	solAmount, tokenAmount, err := raydium.GetReserves(
+	solAmount, tokenAmount, err := raydium_amm.GetReserves(
 		WalletInstance.rpcClient,
 		raydiumSwapKeys.PoolCoinTokenAccountAddress,
 		raydiumSwapKeys.PoolPcTokenAccountAddress,
@@ -454,7 +669,7 @@ func TestWallet_SendTxByJitoBundle(t *testing.T) {
 	)
 	go_test_.Equal(t, nil, err)
 
-	swapInstructions, err := raydium.GetSwapInstructions(
+	swapInstructions, err := raydium_amm.GetSwapInstructions(
 		rpc.MainNetBeta,
 		privObj.PublicKey(),
 		type_.SwapType_Buy,

@@ -1,4 +1,4 @@
-package raydium
+package raydium_amm
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/pefish/go-coin-sol/constant"
-	raydium_type_ "github.com/pefish/go-coin-sol/program/raydium/type"
+	raydium_type_ "github.com/pefish/go-coin-sol/program/raydium-amm/type"
 	type_ "github.com/pefish/go-coin-sol/type"
 	go_test_ "github.com/pefish/go-test"
 )

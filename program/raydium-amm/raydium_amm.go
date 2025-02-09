@@ -1,4 +1,6 @@
-package raydium
+package raydium_amm
+
+// Legacy AMM v4
 
 import (
 	"encoding/hex"
@@ -11,9 +13,9 @@ import (
 	"github.com/gagliardetto/solana-go/rpc"
 	associated_token_account "github.com/pefish/go-coin-sol/program/associated-token-account"
 	associated_token_account_instruction "github.com/pefish/go-coin-sol/program/associated-token-account/instruction"
-	raydium_constant "github.com/pefish/go-coin-sol/program/raydium/constant"
-	"github.com/pefish/go-coin-sol/program/raydium/instruction"
-	raydium_type_ "github.com/pefish/go-coin-sol/program/raydium/type"
+	raydium_constant "github.com/pefish/go-coin-sol/program/raydium-amm/constant"
+	"github.com/pefish/go-coin-sol/program/raydium-amm/instruction"
+	raydium_type_ "github.com/pefish/go-coin-sol/program/raydium-amm/type"
 	type_ "github.com/pefish/go-coin-sol/type"
 	"github.com/pefish/go-coin-sol/util"
 	"github.com/pkg/errors"
