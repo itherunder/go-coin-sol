@@ -32,11 +32,9 @@ type SwapDataType struct {
 	OutputDecimals           uint64           `json:"output_decimals"`
 	UserAddress              solana.PublicKey `json:"user_address"`
 
-	PairAddress               solana.PublicKey `json:"pair_address"`
-	InputVault                solana.PublicKey `json:"input_vault"`
-	OutputVault               solana.PublicKey `json:"output_vault"`
-	ReserveInputWithDecimals  uint64           `json:"reserve_input_with_decimals"`
-	ReserveOutputWithDecimals uint64           `json:"reserve_output_with_decimals"`
+	PairAddress solana.PublicKey `json:"pair_address"`
+	InputVault  solana.PublicKey `json:"input_vault"`
+	OutputVault solana.PublicKey `json:"output_vault"`
 
 	ParsedKeys interface{}        `json:"parsed_keys"`
 	Program    solana.PublicKey   `json:"program"`

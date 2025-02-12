@@ -2,7 +2,6 @@ package meteora_dlmm
 
 import (
 	"encoding/hex"
-	"strconv"
 
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
@@ -91,32 +90,19 @@ func ParseSwapTxByParsedTx(
 			outputVault = instruction.Accounts[2]
 		}
 
-		var reserveInputWithDecimals uint64
-		var reserveOutputWithDecimals uint64
-		for _, tokenBalanceInfo_ := range meta.PostTokenBalances {
-			if transaction.Message.AccountKeys[tokenBalanceInfo_.AccountIndex].PublicKey.Equals(inputVault) {
-				reserveInputWithDecimals, _ = strconv.ParseUint(tokenBalanceInfo_.UiTokenAmount.Amount, 10, 64)
-			}
-			if transaction.Message.AccountKeys[tokenBalanceInfo_.AccountIndex].PublicKey.Equals(outputVault) {
-				reserveOutputWithDecimals, _ = strconv.ParseUint(tokenBalanceInfo_.UiTokenAmount.Amount, 10, 64)
-			}
-		}
-
 		swaps = append(swaps, &type_.SwapDataType{
-			InputAddress:              inputAddress,
-			OutputAddress:             outputAddress,
-			InputAmountWithDecimals:   inputAmount,
-			OutputAmountWithDecimals:  outputAmount,
-			UserAddress:               userAddress,
-			PairAddress:               pairAddress,
-			InputVault:                inputVault,
-			OutputVault:               outputVault,
-			ReserveInputWithDecimals:  reserveInputWithDecimals,
-			ReserveOutputWithDecimals: reserveOutputWithDecimals,
-			ParsedKeys:                parsedKeys,
-			Keys:                      instruction.Accounts,
-			MethodId:                  methodId,
-			Program:                   meteora_dlmm_constant.Meteora_DLMM[network],
+			InputAddress:             inputAddress,
+			OutputAddress:            outputAddress,
+			InputAmountWithDecimals:  inputAmount,
+			OutputAmountWithDecimals: outputAmount,
+			UserAddress:              userAddress,
+			PairAddress:              pairAddress,
+			InputVault:               inputVault,
+			OutputVault:              outputVault,
+			ParsedKeys:               parsedKeys,
+			Keys:                     instruction.Accounts,
+			MethodId:                 methodId,
+			Program:                  meteora_dlmm_constant.Meteora_DLMM[network],
 		})
 	}
 

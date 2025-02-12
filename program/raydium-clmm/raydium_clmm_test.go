@@ -108,8 +108,6 @@ func TestParseSwapTxByParsedTx(t *testing.T) {
 <OutputAmountWithDecimals: %d>
 <InputVault: %s>
 <OutputVault: %s>
-<ReserveInputWithDecimals: %d>
-<ReserveOutputWithDecimals: %d>	
 <RemainAccounts: %s>	
 `,
 			swap.UserAddress,
@@ -119,8 +117,6 @@ func TestParseSwapTxByParsedTx(t *testing.T) {
 			swap.OutputAmountWithDecimals,
 			swap.InputVault,
 			swap.OutputVault,
-			swap.ReserveInputWithDecimals,
-			swap.ReserveOutputWithDecimals,
 			go_format.ToString(swap.ParsedKeys.(*raydium_clmm_type.SwapKeys).RemainAccounts),
 		)
 	}

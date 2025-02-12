@@ -48,8 +48,6 @@ func TestParseSwapTxByParsedTx(t *testing.T) {
 <OutputAmountWithDecimals: %d>
 <InputVault: %s>
 <OutputVault: %s>
-<ReserveInputWithDecimals: %d>
-<ReserveOutputWithDecimals: %d>	
 `,
 			swap.UserAddress,
 			swap.InputAddress,
@@ -58,8 +56,6 @@ func TestParseSwapTxByParsedTx(t *testing.T) {
 			swap.OutputAmountWithDecimals,
 			swap.InputVault,
 			swap.OutputVault,
-			swap.ReserveInputWithDecimals,
-			swap.ReserveOutputWithDecimals,
 		)
 	}
 }

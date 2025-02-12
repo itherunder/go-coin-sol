@@ -4,7 +4,6 @@ package raydium_amm
 
 import (
 	"encoding/hex"
-	"strconv"
 
 	bin "github.com/gagliardetto/binary"
 	"github.com/gagliardetto/solana-go"
@@ -245,17 +244,6 @@ func ParseSwapTxByParsedTx(
 
 		userAddress := transaction.Message.AccountKeys[0].PublicKey
 
-		var reserveInputWithDecimals uint64
-		var reserveOutputWithDecimals uint64
-		for _, tokenBalanceInfo_ := range meta.PostTokenBalances {
-			if transaction.Message.AccountKeys[tokenBalanceInfo_.AccountIndex].PublicKey.Equals(inputVault) {
-				reserveInputWithDecimals, _ = strconv.ParseUint(tokenBalanceInfo_.UiTokenAmount.Amount, 10, 64)
-			}
-			if transaction.Message.AccountKeys[tokenBalanceInfo_.AccountIndex].PublicKey.Equals(outputVault) {
-				reserveOutputWithDecimals, _ = strconv.ParseUint(tokenBalanceInfo_.UiTokenAmount.Amount, 10, 64)
-			}
-		}
-
 		swaps = append(swaps, &type_.SwapDataType{
 			InputAddress:             inputAddress,
 			OutputAddress:            outputAddress,
@@ -275,14 +263,12 @@ func ParseSwapTxByParsedTx(
 					coinAddress: poolCoinTokenAccount,
 				},
 			},
-			PairAddress:               instruction.Accounts[1],
-			InputVault:                inputVault,
-			OutputVault:               outputVault,
-			ReserveInputWithDecimals:  reserveInputWithDecimals,
-			ReserveOutputWithDecimals: reserveOutputWithDecimals,
-			Keys:                      instruction.Accounts,
-			MethodId:                  methodId,
-			Program:                   raydium_amm_constant.Raydium_Authority_V4[network],
+			PairAddress: instruction.Accounts[1],
+			InputVault:  inputVault,
+			OutputVault: outputVault,
+			Keys:        instruction.Accounts,
+			MethodId:    methodId,
+			Program:     raydium_amm_constant.Raydium_Authority_V4[network],
 		})
 	}
 
