@@ -19,7 +19,18 @@ func ParseSwapTxByParsedTx(
 	transaction *rpc.ParsedTransaction,
 ) (*type_.SwapTxDataType, error) {
 	txId := transaction.Signatures[0].String()
+	feeInfo, err := util.GetFeeInfoFromParsedTx(meta, transaction)
+	if err != nil {
+		return nil, errors.Wrapf(err, "<txid: %s>", txId)
+	}
 	swaps := make([]*type_.SwapDataType, 0)
+	if meta.Err != nil {
+		return &type_.SwapTxDataType{
+			TxId:    txId,
+			Swaps:   swaps,
+			FeeInfo: feeInfo,
+		}, nil
+	}
 
 	allInstructions := make([]*rpc.ParsedInstruction, 0)
 	for index, instruction := range transaction.Message.Instructions {
@@ -123,11 +134,6 @@ func ParseSwapTxByParsedTx(
 			MethodId:                  methodId,
 			Program:                   sol_fi_constant.SolFiProgram[network],
 		})
-	}
-
-	feeInfo, err := util.GetFeeInfoFromParsedTx(meta, transaction)
-	if err != nil {
-		return nil, errors.Wrapf(err, "<txid: %s>", txId)
 	}
 
 	return &type_.SwapTxDataType{
