@@ -229,18 +229,14 @@ func ParseSwapTxByParsedTx(
 				ExBitmapAccount:  instruction.Accounts[13],
 				RemainAccounts:   instruction.Accounts[14:],
 			}
-			transfer1Data, err := util.DecodeTransferCheckedInstruction(allInstructions[index+1])
+			transferDatas, err := util.FindNextTwoTransferCheckedDatas(index+1, allInstructions)
 			if err != nil {
 				return nil, errors.Wrapf(err, "<txid: %s>", txId)
 			}
-			transfer2Data, err := util.DecodeTransferCheckedInstruction(allInstructions[index+2])
-			if err != nil {
-				return nil, errors.Wrapf(err, "<txid: %s>", txId)
-			}
-			inputAmountWithDecimals = transfer1Data.AmountWithDecimals
-			outputAmountWithDecimals = transfer2Data.AmountWithDecimals
-			inputDecimals = transfer1Data.Decimals
-			outputDecimals = transfer2Data.Decimals
+			inputAmountWithDecimals = transferDatas[0].AmountWithDecimals
+			outputAmountWithDecimals = transferDatas[1].AmountWithDecimals
+			inputDecimals = transferDatas[0].Decimals
+			outputDecimals = transferDatas[1].Decimals
 		} else if methodId == discriminator.GetDiscriminator("global", "swap") {
 			inputVault = instruction.Accounts[5]
 			outputVault = instruction.Accounts[6]
@@ -270,16 +266,12 @@ func ParseSwapTxByParsedTx(
 				RemainAccounts:   instruction.Accounts[10:],
 			}
 
-			transfer1Data, err := util.DecodeTransferInstruction(allInstructions[index+1])
+			transferDatas, err := util.FindNextTwoTransferDatas(index+1, allInstructions)
 			if err != nil {
 				return nil, errors.Wrapf(err, "<txid: %s>", txId)
 			}
-			transfer2Data, err := util.DecodeTransferInstruction(allInstructions[index+2])
-			if err != nil {
-				return nil, errors.Wrapf(err, "<txid: %s>", txId)
-			}
-			inputAmountWithDecimals = transfer1Data.AmountWithDecimals
-			outputAmountWithDecimals = transfer2Data.AmountWithDecimals
+			inputAmountWithDecimals = transferDatas[0].AmountWithDecimals
+			outputAmountWithDecimals = transferDatas[1].AmountWithDecimals
 
 		} else {
 			continue

@@ -56,16 +56,12 @@ func ParseSwapTxByParsedTx(
 		vaultA := instruction.Accounts[2]
 		vaultB := instruction.Accounts[3]
 
-		transfer1Data, err := util.DecodeTransferInstruction(allInstructions[index+1])
+		transferDatas, err := util.FindNextTwoTransferDatas(index+1, allInstructions)
 		if err != nil {
 			return nil, errors.Wrapf(err, "<txid: %s>", txId)
 		}
-		transfer2Data, err := util.DecodeTransferInstruction(allInstructions[index+2])
-		if err != nil {
-			return nil, errors.Wrapf(err, "<txid: %s>", txId)
-		}
-		inputAmountWithDecimals := transfer1Data.AmountWithDecimals
-		outputAmountWithDecimals := transfer2Data.AmountWithDecimals
+		inputAmountWithDecimals := transferDatas[0].AmountWithDecimals
+		outputAmountWithDecimals := transferDatas[1].AmountWithDecimals
 
 		var mintA solana.PublicKey
 		var mintB solana.PublicKey
@@ -90,7 +86,7 @@ func ParseSwapTxByParsedTx(
 		var outputAddress solana.PublicKey
 		var inputDecimals uint64
 		var outputDecimals uint64
-		if transfer1Data.Destination.Equals(vaultA) {
+		if transferDatas[0].Destination.Equals(vaultA) {
 			// a is input
 			inputVault = vaultA
 			outputVault = vaultB

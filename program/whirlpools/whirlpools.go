@@ -82,19 +82,15 @@ func ParseSwapTxByParsedTx(
 					instruction.Accounts[7]: instruction.Accounts[3],
 				},
 			}
-			transfer1Data, err := util.DecodeTransferCheckedInstruction(allInstructions[index+1])
+			transferDatas, err := util.FindNextTwoTransferCheckedDatas(index+1, allInstructions)
 			if err != nil {
 				return nil, errors.Wrapf(err, "<txid: %s>", txId)
 			}
-			transfer2Data, err := util.DecodeTransferCheckedInstruction(allInstructions[index+2])
-			if err != nil {
-				return nil, errors.Wrapf(err, "<txid: %s>", txId)
-			}
-			inputAmountWithDecimals = transfer1Data.AmountWithDecimals
-			outputAmountWithDecimals = transfer2Data.AmountWithDecimals
-			inputDecimals = transfer1Data.Decimals
-			outputDecimals = transfer2Data.Decimals
-			if transfer1Data.Destination.Equals(instruction.Accounts[8]) {
+			inputAmountWithDecimals = transferDatas[0].AmountWithDecimals
+			outputAmountWithDecimals = transferDatas[1].AmountWithDecimals
+			inputDecimals = transferDatas[0].Decimals
+			outputDecimals = transferDatas[1].Decimals
+			if transferDatas[0].Destination.Equals(instruction.Accounts[8]) {
 				// a is input
 				inputAddress = instruction.Accounts[5]
 				outputAddress = instruction.Accounts[6]
@@ -143,17 +139,14 @@ func ParseSwapTxByParsedTx(
 					instruction.Accounts[7]: instruction.Accounts[3],
 				},
 			}
-			transfer1Data, err := util.DecodeTransferInstruction(allInstructions[index+1])
+			transferDatas, err := util.FindNextTwoTransferDatas(index+1, allInstructions)
 			if err != nil {
 				return nil, errors.Wrapf(err, "<txid: %s>", txId)
 			}
-			transfer2Data, err := util.DecodeTransferInstruction(allInstructions[index+2])
-			if err != nil {
-				return nil, errors.Wrapf(err, "<txid: %s>", txId)
-			}
-			inputAmountWithDecimals = transfer1Data.AmountWithDecimals
-			outputAmountWithDecimals = transfer2Data.AmountWithDecimals
-			if transfer1Data.Destination.Equals(vaultA) {
+
+			inputAmountWithDecimals = transferDatas[0].AmountWithDecimals
+			outputAmountWithDecimals = transferDatas[1].AmountWithDecimals
+			if transferDatas[0].Destination.Equals(vaultA) {
 				// a is input
 				inputAddress = aMint
 				inputDecimals = mintADecimals

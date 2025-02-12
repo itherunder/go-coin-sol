@@ -329,3 +329,39 @@ func GetReserves(
 		nil
 
 }
+
+func FindNextTwoTransferCheckedDatas(startIndex int, allInstructions []*rpc.ParsedInstruction) ([]*TransferCheckedInstructionDataType, error) {
+	transferDatas := make([]*TransferCheckedInstructionDataType, 0)
+	for i := startIndex; i < len(allInstructions); i++ {
+		transferData, err := DecodeTransferCheckedInstruction(allInstructions[i])
+		if err != nil {
+			continue
+		}
+		transferDatas = append(transferDatas, transferData)
+		if len(transferDatas) == 2 {
+			break
+		}
+	}
+	if len(transferDatas) < 2 {
+		return nil, errors.Errorf("没有找到两个 transfer")
+	}
+	return transferDatas, nil
+}
+
+func FindNextTwoTransferDatas(startIndex int, allInstructions []*rpc.ParsedInstruction) ([]*TransferInstructionDataType, error) {
+	transferDatas := make([]*TransferInstructionDataType, 0)
+	for i := startIndex; i < len(allInstructions); i++ {
+		transferData, err := DecodeTransferInstruction(allInstructions[i])
+		if err != nil {
+			continue
+		}
+		transferDatas = append(transferDatas, transferData)
+		if len(transferDatas) == 2 {
+			break
+		}
+	}
+	if len(transferDatas) < 2 {
+		return nil, errors.Errorf("没有找到两个 transfer")
+	}
+	return transferDatas, nil
+}

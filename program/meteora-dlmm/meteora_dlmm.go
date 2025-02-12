@@ -11,6 +11,7 @@ import (
 	meteora_dlmm_type "github.com/pefish/go-coin-sol/program/meteora-dlmm/type"
 	type_ "github.com/pefish/go-coin-sol/type"
 	"github.com/pefish/go-coin-sol/util"
+	"github.com/pkg/errors"
 )
 
 func ParseSwapTxByParsedTx(
@@ -18,7 +19,19 @@ func ParseSwapTxByParsedTx(
 	meta *rpc.ParsedTransactionMeta,
 	transaction *rpc.ParsedTransaction,
 ) (*type_.SwapTxDataType, error) {
+	txId := transaction.Signatures[0].String()
+	feeInfo, err := util.GetFeeInfoFromParsedTx(meta, transaction)
+	if err != nil {
+		return nil, errors.Wrapf(err, "<txid: %s>", txId)
+	}
 	swaps := make([]*type_.SwapDataType, 0)
+	if meta.Err != nil {
+		return &type_.SwapTxDataType{
+			TxId:    txId,
+			Swaps:   swaps,
+			FeeInfo: feeInfo,
+		}, nil
+	}
 
 	allInstructions := make([]*rpc.ParsedInstruction, 0)
 	for index, instruction := range transaction.Message.Instructions {
@@ -58,18 +71,14 @@ func ParseSwapTxByParsedTx(
 			},
 		}
 
-		transfer1Data, err := util.DecodeTransferCheckedInstruction(allInstructions[index+1])
+		transferDatas, err := util.FindNextTwoTransferCheckedDatas(index+1, allInstructions)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "<txid: %s>", txId)
 		}
-		transfer2Data, err := util.DecodeTransferCheckedInstruction(allInstructions[index+2])
-		if err != nil {
-			return nil, err
-		}
-		inputAddress := transfer1Data.Mint
-		outputAddress := transfer2Data.Mint
-		inputAmount := transfer1Data.AmountWithDecimals
-		outputAmount := transfer2Data.AmountWithDecimals
+		inputAddress := transferDatas[0].Mint
+		outputAddress := transferDatas[1].Mint
+		inputAmount := transferDatas[0].AmountWithDecimals
+		outputAmount := transferDatas[1].AmountWithDecimals
 
 		var inputVault solana.PublicKey
 		var outputVault solana.PublicKey
@@ -111,13 +120,8 @@ func ParseSwapTxByParsedTx(
 		})
 	}
 
-	feeInfo, err := util.GetFeeInfoFromParsedTx(meta, transaction)
-	if err != nil {
-		return nil, err
-	}
-
 	return &type_.SwapTxDataType{
-		TxId:    transaction.Signatures[0].String(),
+		TxId:    txId,
 		Swaps:   swaps,
 		FeeInfo: feeInfo,
 	}, nil

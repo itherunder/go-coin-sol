@@ -196,16 +196,12 @@ func ParseSwapTxByParsedTx(
 		poolCoinTokenAccount := instruction.Accounts[len(instruction.Accounts)-13]
 		poolPCTokenAccount := instruction.Accounts[len(instruction.Accounts)-12]
 
-		transfer1Data, err := util.DecodeTransferInstruction(allInstructions[index+1])
+		transferDatas, err := util.FindNextTwoTransferDatas(index+1, allInstructions)
 		if err != nil {
 			return nil, errors.Wrapf(err, "<txid: %s>", txId)
 		}
-		transfer2Data, err := util.DecodeTransferInstruction(allInstructions[index+2])
-		if err != nil {
-			return nil, errors.Wrapf(err, "<txid: %s>", txId)
-		}
-		inputAmountWithDecimals := transfer1Data.AmountWithDecimals
-		outputAmountWithDecimals := transfer2Data.AmountWithDecimals
+		inputAmountWithDecimals := transferDatas[0].AmountWithDecimals
+		outputAmountWithDecimals := transferDatas[1].AmountWithDecimals
 
 		var coinAddress solana.PublicKey
 		var pcAddress solana.PublicKey
@@ -230,7 +226,7 @@ func ParseSwapTxByParsedTx(
 		var outputAddress solana.PublicKey
 		var inputDecimals uint64
 		var outputDecimals uint64
-		if transfer1Data.Destination.Equals(poolCoinTokenAccount) {
+		if transferDatas[0].Destination.Equals(poolCoinTokenAccount) {
 			// coin is input
 			inputVault = poolCoinTokenAccount
 			outputVault = poolPCTokenAccount
