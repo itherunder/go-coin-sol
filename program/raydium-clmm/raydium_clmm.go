@@ -201,9 +201,9 @@ func ParseSwapTxByParsedTx(
 			continue
 		}
 		methodId := hex.EncodeToString(instruction.Data)[:16]
-		inputVault := instruction.Accounts[5]
-		outputVault := instruction.Accounts[6]
-		pairAddress := instruction.Accounts[2]
+		var inputVault solana.PublicKey
+		var outputVault solana.PublicKey
+		var pairAddress solana.PublicKey
 		var inputAddress solana.PublicKey
 		var outputAddress solana.PublicKey
 		var parsedKeys interface{}
@@ -213,6 +213,9 @@ func ParseSwapTxByParsedTx(
 		var outputDecimals uint64
 
 		if methodId == discriminator.GetDiscriminator("global", "swap_v2") {
+			inputVault = instruction.Accounts[5]
+			outputVault = instruction.Accounts[6]
+			pairAddress = instruction.Accounts[2]
 			inputAddress = instruction.Accounts[11]
 			outputAddress = instruction.Accounts[12]
 			parsedKeys = &raydium_clmm_type.SwapV2Keys{
@@ -239,6 +242,9 @@ func ParseSwapTxByParsedTx(
 			inputDecimals = transfer1Data.Decimals
 			outputDecimals = transfer2Data.Decimals
 		} else if methodId == discriminator.GetDiscriminator("global", "swap") {
+			inputVault = instruction.Accounts[5]
+			outputVault = instruction.Accounts[6]
+			pairAddress = instruction.Accounts[2]
 			for _, tokenBalanceInfo_ := range meta.PreTokenBalances {
 				if tokenBalanceInfo_.Owner.Equals(pairAddress) &&
 					transaction.Message.AccountKeys[tokenBalanceInfo_.AccountIndex].PublicKey.Equals(inputVault) {
