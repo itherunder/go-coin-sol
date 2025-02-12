@@ -159,6 +159,8 @@ func ParseSwapTxByParsedTx(
 	meta *rpc.ParsedTransactionMeta,
 	transaction *rpc.ParsedTransaction,
 ) (*type_.SwapTxDataType, error) {
+	txId := transaction.Signatures[0].String()
+
 	swaps := make([]*type_.SwapDataType, 0)
 
 	allInstructions := make([]*rpc.ParsedInstruction, 0)
@@ -185,11 +187,11 @@ func ParseSwapTxByParsedTx(
 
 		transfer1Data, err := util.DecodeTransferInstruction(allInstructions[index+1])
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "<txid: %s>", txId)
 		}
 		transfer2Data, err := util.DecodeTransferInstruction(allInstructions[index+2])
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "<txid: %s>", txId)
 		}
 		inputAmountWithDecimals := transfer1Data.AmountWithDecimals
 		outputAmountWithDecimals := transfer2Data.AmountWithDecimals
@@ -267,11 +269,11 @@ func ParseSwapTxByParsedTx(
 
 	feeInfo, err := util.GetFeeInfoFromParsedTx(meta, transaction)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "<txid: %s>", txId)
 	}
 
 	return &type_.SwapTxDataType{
-		TxId:    transaction.Signatures[0].String(),
+		TxId:    txId,
 		Swaps:   swaps,
 		FeeInfo: feeInfo,
 	}, nil
