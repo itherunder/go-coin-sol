@@ -4,15 +4,20 @@ package raydium_clmm
 
 import (
 	"context"
+	"encoding/hex"
+	"strconv"
 
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/programs/system"
 	"github.com/gagliardetto/solana-go/programs/token"
 	"github.com/gagliardetto/solana-go/rpc"
+	"github.com/pefish/go-coin-sol/discriminator"
 	associated_token_account_instruction "github.com/pefish/go-coin-sol/program/associated-token-account/instruction"
+	raydium_clmm_constant "github.com/pefish/go-coin-sol/program/raydium-clmm/constant"
 	"github.com/pefish/go-coin-sol/program/raydium-clmm/instruction"
 	raydium_clmm_type "github.com/pefish/go-coin-sol/program/raydium-clmm/type"
 	type_ "github.com/pefish/go-coin-sol/type"
+	"github.com/pefish/go-coin-sol/util"
 	"github.com/pkg/errors"
 )
 
@@ -29,44 +34,13 @@ func GetPoolInfo(
 	return &data, nil
 }
 
-func GetReserves(
-	rpcClient *rpc.Client,
-	poolIdAddress solana.PublicKey,
-) (
-	reserveSol_ *type_.TokenAmountInfo,
-	reserveToken_ *type_.TokenAmountInfo,
-	err_ error,
-) {
-	poolInfo, err := GetPoolInfo(rpcClient, poolIdAddress)
-	if err != nil {
-		return nil, nil, err
-	}
-	var reserveSolAmountInfo type_.TokenAmountInfo
-	var reserveTokenAmountInfo type_.TokenAmountInfo
-	if poolInfo.TokenMint0.Equals(solana.SolMint) {
-		reserveSolAmountInfo.AmountWithDecimals = poolInfo.SwapInAmountToken0.BigInt().Uint64()
-		reserveSolAmountInfo.Decimals = uint64(poolInfo.MintDecimals0)
-
-		reserveTokenAmountInfo.AmountWithDecimals = poolInfo.SwapInAmountToken1.BigInt().Uint64()
-		reserveTokenAmountInfo.Decimals = uint64(poolInfo.MintDecimals1)
-	} else {
-		reserveSolAmountInfo.AmountWithDecimals = poolInfo.SwapInAmountToken1.BigInt().Uint64()
-		reserveSolAmountInfo.Decimals = uint64(poolInfo.MintDecimals1)
-
-		reserveTokenAmountInfo.AmountWithDecimals = poolInfo.SwapInAmountToken0.BigInt().Uint64()
-		reserveTokenAmountInfo.Decimals = uint64(poolInfo.MintDecimals0)
-	}
-
-	return &reserveSolAmountInfo, &reserveTokenAmountInfo, nil
-}
-
 func GetSwapInstructions(
 	network rpc.Cluster,
 	userAddress solana.PublicKey,
 	swapType type_.SwapType,
 	tokenAddress solana.PublicKey,
 	tokenAmountWithDecimals uint64,
-	swapKeys raydium_clmm_type.SwapKeys,
+	swapKeys raydium_clmm_type.SwapV2Keys,
 	isClose bool,
 	solReserveWithDecimals uint64,
 	tokenReserveWithDecimals uint64,
@@ -191,4 +165,140 @@ func GetSwapInstructions(
 	}
 
 	return instructions, nil
+}
+
+func ParseSwapTxByParsedTx(
+	network rpc.Cluster,
+	meta *rpc.ParsedTransactionMeta,
+	transaction *rpc.ParsedTransaction,
+) (*type_.SwapTxDataType, error) {
+	swaps := make([]*type_.SwapDataType, 0)
+
+	allInstructions := make([]*rpc.ParsedInstruction, 0)
+	for index, instruction := range transaction.Message.Instructions {
+		allInstructions = append(allInstructions, instruction)
+		innerInstructions := util.FindInnerInstructionsFromParsedMeta(meta, uint64(index))
+		if innerInstructions == nil {
+			continue
+		}
+		allInstructions = append(allInstructions, innerInstructions...)
+	}
+
+	for index, instruction := range allInstructions {
+		if !instruction.ProgramId.Equals(raydium_clmm_constant.Raydium_Concentrated_Liquidity[network]) {
+			continue
+		}
+		methodId := hex.EncodeToString(instruction.Data)[:16]
+		inputVault := instruction.Accounts[5]
+		outputVault := instruction.Accounts[6]
+		pairAddress := instruction.Accounts[2]
+		var inputAddress solana.PublicKey
+		var outputAddress solana.PublicKey
+		var parsedKeys interface{}
+		var inputAmountWithDecimals uint64
+		var outputAmountWithDecimals uint64
+
+		if methodId == discriminator.GetDiscriminator("global", "swap_v2") {
+			inputAddress = instruction.Accounts[11]
+			outputAddress = instruction.Accounts[12]
+			parsedKeys = &raydium_clmm_type.SwapV2Keys{
+				AmmConfig:   instruction.Accounts[1],
+				PairAddress: instruction.Accounts[2],
+				Vaults: map[solana.PublicKey]solana.PublicKey{
+					inputAddress:  inputVault,
+					outputAddress: outputVault,
+				},
+				ObservationState: instruction.Accounts[7],
+				ExBitmapAccount:  instruction.Accounts[13],
+				RemainAccounts:   instruction.Accounts[14:],
+			}
+			transfer1Data, err := util.DecodeTransferCheckedInstruction(allInstructions[index+1])
+			if err != nil {
+				return nil, err
+			}
+			transfer2Data, err := util.DecodeTransferCheckedInstruction(allInstructions[index+2])
+			if err != nil {
+				return nil, err
+			}
+			inputAmountWithDecimals = transfer1Data.AmountWithDecimals
+			outputAmountWithDecimals = transfer2Data.AmountWithDecimals
+		} else if methodId == discriminator.GetDiscriminator("global", "swap") {
+			for _, tokenBalanceInfo_ := range meta.PreTokenBalances {
+				if tokenBalanceInfo_.Owner.Equals(pairAddress) &&
+					transaction.Message.AccountKeys[tokenBalanceInfo_.AccountIndex].PublicKey.Equals(inputVault) {
+					inputAddress = tokenBalanceInfo_.Mint
+				}
+				if tokenBalanceInfo_.Owner.Equals(pairAddress) &&
+					transaction.Message.AccountKeys[tokenBalanceInfo_.AccountIndex].PublicKey.Equals(outputVault) {
+					outputAddress = tokenBalanceInfo_.Mint
+				}
+			}
+
+			parsedKeys = &raydium_clmm_type.SwapKeys{
+				AmmConfig:   instruction.Accounts[1],
+				PairAddress: instruction.Accounts[2],
+				Vaults: map[solana.PublicKey]solana.PublicKey{
+					inputAddress:  inputVault,
+					outputAddress: outputVault,
+				},
+				ObservationState: instruction.Accounts[7],
+				TickArrayAccount: instruction.Accounts[11],
+				RemainAccounts:   instruction.Accounts[12:],
+			}
+
+			transfer1Data, err := util.DecodeTransferInstruction(allInstructions[index+1])
+			if err != nil {
+				return nil, err
+			}
+			transfer2Data, err := util.DecodeTransferInstruction(allInstructions[index+2])
+			if err != nil {
+				return nil, err
+			}
+			inputAmountWithDecimals = transfer1Data.AmountWithDecimals
+			outputAmountWithDecimals = transfer2Data.AmountWithDecimals
+		} else {
+			continue
+		}
+
+		userAddress := transaction.Message.AccountKeys[0].PublicKey
+
+		var reserveInputWithDecimals uint64
+		var reserveOutputWithDecimals uint64
+		for _, tokenBalanceInfo_ := range meta.PostTokenBalances {
+			if transaction.Message.AccountKeys[tokenBalanceInfo_.AccountIndex].PublicKey.Equals(inputVault) {
+				reserveInputWithDecimals, _ = strconv.ParseUint(tokenBalanceInfo_.UiTokenAmount.Amount, 10, 64)
+			}
+			if transaction.Message.AccountKeys[tokenBalanceInfo_.AccountIndex].PublicKey.Equals(outputVault) {
+				reserveOutputWithDecimals, _ = strconv.ParseUint(tokenBalanceInfo_.UiTokenAmount.Amount, 10, 64)
+			}
+		}
+
+		swaps = append(swaps, &type_.SwapDataType{
+			InputAddress:              inputAddress,
+			OutputAddress:             outputAddress,
+			InputAmountWithDecimals:   inputAmountWithDecimals,
+			OutputAmountWithDecimals:  outputAmountWithDecimals,
+			UserAddress:               userAddress,
+			PairAddress:               pairAddress,
+			InputVault:                inputVault,
+			OutputVault:               outputVault,
+			ReserveInputWithDecimals:  reserveInputWithDecimals,
+			ReserveOutputWithDecimals: reserveOutputWithDecimals,
+			ParsedKeys:                parsedKeys,
+			Keys:                      instruction.Accounts,
+			MethodId:                  methodId,
+			Program:                   raydium_clmm_constant.Raydium_Concentrated_Liquidity[network],
+		})
+	}
+
+	feeInfo, err := util.GetFeeInfoFromParsedTx(meta, transaction)
+	if err != nil {
+		return nil, err
+	}
+
+	return &type_.SwapTxDataType{
+		TxId:    transaction.Signatures[0].String(),
+		Swaps:   swaps,
+		FeeInfo: feeInfo,
+	}, nil
 }

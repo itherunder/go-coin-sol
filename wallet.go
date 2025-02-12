@@ -118,12 +118,7 @@ func (t *Wallet) SendTx(
 	unitLimit uint64,
 	skipPreflight bool,
 	urls []string,
-) (
-	meta_ *rpc.TransactionMeta,
-	tx_ *solana.Transaction,
-	timestamp_ uint64,
-	err_ error,
-) {
+) (*rpc.GetParsedTransactionResult, error) {
 	tx, err := t.BuildTx(
 		privObj,
 		signers,
@@ -133,16 +128,11 @@ func (t *Wallet) SendTx(
 		unitLimit,
 	)
 	if err != nil {
-		return nil, nil, 0, err
+		return nil, err
 	}
 	t.logger.InfoF("交易构建成功 <%d>。<%s>", go_time.CurrentTimestamp(), tx.Signatures[0].String())
 
-	meta, timestamp, err := t.SendAndConfirmTransaction(ctx, tx, skipPreflight, urls)
-	if err != nil {
-		return nil, nil, 0, err
-	}
-
-	return meta, tx, timestamp, nil
+	return t.SendAndConfirmTransaction(ctx, tx, skipPreflight, urls)
 }
 
 func (t *Wallet) SendTxByJito(
@@ -156,12 +146,7 @@ func (t *Wallet) SendTxByJito(
 	jitoUrls []string,
 	jitoTipAmountWithDecimals uint64,
 	jitoAccount solana.PublicKey,
-) (
-	meta_ *rpc.TransactionMeta,
-	tx_ *solana.Transaction,
-	timestamp_ uint64,
-	err_ error,
-) {
+) (*rpc.GetParsedTransactionResult, error) {
 
 	instructions = append(
 		instructions,
@@ -182,7 +167,7 @@ func (t *Wallet) SendTxByJito(
 		unitLimit,
 	)
 	if err != nil {
-		return nil, nil, 0, err
+		return nil, err
 	}
 	t.logger.InfoF("交易构建成功 <timestamp: %d> <txid: %s>", go_time.CurrentTimestamp(), tx.Signatures[0].String())
 
@@ -212,10 +197,10 @@ func (t *Wallet) SendTxByJito(
 	for {
 		select {
 		case <-confirmTimer.C:
-			getTransactionResult, err := t.rpcClient.GetTransaction(
+			getTransactionResult, err := t.rpcClient.GetParsedTransaction(
 				ctx,
 				tx.Signatures[0],
-				&rpc.GetTransactionOpts{
+				&rpc.GetParsedTransactionOpts{
 					Commitment:                     rpc.CommitmentConfirmed,
 					MaxSupportedTransactionVersion: constant.MaxSupportedTransactionVersion_0,
 				},
@@ -237,7 +222,7 @@ func (t *Wallet) SendTxByJito(
 					(int64(*getTransactionResult.BlockTime*1000)-sendedTimestamp)/1000,
 					getTransactionResult.Meta.Err,
 				)
-				return getTransactionResult.Meta, tx, uint64(*getTransactionResult.BlockTime * 1000), errors.Errorf("<txid: %s> <err: %s>", tx.Signatures[0], go_format.ToString(getTransactionResult.Meta.Err))
+				return getTransactionResult, errors.Errorf("<txid: %s> <err: %s>", tx.Signatures[0], go_format.ToString(getTransactionResult.Meta.Err))
 			}
 			t.logger.InfoF(
 				"交易已确认[执行成功] <timestamp: %d> <txid: %s> <历时: %ds>",
@@ -245,9 +230,9 @@ func (t *Wallet) SendTxByJito(
 				tx.Signatures[0].String(),
 				(int64(*getTransactionResult.BlockTime*1000)-sendedTimestamp)/1000,
 			)
-			return getTransactionResult.Meta, tx, uint64(*getTransactionResult.BlockTime * 1000), nil
+			return getTransactionResult, nil
 		case <-newCtx.Done():
-			return nil, nil, 0, errors.New("确认超时")
+			return nil, errors.New("确认超时")
 		}
 	}
 }
@@ -455,11 +440,7 @@ func (t *Wallet) SendAndConfirmTransaction(
 	tx *solana.Transaction,
 	skipPreflight bool,
 	urls []string,
-) (
-	meta_ *rpc.TransactionMeta,
-	timestamp_ uint64,
-	err_ error,
-) {
+) (*rpc.GetParsedTransactionResult, error) {
 	for _, url := range urls {
 		go func(url string) {
 			rpc.New(url).SendTransactionWithOpts(ctx, tx, rpc.TransactionOpts{
@@ -483,14 +464,14 @@ func (t *Wallet) SendAndConfirmTransaction(
 				}
 				if strings.Contains(err.Error(), "Program failed to complete") ||
 					strings.Contains(err.Error(), "custom program error") {
-					return nil, 0, err
+					return nil, err
 				}
 				// t.logger.Error(err.Error())
 			}
-			getTransactionResult, err := t.rpcClient.GetTransaction(
+			getTransactionResult, err := t.rpcClient.GetParsedTransaction(
 				ctx,
 				tx.Signatures[0],
-				&rpc.GetTransactionOpts{
+				&rpc.GetParsedTransactionOpts{
 					Commitment:                     rpc.CommitmentConfirmed,
 					MaxSupportedTransactionVersion: constant.MaxSupportedTransactionVersion_0,
 				},
@@ -507,12 +488,12 @@ func (t *Wallet) SendAndConfirmTransaction(
 
 			if getTransactionResult.Meta.Err != nil {
 				t.logger.InfoF("交易已确认[执行失败] <%d>。<%s>", *getTransactionResult.BlockTime*1000, tx.Signatures[0].String())
-				return getTransactionResult.Meta, uint64(*getTransactionResult.BlockTime * 1000), errors.Errorf("<txid: %s> <err: %s>", tx.Signatures[0], go_format.ToString(getTransactionResult.Meta.Err))
+				return getTransactionResult, errors.Errorf("<txid: %s> <err: %s>", tx.Signatures[0], go_format.ToString(getTransactionResult.Meta.Err))
 			}
 			t.logger.InfoF("交易已确认[执行成功] <%d>。<%s>", *getTransactionResult.BlockTime*1000, tx.Signatures[0].String())
-			return getTransactionResult.Meta, uint64(*getTransactionResult.BlockTime * 1000), nil
+			return getTransactionResult, nil
 		case <-newCtx.Done():
-			return nil, 0, errors.New("确认超时")
+			return nil, errors.New("确认超时")
 		}
 	}
 

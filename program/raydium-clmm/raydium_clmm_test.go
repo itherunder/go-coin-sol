@@ -1,6 +1,7 @@
 package raydium_clmm
 
 import (
+	"context"
 	"fmt"
 	"math"
 	"os"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
+	"github.com/pefish/go-coin-sol/constant"
 	raydium_clmm_type "github.com/pefish/go-coin-sol/program/raydium-clmm/type"
 	type_ "github.com/pefish/go-coin-sol/type"
 	go_test_ "github.com/pefish/go-test"
@@ -30,10 +32,12 @@ func TestGetSwapInstructions(t *testing.T) {
 	go_test_.Equal(t, nil, err)
 	tokenAddress := solana.MustPublicKeyFromBase58("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v")
 	tokenDecimals := 6
-	swapKeys := raydium_clmm_type.SwapKeys{
-		PoolIdAddress:    solana.MustPublicKeyFromBase58("8sLbNZoA1cfnvMJLPfp98ZLAnFSYCFApfJKMbiXNLwxj"),
-		WSOLVault:        solana.MustPublicKeyFromBase58("6P4tvbzRY6Bh3MiWDHuLqyHywovsRwRpfskPvyeSoHsz"),
-		TokenVault:       solana.MustPublicKeyFromBase58("6mK4Pxs6GhwnessH7CvPivqDYauiHZmAdbEFDpXFk9zt"),
+	swapKeys := raydium_clmm_type.SwapV2Keys{
+		PairAddress: solana.MustPublicKeyFromBase58("8sLbNZoA1cfnvMJLPfp98ZLAnFSYCFApfJKMbiXNLwxj"),
+		Vaults: map[solana.PublicKey]solana.PublicKey{
+			solana.SolMint: solana.MustPublicKeyFromBase58("6P4tvbzRY6Bh3MiWDHuLqyHywovsRwRpfskPvyeSoHsz"),
+			tokenAddress:   solana.MustPublicKeyFromBase58("6mK4Pxs6GhwnessH7CvPivqDYauiHZmAdbEFDpXFk9zt"),
+		},
 		ObservationState: solana.MustPublicKeyFromBase58("3MsJXVvievxAbsMsaT6TS4i6oMitD9jazucuq3X234tC"),
 		ExBitmapAccount:  solana.MustPublicKeyFromBase58("DoPuiZfJu7sypqwR4eiU7C5TMcmmiFoU4HaF5SoD8mRy"),
 		RemainAccounts: []solana.PublicKey{
@@ -44,7 +48,7 @@ func TestGetSwapInstructions(t *testing.T) {
 	}
 	poolInfo, err := GetPoolInfo(
 		client,
-		swapKeys.PoolIdAddress,
+		swapKeys.PairAddress,
 	)
 	go_test_.Equal(t, nil, err)
 	fmt.Println("solAmount", poolInfo.SwapInAmountToken0.String())
@@ -78,12 +82,43 @@ func TestGetPoolInfo(t *testing.T) {
 	fmt.Println("tokenAmount", poolInfo.SwapInAmountToken1.String())
 }
 
-func TestGetReserves(t *testing.T) {
-	solReserve, tokenReserve, err := GetReserves(
-		client,
-		solana.MustPublicKeyFromBase58("8sLbNZoA1cfnvMJLPfp98ZLAnFSYCFApfJKMbiXNLwxj"),
+func TestParseSwapTxByParsedTx(t *testing.T) {
+	// return
+	// 3jNs8EM3btxGUDP5AyvYX8NRgPcZpPqpRry6Pb6YLdR1CWAZTEcfo2PZzE3VWTqKYGkxqqyuNKdezxedX7j7QPYk
+	// 4Joi4gD36KPcsHoqPjXhQWPKSrmTdJTNvQbtbJJbbbY8RwAjtLmpXFVS4s4WbRDtbD6fjs8LQMUKk6xbmvcfBoVp
+	getTransactionResult, err := client.GetParsedTransaction(
+		context.TODO(),
+		solana.MustSignatureFromBase58("4Joi4gD36KPcsHoqPjXhQWPKSrmTdJTNvQbtbJJbbbY8RwAjtLmpXFVS4s4WbRDtbD6fjs8LQMUKk6xbmvcfBoVp"),
+		&rpc.GetParsedTransactionOpts{
+			Commitment:                     rpc.CommitmentConfirmed,
+			MaxSupportedTransactionVersion: constant.MaxSupportedTransactionVersion_0,
+		},
 	)
 	go_test_.Equal(t, nil, err)
-	fmt.Println("solReserve", solReserve.AmountWithDecimals)
-	fmt.Println("tokenReserve", tokenReserve.AmountWithDecimals)
+	r, err := ParseSwapTxByParsedTx(rpc.MainNetBeta, getTransactionResult.Meta, getTransactionResult.Transaction)
+	go_test_.Equal(t, nil, err)
+	for _, swap := range r.Swaps {
+		fmt.Printf(
+			`
+<UserAddress: %s>
+<InputAddress: %s>
+<OutputAddress: %s>
+<InputAmountWithDecimals: %d>
+<OutputAmountWithDecimals: %d>
+<InputVault: %s>
+<OutputVault: %s>
+<ReserveInputWithDecimals: %d>
+<ReserveOutputWithDecimals: %d>	
+`,
+			swap.UserAddress,
+			swap.InputAddress,
+			swap.OutputAddress,
+			swap.InputAmountWithDecimals,
+			swap.OutputAmountWithDecimals,
+			swap.InputVault,
+			swap.OutputVault,
+			swap.ReserveInputWithDecimals,
+			swap.ReserveOutputWithDecimals,
+		)
+	}
 }

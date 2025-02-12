@@ -7,9 +7,9 @@ import (
 	bin "github.com/gagliardetto/binary"
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
+	"github.com/pefish/go-coin-sol/discriminator"
 	raydium_constant "github.com/pefish/go-coin-sol/program/raydium-clmm/constant"
 	raydium_clmm_type "github.com/pefish/go-coin-sol/program/raydium-clmm/type"
-	"github.com/pefish/go-coin-sol/util"
 	"github.com/pkg/errors"
 )
 
@@ -27,9 +27,10 @@ func NewBuyBaseOutInstruction(
 	userTokenAssociatedAccount solana.PublicKey,
 	tokenAmountWithDecimals uint64,
 	maxCostSolAmountWithDecimals uint64,
-	swapKeys raydium_clmm_type.SwapKeys,
+	swapKeys raydium_clmm_type.SwapV2Keys,
 ) (*BuyInstruction, error) {
-	methodBytes, err := hex.DecodeString(util.GetDiscriminator("global", "swap_v2"))
+	// 2b04ed0b1ac91e62
+	methodBytes, err := hex.DecodeString(discriminator.GetDiscriminator("global", "swap_v2"))
 	if err != nil {
 		return nil, errors.Wrap(err, "")
 	}
@@ -56,12 +57,12 @@ func NewBuyBaseOutInstruction(
 			IsWritable: true,
 		},
 		{
-			PublicKey:  raydium_constant.AMM_Config[network],
+			PublicKey:  swapKeys.AmmConfig,
 			IsSigner:   false,
 			IsWritable: false,
 		},
 		{
-			PublicKey:  swapKeys.PoolIdAddress,
+			PublicKey:  swapKeys.PairAddress,
 			IsSigner:   false,
 			IsWritable: true,
 		},
@@ -76,12 +77,12 @@ func NewBuyBaseOutInstruction(
 			IsWritable: true,
 		},
 		{
-			PublicKey:  swapKeys.WSOLVault,
+			PublicKey:  swapKeys.Vaults[solana.SolMint],
 			IsSigner:   false,
 			IsWritable: true,
 		},
 		{
-			PublicKey:  swapKeys.TokenVault,
+			PublicKey:  swapKeys.Vaults[tokenAddress],
 			IsSigner:   false,
 			IsWritable: true,
 		},

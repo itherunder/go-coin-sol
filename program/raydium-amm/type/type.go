@@ -5,38 +5,28 @@ import (
 	type_ "github.com/pefish/go-coin-sol/type"
 )
 
-type RaydiumSwapKeys struct {
-	AmmAddress                   solana.PublicKey
-	AmmOpenOrdersAddress         solana.PublicKey
-	AmmTargetOrdersAddress       solana.PublicKey
-	PoolCoinTokenAccountAddress  solana.PublicKey
-	PoolPcTokenAccountAddress    solana.PublicKey
-	SerumProgramAddress          solana.PublicKey
-	SerumMarketAddress           solana.PublicKey
-	SerumBidsAddress             solana.PublicKey
-	SerumAsksAddress             solana.PublicKey
-	SerumEventQueueAddress       solana.PublicKey
-	SerumCoinVaultAccountAddress solana.PublicKey
-	SerumPcVaultAccountAddress   solana.PublicKey
-	SerumVaultSignerAddress      solana.PublicKey
+type SwapKeys struct {
+	AmmAddress                  solana.PublicKey
+	PoolCoinTokenAccountAddress solana.PublicKey
+	PoolPcTokenAccountAddress   solana.PublicKey
+	CoinMint                    solana.PublicKey
+	PCMint                      solana.PublicKey
+	Vaults                      map[solana.PublicKey]solana.PublicKey
 }
 
-type SwapDataType struct {
-	TokenAddress                       solana.PublicKey `json:"token_address"`
-	SOLAmountWithDecimals              uint64           `json:"sol_amount_with_decimals"`
-	TokenAmountWithDecimals            uint64           `json:"token_amount_with_decimals"`
-	Type                               type_.SwapType   `json:"type"`
-	UserAddress                        solana.PublicKey `json:"user_address"`
-	UserBalanceWithDecimals            uint64           `json:"user_balance_with_decimals"`
-	BeforeUserBalanceWithDecimals      uint64           `json:"before_user_balance_with_decimals"`
-	BeforeUserTokenBalanceWithDecimals uint64           `json:"before_user_token_balance_with_decimals"`
-	UserTokenBalanceWithDecimals       uint64           `json:"user_token_balance_with_decimals"`
-	RaydiumSwapKeys                    RaydiumSwapKeys  `json:"raydium_swap_keys,omitempty"`
-	CoinIsSOL                          bool             `json:"coin_is_sol"`
-}
+type AddLiqTxDataType struct {
+	TxId                        string           `json:"txid"`
+	TokenAddress                solana.PublicKey `json:"token_address"`
+	InitSOLAmountWithDecimals   uint64           `json:"init_sol_amount_with_decimals"`
+	InitTokenAmountWithDecimals uint64           `json:"init_token_amount_with_decimals"`
 
-type SwapTxDataType struct {
-	Swaps   []*SwapDataType
-	FeeInfo *type_.FeeInfo
-	TxId    string
+	AMMAddress           solana.PublicKey `json:"amm_address"`
+	PoolCoinTokenAccount solana.PublicKey `json:"pool_coin_token_account"`
+	PoolPcTokenAccount   solana.PublicKey `json:"pool_pc_token_account"`
+
+	PairAddress solana.PublicKey `json:"pair_address"`
+	SOLVault    solana.PublicKey `json:"sol_vault"`
+	TokenVault  solana.PublicKey `json:"token_vault"`
+
+	FeeInfo *type_.FeeInfo `json:"fee_info"`
 }

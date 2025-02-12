@@ -26,7 +26,7 @@ func NewSellBaseInInstruction(
 	userTokenAssociatedAccount solana.PublicKey,
 	tokenAmountWithDecimals uint64,
 	minReceiveSOLAmountWithDecimals uint64,
-	raydiumSwapKeys raydium_type.RaydiumSwapKeys,
+	raydiumSwapKeys raydium_type.SwapKeys,
 ) (*SellInstruction, error) {
 	methodBytes, err := hex.DecodeString("09")
 	if err != nil {
@@ -61,24 +61,12 @@ func NewSellBaseInInstruction(
 				IsWritable: false,
 			},
 			{
-				PublicKey: func() solana.PublicKey {
-					if raydiumSwapKeys.AmmOpenOrdersAddress.IsZero() {
-						return solana.SolMint
-					} else {
-						return raydiumSwapKeys.AmmOpenOrdersAddress
-					}
-				}(),
+				PublicKey:  solana.SolMint,
 				IsSigner:   false,
 				IsWritable: true,
 			},
 			{
-				PublicKey: func() solana.PublicKey {
-					if raydiumSwapKeys.AmmTargetOrdersAddress.IsZero() {
-						return solana.SolMint
-					} else {
-						return raydiumSwapKeys.AmmTargetOrdersAddress
-					}
-				}(),
+				PublicKey:  solana.SolMint,
 				IsSigner:   false,
 				IsWritable: true,
 			},
@@ -95,90 +83,42 @@ func NewSellBaseInInstruction(
 			},
 
 			{
-				PublicKey: func() solana.PublicKey {
-					if raydiumSwapKeys.SerumProgramAddress.IsZero() {
-						return solana.SolMint
-					} else {
-						return raydiumSwapKeys.SerumProgramAddress
-					}
-				}(),
+				PublicKey:  solana.SolMint,
 				IsSigner:   false,
 				IsWritable: false,
 			},
 			{
-				PublicKey: func() solana.PublicKey {
-					if raydiumSwapKeys.SerumMarketAddress.IsZero() {
-						return solana.SolMint
-					} else {
-						return raydiumSwapKeys.SerumMarketAddress
-					}
-				}(),
+				PublicKey:  solana.SolMint,
 				IsSigner:   false,
 				IsWritable: true,
 			},
 			{
-				PublicKey: func() solana.PublicKey {
-					if raydiumSwapKeys.SerumBidsAddress.IsZero() {
-						return solana.SolMint
-					} else {
-						return raydiumSwapKeys.SerumBidsAddress
-					}
-				}(),
+				PublicKey:  solana.SolMint,
 				IsSigner:   false,
 				IsWritable: true,
 			},
 			{
-				PublicKey: func() solana.PublicKey {
-					if raydiumSwapKeys.SerumAsksAddress.IsZero() {
-						return solana.SolMint
-					} else {
-						return raydiumSwapKeys.SerumAsksAddress
-					}
-				}(),
+				PublicKey:  solana.SolMint,
 				IsSigner:   false,
 				IsWritable: true,
 			},
 			{
-				PublicKey: func() solana.PublicKey {
-					if raydiumSwapKeys.SerumEventQueueAddress.IsZero() {
-						return solana.SolMint
-					} else {
-						return raydiumSwapKeys.SerumEventQueueAddress
-					}
-				}(),
+				PublicKey:  solana.SolMint,
 				IsSigner:   false,
 				IsWritable: true,
 			},
 			{
-				PublicKey: func() solana.PublicKey {
-					if raydiumSwapKeys.SerumCoinVaultAccountAddress.IsZero() {
-						return solana.SolMint
-					} else {
-						return raydiumSwapKeys.SerumCoinVaultAccountAddress
-					}
-				}(),
+				PublicKey:  solana.SolMint,
 				IsSigner:   false,
 				IsWritable: true,
 			},
 			{
-				PublicKey: func() solana.PublicKey {
-					if raydiumSwapKeys.SerumPcVaultAccountAddress.IsZero() {
-						return solana.SolMint
-					} else {
-						return raydiumSwapKeys.SerumPcVaultAccountAddress
-					}
-				}(),
+				PublicKey:  solana.SolMint,
 				IsSigner:   false,
 				IsWritable: true,
 			},
 			{
-				PublicKey: func() solana.PublicKey {
-					if raydiumSwapKeys.SerumVaultSignerAddress.IsZero() {
-						return solana.SolMint
-					} else {
-						return raydiumSwapKeys.SerumVaultSignerAddress
-					}
-				}(),
+				PublicKey:  solana.SolMint,
 				IsSigner:   false,
 				IsWritable: false,
 			},

@@ -12,6 +12,7 @@ import (
 	"github.com/pefish/go-coin-sol/constant"
 	raydium_type_ "github.com/pefish/go-coin-sol/program/raydium-amm/type"
 	type_ "github.com/pefish/go-coin-sol/type"
+	"github.com/pefish/go-coin-sol/util"
 	go_test_ "github.com/pefish/go-test"
 )
 
@@ -24,38 +25,6 @@ func init() {
 		url = envUrl
 	}
 	client = rpc.New(url)
-}
-
-func TestParseSwapTx(t *testing.T) {
-	// return
-	getTransactionResult, err := client.GetTransaction(
-		context.TODO(),
-		solana.MustSignatureFromBase58("4TRPLs5TzMqo4VmayEFiHGWQyoTyAgvbViqqiJoQWGTR6D7oDjPw4NRWtVUbeJCjpg6T6v5ND4NP8Ms8EPndiQuu"),
-		&rpc.GetTransactionOpts{
-			Commitment:                     rpc.CommitmentConfirmed,
-			MaxSupportedTransactionVersion: constant.MaxSupportedTransactionVersion_0,
-		},
-	)
-	go_test_.Equal(t, nil, err)
-	tx, err := getTransactionResult.Transaction.GetTransaction()
-	go_test_.Equal(t, nil, err)
-	r, err := ParseSwapTx(rpc.MainNetBeta, getTransactionResult.Meta, tx)
-	go_test_.Equal(t, nil, err)
-	for _, swap := range r.Swaps {
-		fmt.Printf(
-			"<UserAddress: %s> <%s> <TokenAddress: %s> <%d sol> <TokenAmount: %d> <UserBalance: %d -> %d> <UserTokenBalance: %d -> %d>\n",
-			swap.UserAddress,
-			swap.Type,
-			swap.TokenAddress,
-			swap.SOLAmountWithDecimals,
-			swap.TokenAmountWithDecimals,
-			swap.BeforeUserBalanceWithDecimals,
-			swap.UserBalanceWithDecimals,
-			swap.BeforeUserTokenBalanceWithDecimals,
-			swap.UserTokenBalanceWithDecimals,
-		)
-	}
-
 }
 
 func TestParseSwapTxByParsedTx(t *testing.T) {
@@ -73,16 +42,26 @@ func TestParseSwapTxByParsedTx(t *testing.T) {
 	go_test_.Equal(t, nil, err)
 	for _, swap := range r.Swaps {
 		fmt.Printf(
-			"<UserAddress: %s> <%s> <TokenAddress: %s> <%d sol> <TokenAmount: %d> <UserBalance: %d -> %d> <UserTokenBalance: %d -> %d>\n",
+			`
+<UserAddress: %s>
+<InputAddress: %s>
+<OutputAddress: %s>
+<InputAmountWithDecimals: %d>
+<OutputAmountWithDecimals: %d>
+<InputVault: %s>
+<OutputVault: %s>
+<ReserveInputWithDecimals: %d>
+<ReserveOutputWithDecimals: %d>	
+`,
 			swap.UserAddress,
-			swap.Type,
-			swap.TokenAddress,
-			swap.SOLAmountWithDecimals,
-			swap.TokenAmountWithDecimals,
-			swap.BeforeUserBalanceWithDecimals,
-			swap.UserBalanceWithDecimals,
-			swap.BeforeUserTokenBalanceWithDecimals,
-			swap.UserTokenBalanceWithDecimals,
+			swap.InputAddress,
+			swap.OutputAddress,
+			swap.InputAmountWithDecimals,
+			swap.OutputAmountWithDecimals,
+			swap.InputVault,
+			swap.OutputVault,
+			swap.ReserveInputWithDecimals,
+			swap.ReserveOutputWithDecimals,
 		)
 	}
 
@@ -94,17 +73,15 @@ func TestGetSwapInstructions(t *testing.T) {
 	go_test_.Equal(t, nil, err)
 	tokenAddress := solana.MustPublicKeyFromBase58("82zGj6ee2ocCMBH1mogyNLr8paUoai45GYVa42QYfzPz")
 	tokenDecimals := 9
-	coinIsSOL := false
-	raydiumSwapKeys := raydium_type_.RaydiumSwapKeys{
+	raydiumSwapKeys := raydium_type_.SwapKeys{
 		AmmAddress:                  solana.MustPublicKeyFromBase58("HfzUC934vUPc7E8G7YtbgtaWrrjKhraDF4ZEZ8A6gsYA"),
 		PoolCoinTokenAccountAddress: solana.MustPublicKeyFromBase58("7ZuXkdD9dTYXJr38W2KGdDLjssN61VxkWzANkFLfeQKe"),
 		PoolPcTokenAccountAddress:   solana.MustPublicKeyFromBase58("8ErAcSyRyWg5xDhzR28fpoA8EPDDUqQaqmcz2pSAZX3J"),
 	}
-	solAmount, tokenAmount, err := GetReserves(
+	solAmount, tokenAmount, err := util.GetReserves(
 		client,
-		raydiumSwapKeys.PoolCoinTokenAccountAddress,
 		raydiumSwapKeys.PoolPcTokenAccountAddress,
-		coinIsSOL,
+		raydiumSwapKeys.PoolCoinTokenAccountAddress,
 	)
 	go_test_.Equal(t, nil, err)
 
@@ -122,4 +99,26 @@ func TestGetSwapInstructions(t *testing.T) {
 	)
 	go_test_.Equal(t, nil, err)
 	fmt.Println(swapInstructions)
+}
+
+func TestParseAddLiqTxByParsedTx(t *testing.T) {
+	getTransactionResult, err := client.GetParsedTransaction(
+		context.TODO(),
+		solana.MustSignatureFromBase58("44sEeJxeoZiZDoT4dakF6kKuynenFgWYevzwuzMqGsarvxd5bQKYcMzZWxh1kEnZxd8uiAKAjs8YfAXCoM2pAGm4"),
+		&rpc.GetParsedTransactionOpts{
+			Commitment:                     rpc.CommitmentConfirmed,
+			MaxSupportedTransactionVersion: constant.MaxSupportedTransactionVersion_0,
+		},
+	)
+	go_test_.Equal(t, nil, err)
+	r, err := ParseAddLiqTxByParsedTx(rpc.MainNetBeta, getTransactionResult.Meta, getTransactionResult.Transaction)
+	go_test_.Equal(t, nil, err)
+	go_test_.Equal(t, false, r == nil)
+	fmt.Printf(
+		"[AddLiq] <%s> <AMMAddress: %s> <PoolCoinTokenAccount: %s> <PoolPcTokenAccount: %s>\n",
+		r.TokenAddress,
+		r.AMMAddress.String(),
+		r.PoolCoinTokenAccount.String(),
+		r.PoolPcTokenAccount.String(),
+	)
 }

@@ -6,8 +6,8 @@ import (
 )
 
 var (
-	Raydium_Concentrated_Liquidity = map[rpc.Cluster]solana.PublicKey{
-		rpc.MainNetBeta: solana.MustPublicKeyFromBase58("CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grrKgrWqK"),
+	WhirlpoolsProgram = map[rpc.Cluster]solana.PublicKey{
+		rpc.MainNetBeta: solana.MustPublicKeyFromBase58("whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc"),
 		rpc.DevNet:      solana.MustPublicKeyFromBase58("devi51mZmdwUJGU9hjN27vEz64Gps7uUefqxg27EAtH"),
 	}
 )

@@ -1,7 +1,6 @@
 package util
 
 import (
-	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -12,6 +11,7 @@ import (
 	bin "github.com/gagliardetto/binary"
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
+	associated_token_account "github.com/pefish/go-coin-sol/program/associated-token-account"
 	type_ "github.com/pefish/go-coin-sol/type"
 	go_http "github.com/pefish/go-http"
 	i_logger "github.com/pefish/go-interface/i-logger"
@@ -204,10 +204,11 @@ type TransferInstructionDataType struct {
 	Authority          solana.PublicKey
 }
 
-func DecodeTransferParsedInstruction(transferInstruction *rpc.ParsedInstruction) (*TransferInstructionDataType, error) {
+func DecodeTransferInstruction(transferInstruction *rpc.ParsedInstruction) (*TransferInstructionDataType, error) {
 	if transferInstruction.Parsed == nil {
 		return nil, errors.New("Parsed 内容不存在，可能不是 transfer 指令")
 	}
+
 	d, _ := transferInstruction.Parsed.MarshalJSON()
 	var transferData struct {
 		Info struct {
@@ -225,6 +226,7 @@ func DecodeTransferParsedInstruction(transferInstruction *rpc.ParsedInstruction)
 	if transferData.Type != "transfer" {
 		return nil, errors.Errorf("不是 transfer 指令, %#v", transferData)
 	}
+
 	amountWithDecimals, _ := strconv.ParseUint(transferData.Info.Amount, 10, 64)
 
 	return &TransferInstructionDataType{
@@ -235,14 +237,93 @@ func DecodeTransferParsedInstruction(transferInstruction *rpc.ParsedInstruction)
 	}, nil
 }
 
-func GetDiscriminator(namespace string, funcName string) string {
+type TransferCheckedInstructionDataType struct {
+	Source             solana.PublicKey
+	Mint               solana.PublicKey
+	Destination        solana.PublicKey
+	AmountWithDecimals uint64
+	Authority          solana.PublicKey
+}
 
-	preimage := namespace + ":" + funcName
-	hash := sha256.Sum256([]byte(preimage))
+func DecodeTransferCheckedInstruction(transferInstruction *rpc.ParsedInstruction) (*TransferCheckedInstructionDataType, error) {
+	if transferInstruction.Parsed == nil {
+		return nil, errors.New("Parsed 内容不存在，可能不是 transfer 指令")
+	}
 
-	var sighash [8]byte
-	copy(sighash[:], hash[:8]) // 复制前 8 个字节
+	d, _ := transferInstruction.Parsed.MarshalJSON()
+	var transferData struct {
+		Info struct {
+			Source      string `json:"source"`
+			Mint        string `json:"mint"`
+			Destination string `json:"destination"`
+			TokenAmount struct {
+				Amount         string  `json:"amount"`
+				Decimals       uint64  `json:"decimals"`
+				UIAmount       float64 `json:"uiAmount"`
+				UIAmountString string  `json:"uiAmountString"`
+			} `json:"tokenAmount"`
+			Authority string `json:"authority"`
+		} `json:"info"`
+		Type string `json:"type"`
+	}
+	err := json.Unmarshal(d, &transferData)
+	if err != nil {
+		return nil, errors.Wrap(err, "")
+	}
 
-	return hex.EncodeToString(sighash[:])
+	if transferData.Type != "transferChecked" {
+		return nil, errors.Errorf("不是 transfer 指令, %#v", transferData)
+	}
+
+	amountWithDecimals, _ := strconv.ParseUint(transferData.Info.TokenAmount.Amount, 10, 64)
+
+	return &TransferCheckedInstructionDataType{
+		Source:             solana.MustPublicKeyFromBase58(transferData.Info.Source),
+		Mint:               solana.MustPublicKeyFromBase58(transferData.Info.Mint),
+		Destination:        solana.MustPublicKeyFromBase58(transferData.Info.Destination),
+		AmountWithDecimals: amountWithDecimals,
+		Authority:          solana.MustPublicKeyFromBase58(transferData.Info.Authority),
+	}, nil
+}
+
+func GetReserves(
+	rpcClient *rpc.Client,
+	vault1 solana.PublicKey,
+	vault2 solana.PublicKey,
+) (
+	reserve1_ *type_.TokenAmountInfo,
+	reserve2_ *type_.TokenAmountInfo,
+	err_ error,
+) {
+	datas, err := associated_token_account.GetAssociatedTokenAccountDatas(
+		rpcClient,
+		[]solana.PublicKey{
+			vault1,
+			vault2,
+		},
+	)
+	if err != nil {
+		return nil, nil, errors.Wrapf(err, "<vault1: %s> <vault2: %s>", vault1, vault2)
+	}
+	if datas[0] == nil || datas[1] == nil {
+		return nil, nil, errors.New("账户没查到信息")
+	}
+	reserve1WithDecimals, err := strconv.ParseUint(datas[0].Parsed.Info.TokenAmount.Amount, 10, 64)
+	if err != nil {
+		return nil, nil, errors.Wrapf(err, "<amount: %s>", datas[0].Parsed.Info.TokenAmount.Amount)
+	}
+	reserve2WithDecimals, err := strconv.ParseUint(datas[1].Parsed.Info.TokenAmount.Amount, 10, 64)
+	if err != nil {
+		return nil, nil, errors.Wrapf(err, "<amount: %s>", datas[1].Parsed.Info.TokenAmount.Amount)
+	}
+	return &type_.TokenAmountInfo{
+			AmountWithDecimals: reserve1WithDecimals,
+			Decimals:           datas[1].Parsed.Info.TokenAmount.Decimals,
+		},
+		&type_.TokenAmountInfo{
+			AmountWithDecimals: reserve2WithDecimals,
+			Decimals:           datas[0].Parsed.Info.TokenAmount.Decimals,
+		},
+		nil
 
 }

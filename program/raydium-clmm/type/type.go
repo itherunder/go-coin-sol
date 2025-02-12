@@ -5,12 +5,21 @@ import (
 	"github.com/gagliardetto/solana-go"
 )
 
-type SwapKeys struct {
-	PoolIdAddress    solana.PublicKey
-	WSOLVault        solana.PublicKey
-	TokenVault       solana.PublicKey
+type SwapV2Keys struct {
+	AmmConfig        solana.PublicKey
+	PairAddress      solana.PublicKey
+	Vaults           map[solana.PublicKey]solana.PublicKey
 	ObservationState solana.PublicKey
 	ExBitmapAccount  solana.PublicKey
+	RemainAccounts   []solana.PublicKey
+}
+
+type SwapKeys struct {
+	AmmConfig        solana.PublicKey
+	PairAddress      solana.PublicKey
+	Vaults           map[solana.PublicKey]solana.PublicKey
+	ObservationState solana.PublicKey
+	TickArrayAccount solana.PublicKey
 	RemainAccounts   []solana.PublicKey
 }
 

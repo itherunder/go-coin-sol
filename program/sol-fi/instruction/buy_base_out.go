@@ -2,11 +2,11 @@ package instruction
 
 import (
 	"bytes"
+	"encoding/hex"
 
 	bin "github.com/gagliardetto/binary"
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
-	raydium_proxy_constant "github.com/pefish/go-coin-sol/program/raydium-amm-proxy/constant"
 	raydium_constant "github.com/pefish/go-coin-sol/program/raydium-amm/constant"
 	raydium_type "github.com/pefish/go-coin-sol/program/raydium-amm/type"
 	"github.com/pkg/errors"
@@ -26,11 +26,14 @@ func NewBuyBaseOutInstruction(
 	userTokenAssociatedAccount solana.PublicKey,
 	tokenAmountWithDecimals uint64,
 	maxCostSolAmountWithDecimals uint64,
-	raydiumSwapKeys raydium_type.RaydiumSwapKeys,
-	coinIsSOL bool,
+	raydiumSwapKeys raydium_type.SwapKeys,
 ) (*BuyInstruction, error) {
+	methodBytes, err := hex.DecodeString("0b")
+	if err != nil {
+		return nil, errors.Wrap(err, "")
+	}
 	params := new(bytes.Buffer)
-	err := bin.NewBorshEncoder(params).Encode(struct {
+	err = bin.NewBorshEncoder(params).Encode(struct {
 		MaxCostSolAmountWithDecimals uint64
 		TokenAmountWithDecimals      uint64
 	}{
@@ -40,19 +43,10 @@ func NewBuyBaseOutInstruction(
 	if err != nil {
 		return nil, errors.Wrap(err, "")
 	}
-	var coinAccount solana.PublicKey
-	var pcAccount solana.PublicKey
-	if coinIsSOL {
-		coinAccount = solana.SolMint
-		pcAccount = tokenAddress
-	} else {
-		coinAccount = tokenAddress
-		pcAccount = solana.SolMint
-	}
 	return &BuyInstruction{
 		accounts: []*solana.AccountMeta{
 			{
-				PublicKey:  raydium_constant.Raydium_Liquidity_Pool_V4[network],
+				PublicKey:  solana.TokenProgramID,
 				IsSigner:   false,
 				IsWritable: false,
 			},
@@ -67,6 +61,17 @@ func NewBuyBaseOutInstruction(
 				IsWritable: false,
 			},
 			{
+				PublicKey:  solana.SolMint,
+				IsSigner:   false,
+				IsWritable: true,
+			},
+			{
+				PublicKey:  solana.SolMint,
+				IsSigner:   false,
+				IsWritable: true,
+			},
+
+			{
 				PublicKey:  raydiumSwapKeys.PoolCoinTokenAccountAddress,
 				IsSigner:   false,
 				IsWritable: true,
@@ -76,13 +81,44 @@ func NewBuyBaseOutInstruction(
 				IsSigner:   false,
 				IsWritable: true,
 			},
+
 			{
-				PublicKey:  coinAccount,
+				PublicKey:  solana.SolMint,
 				IsSigner:   false,
 				IsWritable: false,
 			},
 			{
-				PublicKey:  pcAccount,
+				PublicKey:  solana.SolMint,
+				IsSigner:   false,
+				IsWritable: true,
+			},
+			{
+				PublicKey:  solana.SolMint,
+				IsSigner:   false,
+				IsWritable: true,
+			},
+			{
+				PublicKey:  solana.SolMint,
+				IsSigner:   false,
+				IsWritable: true,
+			},
+			{
+				PublicKey:  solana.SolMint,
+				IsSigner:   false,
+				IsWritable: true,
+			},
+			{
+				PublicKey:  solana.SolMint,
+				IsSigner:   false,
+				IsWritable: true,
+			},
+			{
+				PublicKey:  solana.SolMint,
+				IsSigner:   false,
+				IsWritable: true,
+			},
+			{
+				PublicKey:  solana.SolMint,
 				IsSigner:   false,
 				IsWritable: false,
 			},
@@ -101,23 +137,9 @@ func NewBuyBaseOutInstruction(
 				IsSigner:   true,
 				IsWritable: false,
 			},
-			{
-				PublicKey:  solana.TokenProgramID,
-				IsSigner:   false,
-				IsWritable: false,
-			},
 		},
-		data: append([]byte{
-			194,
-			15,
-			252,
-			249,
-			72,
-			54,
-			250,
-			85,
-		}, params.Bytes()...),
-		programID: raydium_proxy_constant.Proxy[network],
+		data:      append(methodBytes, params.Bytes()...),
+		programID: raydium_constant.Raydium_Liquidity_Pool_V4[network],
 	}, nil
 }
 

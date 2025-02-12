@@ -27,18 +27,16 @@ func init() {
 
 func TestParseSwapTx(t *testing.T) {
 	// return
-	getTransactionResult, err := client.GetTransaction(
+	getTransactionResult, err := client.GetParsedTransaction(
 		context.TODO(),
 		solana.MustSignatureFromBase58("3FhAfwZts7di6LwtTY86rVGprB1hvsMtNrpfmt95UxfvH4LSZsn2fjMxuekmm7sx6ZKvxuwzWQhYc7yZdrb2r2f9"),
-		&rpc.GetTransactionOpts{
+		&rpc.GetParsedTransactionOpts{
 			Commitment:                     rpc.CommitmentConfirmed,
 			MaxSupportedTransactionVersion: constant.MaxSupportedTransactionVersion_0,
 		},
 	)
 	go_test_.Equal(t, nil, err)
-	tx, err := getTransactionResult.Transaction.GetTransaction()
-	go_test_.Equal(t, nil, err)
-	r, err := ParseSwapTx(getTransactionResult.Meta, tx)
+	r, err := ParseSwapTxByParsedTx(getTransactionResult.Meta, getTransactionResult.Transaction)
 	go_test_.Equal(t, nil, err)
 	for _, swapData := range r.Swaps {
 		fmt.Printf(
@@ -133,27 +131,5 @@ func TestParseRemoveLiqTxByParsedTx(t *testing.T) {
 		"[RemoveLiq] <%s> <BondingCurveAddress: %s>\n",
 		r.TokenAddress,
 		r.BondingCurveAddress.String(),
-	)
-}
-
-func TestParseAddLiqTxByParsedTx(t *testing.T) {
-	getTransactionResult, err := client.GetParsedTransaction(
-		context.TODO(),
-		solana.MustSignatureFromBase58("44sEeJxeoZiZDoT4dakF6kKuynenFgWYevzwuzMqGsarvxd5bQKYcMzZWxh1kEnZxd8uiAKAjs8YfAXCoM2pAGm4"),
-		&rpc.GetParsedTransactionOpts{
-			Commitment:                     rpc.CommitmentConfirmed,
-			MaxSupportedTransactionVersion: constant.MaxSupportedTransactionVersion_0,
-		},
-	)
-	go_test_.Equal(t, nil, err)
-	r, err := ParseAddLiqTxByParsedTx(rpc.MainNetBeta, getTransactionResult.Meta, getTransactionResult.Transaction)
-	go_test_.Equal(t, nil, err)
-	go_test_.Equal(t, false, r == nil)
-	fmt.Printf(
-		"[AddLiq] <%s> <AMMAddress: %s> <PoolCoinTokenAccount: %s> <PoolPcTokenAccount: %s>\n",
-		r.TokenAddress,
-		r.AMMAddress.String(),
-		r.PoolCoinTokenAccount.String(),
-		r.PoolPcTokenAccount.String(),
 	)
 }

@@ -24,13 +24,6 @@ type SwapTxDataType struct {
 	BeforeUserBalanceWithDecimals uint64          `json:"before_user_balance_with_decimals"`
 }
 
-type ParseTxResult struct {
-	SwapTxData      *SwapTxDataType
-	CreateTxData    *CreateTxDataType
-	RemoveLiqTxData *RemoveLiqTxDataType
-	AddLiqTxData    *AddLiqTxDataType
-}
-
 type CreateTxDataType struct {
 	CreateDataType
 	TxId    string         `json:"txid"`
@@ -51,17 +44,4 @@ type RemoveLiqTxDataType struct {
 	BondingCurveAddress solana.PublicKey `json:"bonding_curve_address"`
 	TokenAddress        solana.PublicKey `json:"token_address"`
 	FeeInfo             *type_.FeeInfo   `json:"fee_info"`
-}
-
-type AddLiqTxDataType struct {
-	TxId                        string           `json:"txid"`
-	TokenAddress                solana.PublicKey `json:"token_address"`
-	InitSOLAmountWithDecimals   uint64           `json:"init_sol_amount_with_decimals"`
-	InitTokenAmountWithDecimals uint64           `json:"init_token_amount_with_decimals"`
-	AMMAddress                  solana.PublicKey `json:"amm_address"`
-	PoolCoinTokenAccount        solana.PublicKey `json:"pool_coin_token_account"`
-	PoolPcTokenAccount          solana.PublicKey `json:"pool_pc_token_account"`
-	CoinIsSOL                   bool             `json:"coin_is_sol"`
-
-	FeeInfo *type_.FeeInfo `json:"fee_info"`
 }
