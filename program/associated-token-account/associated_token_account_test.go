@@ -10,7 +10,7 @@ import (
 )
 
 func TestGetAssociatedTokenAccountData(t *testing.T) {
-	return
+	// return
 	endpoint := rpc.MainNetBeta_RPC
 	client := rpc.New(endpoint)
 	r, err := GetAssociatedTokenAccountData(client, solana.MustPublicKeyFromBase58("DpUcSNu7gh4P2fXMx2s8ub3dVQC5dwjX6CAo2KRekaBt"))
@@ -19,7 +19,7 @@ func TestGetAssociatedTokenAccountData(t *testing.T) {
 }
 
 func TestGetAssociatedTokenAccountDatas(t *testing.T) {
-	return
+	// return
 	endpoint := rpc.MainNetBeta_RPC
 	client := rpc.New(endpoint)
 	r, err := GetAssociatedTokenAccountDatas(client, []solana.PublicKey{
