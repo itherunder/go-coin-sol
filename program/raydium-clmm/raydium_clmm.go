@@ -260,8 +260,8 @@ func ParseSwapTxByParsedTx(
 					outputAddress: outputVault,
 				},
 				ObservationState: instruction.Accounts[7],
-				TickArrayAccount: instruction.Accounts[11],
-				RemainAccounts:   instruction.Accounts[12:],
+				TickArrayAccount: instruction.Accounts[9],
+				RemainAccounts:   instruction.Accounts[10:],
 			}
 
 			transfer1Data, err := util.DecodeTransferInstruction(allInstructions[index+1])

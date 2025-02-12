@@ -12,6 +12,7 @@ import (
 	"github.com/pefish/go-coin-sol/constant"
 	raydium_clmm_type "github.com/pefish/go-coin-sol/program/raydium-clmm/type"
 	type_ "github.com/pefish/go-coin-sol/type"
+	go_format "github.com/pefish/go-format"
 	go_test_ "github.com/pefish/go-test"
 )
 
@@ -109,6 +110,7 @@ func TestParseSwapTxByParsedTx(t *testing.T) {
 <OutputVault: %s>
 <ReserveInputWithDecimals: %d>
 <ReserveOutputWithDecimals: %d>	
+<RemainAccounts: %s>	
 `,
 			swap.UserAddress,
 			swap.InputAddress,
@@ -119,6 +121,7 @@ func TestParseSwapTxByParsedTx(t *testing.T) {
 			swap.OutputVault,
 			swap.ReserveInputWithDecimals,
 			swap.ReserveOutputWithDecimals,
+			go_format.ToString(swap.ParsedKeys.(*raydium_clmm_type.SwapKeys).RemainAccounts),
 		)
 	}
 }
