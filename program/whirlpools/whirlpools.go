@@ -53,15 +53,20 @@ func ParseSwapTxByParsedTx(
 		var parsedKeys interface{}
 		var inputAmountWithDecimals uint64
 		var outputAmountWithDecimals uint64
+		var inputDecimals uint64
+		var outputDecimals uint64
 		var inputAddress solana.PublicKey
 		var outputAddress solana.PublicKey
 		var inputVault solana.PublicKey
 		var outputVault solana.PublicKey
+		var mintADecimals uint64
+		var mintBDecimals uint64
 
 		methodId := hex.EncodeToString(instruction.Data)[:16]
 		if methodId == discriminator.GetDiscriminator("global", "swap_v2") {
 			userAddress = instruction.Accounts[3]
 			pairAddress = instruction.Accounts[4]
+
 			parsedKeys = &whirlpools_type.SwapV2Keys{
 				PairAddress: pairAddress,
 				VaultA:      instruction.Accounts[8],
@@ -87,6 +92,8 @@ func ParseSwapTxByParsedTx(
 			}
 			inputAmountWithDecimals = transfer1Data.AmountWithDecimals
 			outputAmountWithDecimals = transfer2Data.AmountWithDecimals
+			inputDecimals = transfer1Data.Decimals
+			outputDecimals = transfer2Data.Decimals
 			if transfer1Data.Destination.Equals(instruction.Accounts[8]) {
 				// a is input
 				inputAddress = instruction.Accounts[5]
@@ -111,10 +118,12 @@ func ParseSwapTxByParsedTx(
 				if tokenBalanceInfo_.Owner.Equals(pairAddress) &&
 					transaction.Message.AccountKeys[tokenBalanceInfo_.AccountIndex].PublicKey.Equals(vaultA) {
 					aMint = tokenBalanceInfo_.Mint
+					mintADecimals = uint64(tokenBalanceInfo_.UiTokenAmount.Decimals)
 				}
 				if tokenBalanceInfo_.Owner.Equals(pairAddress) &&
 					transaction.Message.AccountKeys[tokenBalanceInfo_.AccountIndex].PublicKey.Equals(vaultB) {
 					bMint = tokenBalanceInfo_.Mint
+					mintBDecimals = uint64(tokenBalanceInfo_.UiTokenAmount.Decimals)
 				}
 			}
 
@@ -147,12 +156,16 @@ func ParseSwapTxByParsedTx(
 			if transfer1Data.Destination.Equals(vaultA) {
 				// a is input
 				inputAddress = aMint
+				inputDecimals = mintADecimals
 				outputAddress = bMint
+				outputDecimals = mintBDecimals
 				inputVault = vaultA
 				outputVault = vaultB
 			} else {
 				inputAddress = bMint
+				inputDecimals = mintBDecimals
 				outputAddress = aMint
+				outputDecimals = mintADecimals
 				inputVault = vaultB
 				outputVault = vaultA
 			}
@@ -175,7 +188,9 @@ func ParseSwapTxByParsedTx(
 			InputAddress:              inputAddress,
 			OutputAddress:             outputAddress,
 			InputAmountWithDecimals:   inputAmountWithDecimals,
+			InputDecimals:             inputDecimals,
 			OutputAmountWithDecimals:  outputAmountWithDecimals,
+			OutputDecimals:            outputDecimals,
 			UserAddress:               userAddress,
 			PairAddress:               pairAddress,
 			InputVault:                inputVault,

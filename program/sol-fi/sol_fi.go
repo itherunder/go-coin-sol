@@ -69,14 +69,18 @@ func ParseSwapTxByParsedTx(
 
 		var mintA solana.PublicKey
 		var mintB solana.PublicKey
+		var mintADecimals uint64
+		var mintBDecimals uint64
 		for _, tokenBalanceInfo_ := range meta.PreTokenBalances {
 			if tokenBalanceInfo_.Owner.Equals(pairAddress) &&
 				transaction.Message.AccountKeys[tokenBalanceInfo_.AccountIndex].PublicKey.Equals(vaultA) {
 				mintA = tokenBalanceInfo_.Mint
+				mintADecimals = uint64(tokenBalanceInfo_.UiTokenAmount.Decimals)
 			}
 			if tokenBalanceInfo_.Owner.Equals(pairAddress) &&
 				transaction.Message.AccountKeys[tokenBalanceInfo_.AccountIndex].PublicKey.Equals(vaultB) {
 				mintB = tokenBalanceInfo_.Mint
+				mintBDecimals = uint64(tokenBalanceInfo_.UiTokenAmount.Decimals)
 			}
 		}
 
@@ -84,17 +88,23 @@ func ParseSwapTxByParsedTx(
 		var outputVault solana.PublicKey
 		var inputAddress solana.PublicKey
 		var outputAddress solana.PublicKey
+		var inputDecimals uint64
+		var outputDecimals uint64
 		if transfer1Data.Destination.Equals(vaultA) {
 			// a is input
 			inputVault = vaultA
 			outputVault = vaultB
 			inputAddress = mintA
 			outputAddress = mintB
+			inputDecimals = mintADecimals
+			outputDecimals = mintBDecimals
 		} else {
 			outputVault = vaultA
 			inputVault = vaultB
 			inputAddress = mintB
 			outputAddress = mintA
+			inputDecimals = mintBDecimals
+			outputDecimals = mintADecimals
 		}
 
 		var reserveInputWithDecimals uint64
@@ -112,7 +122,9 @@ func ParseSwapTxByParsedTx(
 			InputAddress:             inputAddress,
 			OutputAddress:            outputAddress,
 			InputAmountWithDecimals:  inputAmountWithDecimals,
+			InputDecimals:            inputDecimals,
 			OutputAmountWithDecimals: outputAmountWithDecimals,
+			OutputDecimals:           outputDecimals,
 			UserAddress:              userAddress,
 			ParsedKeys: &sol_fi_type.SwapKeys{
 				PairAddress: pairAddress,

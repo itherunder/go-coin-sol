@@ -209,14 +209,18 @@ func ParseSwapTxByParsedTx(
 
 		var coinAddress solana.PublicKey
 		var pcAddress solana.PublicKey
+		var coinDecimals uint64
+		var pcDecimals uint64
 		for _, tokenBalanceInfo_ := range meta.PreTokenBalances {
 			if tokenBalanceInfo_.Owner.Equals(raydium_amm_constant.Raydium_Authority_V4[network]) &&
 				transaction.Message.AccountKeys[tokenBalanceInfo_.AccountIndex].PublicKey.Equals(poolCoinTokenAccount) {
 				coinAddress = tokenBalanceInfo_.Mint
+				coinDecimals = uint64(tokenBalanceInfo_.UiTokenAmount.Decimals)
 			}
 			if tokenBalanceInfo_.Owner.Equals(raydium_amm_constant.Raydium_Authority_V4[network]) &&
 				transaction.Message.AccountKeys[tokenBalanceInfo_.AccountIndex].PublicKey.Equals(poolPCTokenAccount) {
 				pcAddress = tokenBalanceInfo_.Mint
+				pcDecimals = uint64(tokenBalanceInfo_.UiTokenAmount.Decimals)
 			}
 		}
 
@@ -224,17 +228,23 @@ func ParseSwapTxByParsedTx(
 		var outputVault solana.PublicKey
 		var inputAddress solana.PublicKey
 		var outputAddress solana.PublicKey
+		var inputDecimals uint64
+		var outputDecimals uint64
 		if transfer1Data.Destination.Equals(poolCoinTokenAccount) {
 			// coin is input
 			inputVault = poolCoinTokenAccount
 			outputVault = poolPCTokenAccount
 			inputAddress = coinAddress
 			outputAddress = pcAddress
+			inputDecimals = coinDecimals
+			outputDecimals = pcDecimals
 		} else {
 			outputVault = poolCoinTokenAccount
 			inputVault = poolPCTokenAccount
 			inputAddress = pcAddress
 			outputAddress = coinAddress
+			inputDecimals = pcDecimals
+			outputDecimals = coinDecimals
 		}
 
 		userAddress := transaction.Message.AccountKeys[0].PublicKey
@@ -254,7 +264,9 @@ func ParseSwapTxByParsedTx(
 			InputAddress:             inputAddress,
 			OutputAddress:            outputAddress,
 			InputAmountWithDecimals:  inputAmountWithDecimals,
+			InputDecimals:            inputDecimals,
 			OutputAmountWithDecimals: outputAmountWithDecimals,
+			OutputDecimals:           outputDecimals,
 			UserAddress:              userAddress,
 			ParsedKeys: &raydium_amm_type.SwapKeys{
 				AmmAddress:                  instruction.Accounts[1],

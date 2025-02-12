@@ -209,6 +209,8 @@ func ParseSwapTxByParsedTx(
 		var parsedKeys interface{}
 		var inputAmountWithDecimals uint64
 		var outputAmountWithDecimals uint64
+		var inputDecimals uint64
+		var outputDecimals uint64
 
 		if methodId == discriminator.GetDiscriminator("global", "swap_v2") {
 			inputAddress = instruction.Accounts[11]
@@ -234,15 +236,19 @@ func ParseSwapTxByParsedTx(
 			}
 			inputAmountWithDecimals = transfer1Data.AmountWithDecimals
 			outputAmountWithDecimals = transfer2Data.AmountWithDecimals
+			inputDecimals = transfer1Data.Decimals
+			outputDecimals = transfer2Data.Decimals
 		} else if methodId == discriminator.GetDiscriminator("global", "swap") {
 			for _, tokenBalanceInfo_ := range meta.PreTokenBalances {
 				if tokenBalanceInfo_.Owner.Equals(pairAddress) &&
 					transaction.Message.AccountKeys[tokenBalanceInfo_.AccountIndex].PublicKey.Equals(inputVault) {
 					inputAddress = tokenBalanceInfo_.Mint
+					inputDecimals = uint64(tokenBalanceInfo_.UiTokenAmount.Decimals)
 				}
 				if tokenBalanceInfo_.Owner.Equals(pairAddress) &&
 					transaction.Message.AccountKeys[tokenBalanceInfo_.AccountIndex].PublicKey.Equals(outputVault) {
 					outputAddress = tokenBalanceInfo_.Mint
+					outputDecimals = uint64(tokenBalanceInfo_.UiTokenAmount.Decimals)
 				}
 			}
 
@@ -268,6 +274,7 @@ func ParseSwapTxByParsedTx(
 			}
 			inputAmountWithDecimals = transfer1Data.AmountWithDecimals
 			outputAmountWithDecimals = transfer2Data.AmountWithDecimals
+
 		} else {
 			continue
 		}
@@ -289,7 +296,9 @@ func ParseSwapTxByParsedTx(
 			InputAddress:              inputAddress,
 			OutputAddress:             outputAddress,
 			InputAmountWithDecimals:   inputAmountWithDecimals,
+			InputDecimals:             inputDecimals,
 			OutputAmountWithDecimals:  outputAmountWithDecimals,
+			OutputDecimals:            outputDecimals,
 			UserAddress:               userAddress,
 			PairAddress:               pairAddress,
 			InputVault:                inputVault,

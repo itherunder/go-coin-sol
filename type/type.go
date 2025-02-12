@@ -28,6 +28,8 @@ type SwapDataType struct {
 	OutputAddress            solana.PublicKey `json:"output_address"`
 	InputAmountWithDecimals  uint64           `json:"input_amount_with_decimals"`
 	OutputAmountWithDecimals uint64           `json:"output_amount_with_decimals"`
+	InputDecimals            uint64           `json:"input_decimals"`
+	OutputDecimals           uint64           `json:"output_decimals"`
 	UserAddress              solana.PublicKey `json:"user_address"`
 
 	PairAddress               solana.PublicKey `json:"pair_address"`

@@ -242,6 +242,7 @@ type TransferCheckedInstructionDataType struct {
 	Mint               solana.PublicKey
 	Destination        solana.PublicKey
 	AmountWithDecimals uint64
+	Decimals           uint64
 	Authority          solana.PublicKey
 }
 
@@ -282,6 +283,7 @@ func DecodeTransferCheckedInstruction(transferInstruction *rpc.ParsedInstruction
 		Mint:               solana.MustPublicKeyFromBase58(transferData.Info.Mint),
 		Destination:        solana.MustPublicKeyFromBase58(transferData.Info.Destination),
 		AmountWithDecimals: amountWithDecimals,
+		Decimals:           transferData.Info.TokenAmount.Decimals,
 		Authority:          solana.MustPublicKeyFromBase58(transferData.Info.Authority),
 	}, nil
 }
