@@ -3,6 +3,7 @@ package constant
 import (
 	solana "github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
+	type_ "github.com/pefish/go-coin-sol/type"
 )
 
 var (
@@ -14,6 +15,8 @@ var (
 		rpc.MainNetBeta: solana.MustPublicKeyFromBase58("5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1"),
 		rpc.DevNet:      solana.MustPublicKeyFromBase58("DbQqP6ehDYmeYjcBaMRuA8tAJY1EjDUz9DpwSLjaQqfC"),
 	}
+
+	Platform_Raydium_AMM type_.DexPlatform = "raydium_amm"
 )
 
 const (

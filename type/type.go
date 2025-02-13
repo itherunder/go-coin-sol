@@ -4,6 +4,8 @@ import (
 	"github.com/gagliardetto/solana-go"
 )
 
+type DexPlatform string
+
 type SwapType string
 
 const (
