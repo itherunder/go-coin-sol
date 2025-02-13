@@ -14,6 +14,11 @@ type SwapKeys struct {
 	Vaults                      map[solana.PublicKey]solana.PublicKey
 }
 
+type ExtraDatasType struct {
+	ReserveInputWithDecimals  uint64 `json:"reserve_input_with_decimals"`
+	ReserveOutputWithDecimals uint64 `json:"reserve_output_with_decimals"`
+}
+
 type AddLiqTxDataType struct {
 	TxId                        string           `json:"txid"`
 	TokenAddress                solana.PublicKey `json:"token_address"`

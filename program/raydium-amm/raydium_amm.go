@@ -4,6 +4,7 @@ package raydium_amm
 
 import (
 	"encoding/hex"
+	"strconv"
 
 	bin "github.com/gagliardetto/binary"
 	"github.com/gagliardetto/solana-go"
@@ -244,6 +245,17 @@ func ParseSwapTxByParsedTx(
 
 		userAddress := transaction.Message.AccountKeys[0].PublicKey
 
+		var reserveInputWithDecimals uint64
+		var reserveOutputWithDecimals uint64
+		for _, tokenBalanceInfo_ := range meta.PostTokenBalances {
+			if transaction.Message.AccountKeys[tokenBalanceInfo_.AccountIndex].PublicKey.Equals(inputVault) {
+				reserveInputWithDecimals, _ = strconv.ParseUint(tokenBalanceInfo_.UiTokenAmount.Amount, 10, 64)
+			}
+			if transaction.Message.AccountKeys[tokenBalanceInfo_.AccountIndex].PublicKey.Equals(outputVault) {
+				reserveOutputWithDecimals, _ = strconv.ParseUint(tokenBalanceInfo_.UiTokenAmount.Amount, 10, 64)
+			}
+		}
+
 		swaps = append(swaps, &type_.SwapDataType{
 			InputAddress:             inputAddress,
 			OutputAddress:            outputAddress,
@@ -262,6 +274,10 @@ func ParseSwapTxByParsedTx(
 					pcAddress:   poolPCTokenAccount,
 					coinAddress: poolCoinTokenAccount,
 				},
+			},
+			ExtraDatas: &raydium_amm_type.ExtraDatasType{
+				ReserveInputWithDecimals:  reserveInputWithDecimals,
+				ReserveOutputWithDecimals: reserveOutputWithDecimals,
 			},
 			PairAddress: instruction.Accounts[1],
 			InputVault:  inputVault,
