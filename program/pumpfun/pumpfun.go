@@ -16,6 +16,7 @@ import (
 	solana "github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/programs/token"
 	"github.com/gagliardetto/solana-go/rpc"
+	"github.com/pefish/go-coin-sol/constant"
 	associated_token_account_instruction "github.com/pefish/go-coin-sol/program/associated-token-account/instruction"
 	pumpfun_constant "github.com/pefish/go-coin-sol/program/pumpfun/constant"
 	pumpfun_instruction "github.com/pefish/go-coin-sol/program/pumpfun/instruction"
@@ -27,8 +28,8 @@ import (
 	"github.com/pkg/errors"
 )
 
-func ParseSwapTxByParsedTx(meta *rpc.ParsedTransactionMeta, transaction *rpc.ParsedTransaction) (*pumpfun_type.SwapTxDataType, error) {
-	swaps := make([]*pumpfun_type.SwapDataType, 0)
+func ParseSwapTxByParsedTx(meta *rpc.ParsedTransactionMeta, transaction *rpc.ParsedTransaction) (*type_.SwapTxDataType, error) {
+	swaps := make([]*type_.SwapDataType, 0)
 
 	allInstructions := make([]*rpc.ParsedInstruction, 0)
 	for index, instruction := range transaction.Message.Instructions {
@@ -49,13 +50,14 @@ func ParseSwapTxByParsedTx(meta *rpc.ParsedTransactionMeta, transaction *rpc.Par
 		}
 		// 记录事件的指令
 		dataHexString := hex.EncodeToString(instruction.Data)
-		if dataHexString[:16] != "e445a52e51cb9a1d" {
+		methodId := dataHexString[:16]
+		if methodId != "e445a52e51cb9a1d" {
 			continue
 		}
 		if len(dataHexString) > 350 {
 			continue
 		}
-		var log struct {
+		var logObj struct {
 			Id                   uint64           `json:"id"`
 			Mint                 solana.PublicKey `json:"mint"`
 			SOLAmount            uint64           `json:"solAmount"`
@@ -66,44 +68,79 @@ func ParseSwapTxByParsedTx(meta *rpc.ParsedTransactionMeta, transaction *rpc.Par
 			VirtualSolReserves   uint64           `json:"virtualSolReserves"`
 			VirtualTokenReserves uint64           `json:"virtualTokenReserves"`
 		}
-		err := bin.NewBorshDecoder(instruction.Data[8:]).Decode(&log)
+		err := bin.NewBorshDecoder(instruction.Data[8:]).Decode(&logObj)
 		if err != nil {
 			// 说明记录的不是 swap 信息
 			continue
 		}
-		if log.VirtualSolReserves == 0 ||
-			log.VirtualTokenReserves == 0 ||
-			log.Timestamp == 0 {
+		if logObj.VirtualSolReserves == 0 ||
+			logObj.VirtualTokenReserves == 0 ||
+			logObj.Timestamp == 0 {
 			continue
 		}
-		swaps = append(swaps, &pumpfun_type.SwapDataType{
-			TokenAddress:            log.Mint,
-			SOLAmountWithDecimals:   log.SOLAmount,
-			TokenAmountWithDecimals: log.TokenAmount,
-			Type: func() type_.SwapType {
-				if log.IsBuy {
-					return type_.SwapType_Buy
-				} else {
-					return type_.SwapType_Sell
-				}
-			}(),
-			UserAddress:                    log.User,
-			Timestamp:                      uint64(log.Timestamp * 1000),
-			ReserveSOLAmountWithDecimals:   log.VirtualSolReserves,
-			ReserveTokenAmountWithDecimals: log.VirtualTokenReserves,
-		})
+		var swapData type_.SwapDataType
+		if logObj.IsBuy {
+			swapData = type_.SwapDataType{
+				InputAddress:             solana.SolMint,
+				OutputAddress:            logObj.Mint,
+				InputAmountWithDecimals:  logObj.SOLAmount,
+				OutputAmountWithDecimals: logObj.TokenAmount,
+				InputDecimals:            constant.SOL_Decimals,
+				OutputDecimals:           pumpfun_constant.Pumpfun_Token_Decimals,
+				UserAddress:              logObj.User,
+
+				PairAddress: solana.PublicKey{},
+				InputVault:  solana.PublicKey{},
+				OutputVault: solana.PublicKey{},
+
+				ParsedKeys: nil,
+				ExtraDatas: &pumpfun_type.ExtraDatasType{
+					ReserveSOLAmountWithDecimals:   logObj.VirtualSolReserves,
+					ReserveTokenAmountWithDecimals: logObj.VirtualTokenReserves,
+					Timestamp:                      uint64(logObj.Timestamp * 1000),
+				},
+
+				Program:  pumpfun_constant.Pumpfun_Program,
+				Keys:     instruction.Accounts,
+				MethodId: methodId,
+			}
+		} else {
+			swapData = type_.SwapDataType{
+				InputAddress:             logObj.Mint,
+				OutputAddress:            solana.SolMint,
+				InputAmountWithDecimals:  logObj.TokenAmount,
+				OutputAmountWithDecimals: logObj.SOLAmount,
+				InputDecimals:            pumpfun_constant.Pumpfun_Token_Decimals,
+				OutputDecimals:           constant.SOL_Decimals,
+				UserAddress:              logObj.User,
+
+				PairAddress: solana.PublicKey{},
+				InputVault:  solana.PublicKey{},
+				OutputVault: solana.PublicKey{},
+
+				ParsedKeys: nil,
+				ExtraDatas: &pumpfun_type.ExtraDatasType{
+					ReserveSOLAmountWithDecimals:   logObj.VirtualSolReserves,
+					ReserveTokenAmountWithDecimals: logObj.VirtualTokenReserves,
+					Timestamp:                      uint64(logObj.Timestamp * 1000),
+				},
+
+				Program:  pumpfun_constant.Pumpfun_Program,
+				Keys:     instruction.Accounts,
+				MethodId: methodId,
+			}
+		}
+		swaps = append(swaps, &swapData)
 	}
 
 	feeInfo, err := util.GetFeeInfoFromParsedTx(meta, transaction)
 	if err != nil {
 		return nil, err
 	}
-	return &pumpfun_type.SwapTxDataType{
-		TxId:                          transaction.Signatures[0].String(),
-		Swaps:                         swaps,
-		FeeInfo:                       feeInfo,
-		UserBalanceWithDecimals:       meta.PostBalances[0],
-		BeforeUserBalanceWithDecimals: meta.PreBalances[0],
+	return &type_.SwapTxDataType{
+		TxId:    transaction.Signatures[0].String(),
+		Swaps:   swaps,
+		FeeInfo: feeInfo,
 	}, nil
 }
 

@@ -9,6 +9,7 @@ import (
 	solana "github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
 	constant "github.com/pefish/go-coin-sol/constant"
+	type_ "github.com/pefish/go-coin-sol/program/pumpfun/type"
 	go_test_ "github.com/pefish/go-test"
 )
 
@@ -59,14 +60,27 @@ func TestParseSwapByLogs(t *testing.T) {
 	)
 	go_test_.Equal(t, nil, err)
 	swaps := ParseSwapByLogs(getTransactionResult.Meta.LogMessages)
-	for _, swapData := range swaps {
+	for _, swap := range swaps {
+		extraDatas := swap.ExtraDatas.(*type_.ExtraDatasType)
 		fmt.Printf(
-			"[Swap] <%s> <SOLAmount: %d> <TokenAmount: %d> <ReserveSOLAmount: %d> <ReserveTokenAmount: %d>\n",
-			swapData.Type,
-			swapData.SOLAmountWithDecimals,
-			swapData.TokenAmountWithDecimals,
-			swapData.ReserveSOLAmountWithDecimals,
-			swapData.ReserveTokenAmountWithDecimals,
+			`
+<UserAddress: %s>
+<InputAddress: %s>
+<OutputAddress: %s>
+<InputAmountWithDecimals: %d>
+<OutputAmountWithDecimals: %d>
+<ReserveSOLAmountWithDecimals: %d>
+<ReserveTokenAmountWithDecimals: %d>
+<Timestamp: %d>
+`,
+			swap.UserAddress,
+			swap.InputAddress,
+			swap.OutputAddress,
+			swap.InputAmountWithDecimals,
+			swap.OutputAmountWithDecimals,
+			extraDatas.ReserveSOLAmountWithDecimals,
+			extraDatas.ReserveTokenAmountWithDecimals,
+			extraDatas.Timestamp,
 		)
 	}
 }

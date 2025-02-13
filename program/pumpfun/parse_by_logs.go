@@ -8,6 +8,7 @@ import (
 	bin "github.com/gagliardetto/binary"
 	solana "github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
+	"github.com/pefish/go-coin-sol/constant"
 	pumpfun_constant "github.com/pefish/go-coin-sol/program/pumpfun/constant"
 	pumpfun_type "github.com/pefish/go-coin-sol/program/pumpfun/type"
 	raydium_amm_constant "github.com/pefish/go-coin-sol/program/raydium-amm/constant"
@@ -15,12 +16,12 @@ import (
 	util "github.com/pefish/go-coin-sol/util"
 )
 
-func ParseSwapByLogs(logs []string) []*pumpfun_type.SwapDataType {
+func ParseSwapByLogs(logs []string) []*type_.SwapDataType {
 	if strings.Contains(strings.Join(logs, ""), "failed") {
 		return nil
 	}
 
-	swaps := make([]*pumpfun_type.SwapDataType, 0)
+	swaps := make([]*type_.SwapDataType, 0)
 
 	isSwap := false
 	stack := util.NewStack()
@@ -80,22 +81,60 @@ func ParseSwapByLogs(logs []string) []*pumpfun_type.SwapDataType {
 			logObj.Timestamp == 0 {
 			continue
 		}
-		swaps = append(swaps, &pumpfun_type.SwapDataType{
-			TokenAddress:            logObj.Mint,
-			SOLAmountWithDecimals:   logObj.SOLAmount,
-			TokenAmountWithDecimals: logObj.TokenAmount,
-			Type: func() type_.SwapType {
-				if logObj.IsBuy {
-					return type_.SwapType_Buy
-				} else {
-					return type_.SwapType_Sell
-				}
-			}(),
-			UserAddress:                    logObj.User,
-			Timestamp:                      uint64(logObj.Timestamp * 1000),
-			ReserveSOLAmountWithDecimals:   logObj.VirtualSolReserves,
-			ReserveTokenAmountWithDecimals: logObj.VirtualTokenReserves,
-		})
+		var swapData type_.SwapDataType
+		if logObj.IsBuy {
+			swapData = type_.SwapDataType{
+				InputAddress:             solana.SolMint,
+				OutputAddress:            logObj.Mint,
+				InputAmountWithDecimals:  logObj.SOLAmount,
+				OutputAmountWithDecimals: logObj.TokenAmount,
+				InputDecimals:            constant.SOL_Decimals,
+				OutputDecimals:           pumpfun_constant.Pumpfun_Token_Decimals,
+				UserAddress:              logObj.User,
+
+				PairAddress: solana.PublicKey{},
+				InputVault:  solana.PublicKey{},
+				OutputVault: solana.PublicKey{},
+
+				ParsedKeys: nil,
+				ExtraDatas: &pumpfun_type.ExtraDatasType{
+					ReserveSOLAmountWithDecimals:   logObj.VirtualSolReserves,
+					ReserveTokenAmountWithDecimals: logObj.VirtualTokenReserves,
+					Timestamp:                      uint64(logObj.Timestamp * 1000),
+				},
+
+				Program:  pumpfun_constant.Pumpfun_Program,
+				Keys:     nil,
+				MethodId: "",
+			}
+		} else {
+			swapData = type_.SwapDataType{
+				InputAddress:             logObj.Mint,
+				OutputAddress:            solana.SolMint,
+				InputAmountWithDecimals:  logObj.TokenAmount,
+				OutputAmountWithDecimals: logObj.SOLAmount,
+				InputDecimals:            pumpfun_constant.Pumpfun_Token_Decimals,
+				OutputDecimals:           constant.SOL_Decimals,
+				UserAddress:              logObj.User,
+
+				PairAddress: solana.PublicKey{},
+				InputVault:  solana.PublicKey{},
+				OutputVault: solana.PublicKey{},
+
+				ParsedKeys: nil,
+				ExtraDatas: &pumpfun_type.ExtraDatasType{
+					ReserveSOLAmountWithDecimals:   logObj.VirtualSolReserves,
+					ReserveTokenAmountWithDecimals: logObj.VirtualTokenReserves,
+					Timestamp:                      uint64(logObj.Timestamp * 1000),
+				},
+
+				Program:  pumpfun_constant.Pumpfun_Program,
+				Keys:     nil,
+				MethodId: "",
+			}
+		}
+
+		swaps = append(swaps, &swapData)
 	}
 
 	return swaps

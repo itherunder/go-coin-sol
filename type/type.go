@@ -38,10 +38,12 @@ type SwapDataType struct {
 	InputVault  solana.PublicKey `json:"input_vault"`
 	OutputVault solana.PublicKey `json:"output_vault"`
 
-	ParsedKeys interface{}        `json:"parsed_keys"`
-	Program    solana.PublicKey   `json:"program"`
-	Keys       []solana.PublicKey `json:"keys"`
-	MethodId   string             `json:"method_id"`
+	ParsedKeys interface{} `json:"parsed_keys"`
+	ExtraDatas interface{} `json:"extra_datas"`
+
+	Program  solana.PublicKey   `json:"program"`
+	Keys     []solana.PublicKey `json:"keys"`
+	MethodId string             `json:"method_id"`
 }
 
 type SwapTxDataType struct {

@@ -5,23 +5,10 @@ import (
 	type_ "github.com/pefish/go-coin-sol/type"
 )
 
-type SwapDataType struct {
-	TokenAddress                   solana.PublicKey `json:"token_address"`
-	SOLAmountWithDecimals          uint64           `json:"sol_amount_with_decimals"`
-	TokenAmountWithDecimals        uint64           `json:"token_amount_with_decimals"`
-	Type                           type_.SwapType   `json:"type"`
-	UserAddress                    solana.PublicKey `json:"user_address"`
-	ReserveSOLAmountWithDecimals   uint64           `json:"reserve_sol_amount_with_decimals"`
-	ReserveTokenAmountWithDecimals uint64           `json:"reserve_token_amount_with_decimals"`
-	Timestamp                      uint64           `json:"timestamp"`
-}
-
-type SwapTxDataType struct {
-	Swaps                         []*SwapDataType `json:"swaps"`
-	FeeInfo                       *type_.FeeInfo  `json:"fee_info"`
-	TxId                          string          `json:"tx_id"`
-	UserBalanceWithDecimals       uint64          `json:"user_balance_with_decimals"`
-	BeforeUserBalanceWithDecimals uint64          `json:"before_user_balance_with_decimals"`
+type ExtraDatasType struct {
+	ReserveSOLAmountWithDecimals   uint64 `json:"reserve_sol_amount_with_decimals"`
+	ReserveTokenAmountWithDecimals uint64 `json:"reserve_token_amount_with_decimals"`
+	Timestamp                      uint64 `json:"timestamp"`
 }
 
 type CreateTxDataType struct {

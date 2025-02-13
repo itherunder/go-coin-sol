@@ -10,6 +10,7 @@ import (
 	solana "github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
 	constant "github.com/pefish/go-coin-sol/constant"
+	type_ "github.com/pefish/go-coin-sol/program/pumpfun/type"
 	i_logger "github.com/pefish/go-interface/i-logger"
 	go_test_ "github.com/pefish/go-test"
 )
@@ -25,7 +26,7 @@ func init() {
 	client = rpc.New(url)
 }
 
-func TestParseSwapTx(t *testing.T) {
+func TestParseSwapTxByParsedTx(t *testing.T) {
 	// return
 	getTransactionResult, err := client.GetParsedTransaction(
 		context.TODO(),
@@ -38,42 +39,27 @@ func TestParseSwapTx(t *testing.T) {
 	go_test_.Equal(t, nil, err)
 	r, err := ParseSwapTxByParsedTx(getTransactionResult.Meta, getTransactionResult.Transaction)
 	go_test_.Equal(t, nil, err)
-	for _, swapData := range r.Swaps {
+	for _, swap := range r.Swaps {
+		extraDatas := swap.ExtraDatas.(*type_.ExtraDatasType)
 		fmt.Printf(
-			"[Swap] <UserAddress: %s> <%s> <SOLAmount: %d> <TokenAmount: %d> <TokenAddress: %s> <ReserveSOLAmount: %d> <ReserveTokenAmount: %d>\n",
-			swapData.UserAddress,
-			swapData.Type,
-			swapData.SOLAmountWithDecimals,
-			swapData.TokenAmountWithDecimals,
-			swapData.TokenAddress,
-			swapData.ReserveSOLAmountWithDecimals,
-			swapData.ReserveTokenAmountWithDecimals,
-		)
-	}
-}
-
-func TestParseSwapTxByParsedTx(t *testing.T) {
-	getTransactionResult, err := client.GetParsedTransaction(
-		context.TODO(),
-		solana.MustSignatureFromBase58("3FhAfwZts7di6LwtTY86rVGprB1hvsMtNrpfmt95UxfvH4LSZsn2fjMxuekmm7sx6ZKvxuwzWQhYc7yZdrb2r2f9"),
-		&rpc.GetParsedTransactionOpts{
-			Commitment:                     rpc.CommitmentConfirmed,
-			MaxSupportedTransactionVersion: constant.MaxSupportedTransactionVersion_0,
-		},
-	)
-	go_test_.Equal(t, nil, err)
-	r, err := ParseSwapTxByParsedTx(getTransactionResult.Meta, getTransactionResult.Transaction)
-	go_test_.Equal(t, nil, err)
-	for _, swapData := range r.Swaps {
-		fmt.Printf(
-			"[Swap] <UserAddress: %s> <%s> <SOLAmount: %d> <TokenAmount: %d> <TokenAddress: %s> <ReserveSOLAmount: %d> <ReserveTokenAmount: %d>\n",
-			swapData.UserAddress,
-			swapData.Type,
-			swapData.SOLAmountWithDecimals,
-			swapData.TokenAmountWithDecimals,
-			swapData.TokenAddress,
-			swapData.ReserveSOLAmountWithDecimals,
-			swapData.ReserveTokenAmountWithDecimals,
+			`
+<UserAddress: %s>
+<InputAddress: %s>
+<OutputAddress: %s>
+<InputAmountWithDecimals: %d>
+<OutputAmountWithDecimals: %d>
+<ReserveSOLAmountWithDecimals: %d>
+<ReserveTokenAmountWithDecimals: %d>
+<Timestamp: %d>
+`,
+			swap.UserAddress,
+			swap.InputAddress,
+			swap.OutputAddress,
+			swap.InputAmountWithDecimals,
+			swap.OutputAmountWithDecimals,
+			extraDatas.ReserveSOLAmountWithDecimals,
+			extraDatas.ReserveTokenAmountWithDecimals,
+			extraDatas.Timestamp,
 		)
 	}
 }
