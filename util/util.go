@@ -320,11 +320,11 @@ func GetReserves(
 	}
 	return &type_.TokenAmountInfo{
 			AmountWithDecimals: reserve1WithDecimals,
-			Decimals:           datas[1].Parsed.Info.TokenAmount.Decimals,
+			Decimals:           datas[0].Parsed.Info.TokenAmount.Decimals,
 		},
 		&type_.TokenAmountInfo{
 			AmountWithDecimals: reserve2WithDecimals,
-			Decimals:           datas[0].Parsed.Info.TokenAmount.Decimals,
+			Decimals:           datas[1].Parsed.Info.TokenAmount.Decimals,
 		},
 		nil
 

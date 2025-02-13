@@ -13,6 +13,17 @@ import (
 	go_test_ "github.com/pefish/go-test"
 )
 
+var client *rpc.Client
+
+func init() {
+	url := rpc.MainNetBeta_RPC
+	envUrl := os.Getenv("URL")
+	if envUrl != "" {
+		url = envUrl
+	}
+	client = rpc.New(url)
+}
+
 func TestGetFeeInfoFromTx(t *testing.T) {
 	// return
 	endpoint := rpc.MainNetBeta_RPC
@@ -48,4 +59,26 @@ func TestGetComputeUnitPriceFromHelius(t *testing.T) {
 	)
 	go_test_.Equal(t, nil, err)
 	fmt.Println(r)
+}
+
+func TestGetReserves(t *testing.T) {
+	// return
+	r1, r2, err := GetReserves(
+		client,
+		solana.MustPublicKeyFromBase58("72SjUpm13yXFipjgppCcFz3fLof9gohscpGqFMus3eoG"),
+		solana.MustPublicKeyFromBase58("3BSbsfPXRQijoKmgS2qyGwjCS1XRN81ff9PRq4JwZZ9S"),
+	)
+	go_test_.Equal(t, nil, err)
+	fmt.Printf(
+		`
+<r1.AmountWithDecimals: %d>
+<r1.Decimals: %d>
+<r2.AmountWithDecimals: %d>
+<r2.Decimals: %d>
+`,
+		r1.AmountWithDecimals,
+		r1.Decimals,
+		r2.AmountWithDecimals,
+		r2.Decimals,
+	)
 }

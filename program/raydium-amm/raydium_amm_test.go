@@ -10,6 +10,7 @@ import (
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/pefish/go-coin-sol/constant"
+	raydium_amm_type "github.com/pefish/go-coin-sol/program/raydium-amm/type"
 	raydium_type_ "github.com/pefish/go-coin-sol/program/raydium-amm/type"
 	type_ "github.com/pefish/go-coin-sol/type"
 	"github.com/pefish/go-coin-sol/util"
@@ -31,7 +32,7 @@ func TestParseSwapTxByParsedTx(t *testing.T) {
 	// return
 	getTransactionResult, err := client.GetParsedTransaction(
 		context.TODO(),
-		solana.MustSignatureFromBase58("4isBHXQ6y9CPvuJetwHcDZWypB952prBHn9ZGokx5pTQUrPKd5241uxyL5SQNQRUEFRefXLRWuZVzaNAaq2JqPAt"),
+		solana.MustSignatureFromBase58("232jxvZPAdA4u8rhLgo2YjQtqh7rtkzVkhWyzJ97etDjpnyLBx1xt2DiRgC44yt1XmDqS2UEKk2yGh9dHWxYgja3"),
 		&rpc.GetParsedTransactionOpts{
 			Commitment:                     rpc.CommitmentConfirmed,
 			MaxSupportedTransactionVersion: constant.MaxSupportedTransactionVersion_0,
@@ -40,24 +41,34 @@ func TestParseSwapTxByParsedTx(t *testing.T) {
 	go_test_.Equal(t, nil, err)
 	r, err := ParseSwapTxByParsedTx(rpc.MainNetBeta, getTransactionResult.Meta, getTransactionResult.Transaction)
 	go_test_.Equal(t, nil, err)
+
 	for _, swap := range r.Swaps {
+		extraDatas := swap.ExtraDatas.(*raydium_amm_type.ExtraDatasType)
 		fmt.Printf(
 			`
 <UserAddress: %s>
 <InputAddress: %s>
+<InputDecimals: %d>
 <OutputAddress: %s>
+<OutputDecimals: %d>
 <InputAmountWithDecimals: %d>
 <OutputAmountWithDecimals: %d>
 <InputVault: %s>
 <OutputVault: %s>
+<ReserveInputWithDecimals: %d>
+<ReserveOutputWithDecimals: %d>
 `,
 			swap.UserAddress,
 			swap.InputAddress,
+			swap.InputDecimals,
 			swap.OutputAddress,
+			swap.OutputDecimals,
 			swap.InputAmountWithDecimals,
 			swap.OutputAmountWithDecimals,
 			swap.InputVault,
 			swap.OutputVault,
+			extraDatas.ReserveInputWithDecimals,
+			extraDatas.ReserveOutputWithDecimals,
 		)
 	}
 
