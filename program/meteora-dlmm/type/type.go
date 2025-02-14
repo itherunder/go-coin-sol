@@ -12,5 +12,5 @@ type SwapKeys struct {
 	RemainAccounts []solana.PublicKey
 	XMint          solana.PublicKey
 	YMint          solana.PublicKey
-	Vaults         map[solana.PublicKey]solana.PublicKey
+	Vaults         map[solana.PublicKey]solana.PublicKey // mint -> vault
 }

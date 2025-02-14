@@ -6,12 +6,10 @@ import (
 )
 
 type SwapKeys struct {
-	AmmAddress                  solana.PublicKey
-	PoolCoinTokenAccountAddress solana.PublicKey
-	PoolPcTokenAccountAddress   solana.PublicKey
-	CoinMint                    solana.PublicKey
-	PCMint                      solana.PublicKey
-	Vaults                      map[solana.PublicKey]solana.PublicKey
+	AmmAddress solana.PublicKey
+	CoinMint   solana.PublicKey
+	PCMint     solana.PublicKey
+	Vaults     map[solana.PublicKey]solana.PublicKey // mint -> vault
 }
 
 type ExtraDatasType struct {

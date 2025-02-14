@@ -81,14 +81,18 @@ func TestGetSwapInstructions(t *testing.T) {
 	tokenAddress := solana.MustPublicKeyFromBase58("82zGj6ee2ocCMBH1mogyNLr8paUoai45GYVa42QYfzPz")
 	tokenDecimals := 9
 	raydiumSwapKeys := raydium_type_.SwapKeys{
-		AmmAddress:                  solana.MustPublicKeyFromBase58("HfzUC934vUPc7E8G7YtbgtaWrrjKhraDF4ZEZ8A6gsYA"),
-		PoolCoinTokenAccountAddress: solana.MustPublicKeyFromBase58("7ZuXkdD9dTYXJr38W2KGdDLjssN61VxkWzANkFLfeQKe"),
-		PoolPcTokenAccountAddress:   solana.MustPublicKeyFromBase58("8ErAcSyRyWg5xDhzR28fpoA8EPDDUqQaqmcz2pSAZX3J"),
+		AmmAddress: solana.MustPublicKeyFromBase58("HfzUC934vUPc7E8G7YtbgtaWrrjKhraDF4ZEZ8A6gsYA"),
+		CoinMint:   tokenAddress,
+		PCMint:     solana.SolMint,
+		Vaults: map[solana.PublicKey]solana.PublicKey{
+			solana.SolMint: solana.MustPublicKeyFromBase58("8ErAcSyRyWg5xDhzR28fpoA8EPDDUqQaqmcz2pSAZX3J"),
+			tokenAddress:   solana.MustPublicKeyFromBase58("7ZuXkdD9dTYXJr38W2KGdDLjssN61VxkWzANkFLfeQKe"),
+		},
 	}
 	solAmount, tokenAmount, err := util.GetReserves(
 		client,
-		raydiumSwapKeys.PoolPcTokenAccountAddress,
-		raydiumSwapKeys.PoolCoinTokenAccountAddress,
+		raydiumSwapKeys.Vaults[solana.SolMint],
+		raydiumSwapKeys.Vaults[tokenAddress],
 	)
 	go_test_.Equal(t, nil, err)
 
@@ -133,8 +137,8 @@ func TestParseAddLiqTxByParsedTx(t *testing.T) {
 		`,
 		r.TokenAddress,
 		r.AmmAddress.String(),
-		r.PoolCoinTokenAccountAddress.String(),
-		r.PoolPcTokenAccountAddress.String(),
+		r.Vaults[r.CoinMint].String(),
+		r.Vaults[r.PCMint].String(),
 		r.CoinMint.String(),
 		r.PCMint.String(),
 	)

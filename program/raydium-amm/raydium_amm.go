@@ -265,11 +265,9 @@ func ParseSwapTxByParsedTx(
 			OutputDecimals:           outputDecimals,
 			UserAddress:              userAddress,
 			ParsedKeys: &raydium_amm_type.SwapKeys{
-				AmmAddress:                  instruction.Accounts[1],
-				PoolCoinTokenAccountAddress: poolCoinTokenAccount,
-				PoolPcTokenAccountAddress:   poolPCTokenAccount,
-				CoinMint:                    coinAddress,
-				PCMint:                      pcAddress,
+				AmmAddress: instruction.Accounts[1],
+				CoinMint:   coinAddress,
+				PCMint:     pcAddress,
 				Vaults: map[solana.PublicKey]solana.PublicKey{
 					pcAddress:   poolPCTokenAccount,
 					coinAddress: poolCoinTokenAccount,
@@ -351,11 +349,9 @@ func ParseAddLiqTxByParsedTx(
 			TxId:         parsedTransaction.Signatures[0].String(),
 			TokenAddress: tokenAddress,
 			SwapKeys: raydium_amm_type.SwapKeys{
-				AmmAddress:                  parsedInstruction.Accounts[4],
-				PoolCoinTokenAccountAddress: parsedInstruction.Accounts[10],
-				PoolPcTokenAccountAddress:   parsedInstruction.Accounts[11],
-				CoinMint:                    coinAddress,
-				PCMint:                      pcAddress,
+				AmmAddress: parsedInstruction.Accounts[4],
+				CoinMint:   coinAddress,
+				PCMint:     pcAddress,
 				Vaults: map[solana.PublicKey]solana.PublicKey{
 					pcAddress:   parsedInstruction.Accounts[11],
 					coinAddress: parsedInstruction.Accounts[10],

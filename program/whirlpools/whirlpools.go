@@ -68,8 +68,6 @@ func ParseSwapTxByParsedTx(
 
 			parsedKeys = &whirlpools_type.SwapV2Keys{
 				PairAddress: pairAddress,
-				VaultA:      instruction.Accounts[8],
-				VaultB:      instruction.Accounts[10],
 				Oracle:      instruction.Accounts[14],
 				MintA:       instruction.Accounts[5],
 				MintB:       instruction.Accounts[6],
@@ -77,8 +75,8 @@ func ParseSwapTxByParsedTx(
 				TickArray1:  instruction.Accounts[12],
 				TickArray2:  instruction.Accounts[13],
 				Vaults: map[solana.PublicKey]solana.PublicKey{
-					instruction.Accounts[6]: instruction.Accounts[2],
-					instruction.Accounts[7]: instruction.Accounts[3],
+					instruction.Accounts[5]: instruction.Accounts[8],
+					instruction.Accounts[6]: instruction.Accounts[10],
 				},
 			}
 			transferDatas, err := util.FindNextTwoTransferCheckedDatas(index+1, allInstructions)
@@ -124,8 +122,6 @@ func ParseSwapTxByParsedTx(
 
 			parsedKeys = &whirlpools_type.SwapKeys{
 				PairAddress: pairAddress,
-				VaultA:      vaultA,
-				VaultB:      vaultB,
 				Oracle:      instruction.Accounts[8],
 				TickArray0:  instruction.Accounts[7],
 				TickArray1:  instruction.Accounts[8],
@@ -134,8 +130,8 @@ func ParseSwapTxByParsedTx(
 				MintA: aMint,
 				MintB: bMint,
 				Vaults: map[solana.PublicKey]solana.PublicKey{
-					instruction.Accounts[6]: instruction.Accounts[2],
-					instruction.Accounts[7]: instruction.Accounts[3],
+					aMint: vaultA,
+					bMint: vaultB,
 				},
 			}
 			transferDatas, err := util.FindNextTwoTransferDatas(index+1, allInstructions)

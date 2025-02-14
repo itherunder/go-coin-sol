@@ -72,12 +72,12 @@ func NewBuyBaseOutInstruction(
 			},
 
 			{
-				PublicKey:  raydiumSwapKeys.PoolCoinTokenAccountAddress,
+				PublicKey:  raydiumSwapKeys.Vaults[raydiumSwapKeys.CoinMint],
 				IsSigner:   false,
 				IsWritable: true,
 			},
 			{
-				PublicKey:  raydiumSwapKeys.PoolPcTokenAccountAddress,
+				PublicKey:  raydiumSwapKeys.Vaults[raydiumSwapKeys.PCMint],
 				IsSigner:   false,
 				IsWritable: true,
 			},

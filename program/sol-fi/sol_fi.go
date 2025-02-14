@@ -112,8 +112,6 @@ func ParseSwapTxByParsedTx(
 			UserAddress:              userAddress,
 			ParsedKeys: &sol_fi_type.SwapKeys{
 				PairAddress: pairAddress,
-				VaultA:      vaultA,
-				VaultB:      vaultB,
 				MintA:       mintA,
 				MintB:       mintB,
 				Vaults: map[solana.PublicKey]solana.PublicKey{
