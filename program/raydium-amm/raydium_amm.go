@@ -281,6 +281,7 @@ func ParseSwapTxByParsedTx(
 			InputVault:  inputVault,
 			OutputVault: outputVault,
 			Keys:        instruction.Accounts,
+			AllKeys:     transaction.Message.AccountKeys,
 			MethodId:    methodId,
 			Program:     raydium_amm_constant.Raydium_Authority_V4[network],
 		})

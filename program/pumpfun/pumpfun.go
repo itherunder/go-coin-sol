@@ -102,6 +102,7 @@ func ParseSwapTxByParsedTx(network rpc.Cluster, meta *rpc.ParsedTransactionMeta,
 
 				Program:  pumpfun_constant.Pumpfun_Program[network],
 				Keys:     instruction.Accounts,
+				AllKeys:  transaction.Message.AccountKeys,
 				MethodId: methodId,
 			}
 		} else {
@@ -127,6 +128,7 @@ func ParseSwapTxByParsedTx(network rpc.Cluster, meta *rpc.ParsedTransactionMeta,
 
 				Program:  pumpfun_constant.Pumpfun_Program[network],
 				Keys:     instruction.Accounts,
+				AllKeys:  transaction.Message.AccountKeys,
 				MethodId: methodId,
 			}
 		}

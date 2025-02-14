@@ -101,6 +101,7 @@ func ParseSwapTxByParsedTx(
 			OutputVault:              outputVault,
 			ParsedKeys:               parsedKeys,
 			Keys:                     instruction.Accounts,
+			AllKeys:                  transaction.Message.AccountKeys,
 			MethodId:                 methodId,
 			Program:                  meteora_dlmm_constant.Meteora_DLMM_Program[network],
 		})

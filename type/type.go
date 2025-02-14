@@ -2,6 +2,7 @@ package type_
 
 import (
 	"github.com/gagliardetto/solana-go"
+	"github.com/gagliardetto/solana-go/rpc"
 )
 
 type DexPlatform string
@@ -41,9 +42,10 @@ type SwapDataType struct {
 	ParsedKeys interface{} `json:"parsed_keys"`
 	ExtraDatas interface{} `json:"extra_datas"`
 
-	Program  solana.PublicKey   `json:"program"`
-	Keys     []solana.PublicKey `json:"keys"`
-	MethodId string             `json:"method_id"`
+	Program  solana.PublicKey           `json:"program"`
+	Keys     []solana.PublicKey         `json:"keys"`
+	AllKeys  []rpc.ParsedMessageAccount `json:"all_keys"`
+	MethodId string                     `json:"method_id"`
 }
 
 type SOLTradeInfoType struct {
