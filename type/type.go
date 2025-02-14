@@ -46,6 +46,36 @@ type SwapDataType struct {
 	MethodId string             `json:"method_id"`
 }
 
+type SOLTradeInfoType struct {
+	TokenAddress            solana.PublicKey `json:"token_address"`
+	Type                    SwapType         `json:"type"`
+	SOLAmountWithDecimals   uint64           `json:"sol_amount_with_decimals"`
+	TokenAmountWithDecimals uint64           `json:"token_amount_with_decimals"`
+	UserAddress             solana.PublicKey `json:"user_address"`
+}
+
+func (t *SwapDataType) ToSOLTradeInfo() *SOLTradeInfoType {
+	if t.InputAddress.Equals(solana.SolMint) {
+		return &SOLTradeInfoType{
+			TokenAddress:            t.OutputAddress,
+			Type:                    SwapType_Buy,
+			SOLAmountWithDecimals:   t.InputAmountWithDecimals,
+			TokenAmountWithDecimals: t.OutputAmountWithDecimals,
+			UserAddress:             t.UserAddress,
+		}
+	} else if t.OutputAddress.Equals(solana.SolMint) {
+		return &SOLTradeInfoType{
+			TokenAddress:            t.InputAddress,
+			Type:                    SwapType_Sell,
+			SOLAmountWithDecimals:   t.OutputAmountWithDecimals,
+			TokenAmountWithDecimals: t.InputAmountWithDecimals,
+			UserAddress:             t.UserAddress,
+		}
+	} else {
+		return nil
+	}
+}
+
 type SwapTxDataType struct {
 	Swaps   []*SwapDataType
 	FeeInfo *FeeInfo
