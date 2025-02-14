@@ -328,25 +328,39 @@ func ParseAddLiqTxByParsedTx(
 		}
 
 		coinIsSOL := parsedInstruction.Accounts[8].Equals(solana.SolMint)
+		var coinAddress solana.PublicKey
+		var pcAddress solana.PublicKey
 		var solVault solana.PublicKey
 		var tokenVault solana.PublicKey
 		var tokenAddress solana.PublicKey
 		if coinIsSOL {
+			coinAddress = solana.SolMint
+			pcAddress = parsedInstruction.Accounts[9]
 			tokenAddress = parsedInstruction.Accounts[9]
 			solVault = parsedInstruction.Accounts[10]
 			tokenVault = parsedInstruction.Accounts[11]
 		} else {
+			coinAddress = parsedInstruction.Accounts[9]
+			pcAddress = solana.SolMint
 			tokenAddress = parsedInstruction.Accounts[8]
 			solVault = parsedInstruction.Accounts[11]
 			tokenVault = parsedInstruction.Accounts[10]
 		}
 
 		return &raydium_amm_type.AddLiqTxDataType{
-			TxId:                        parsedTransaction.Signatures[0].String(),
-			TokenAddress:                tokenAddress,
-			AMMAddress:                  parsedInstruction.Accounts[4],
-			PoolCoinTokenAccount:        parsedInstruction.Accounts[10],
-			PoolPcTokenAccount:          parsedInstruction.Accounts[11],
+			TxId:         parsedTransaction.Signatures[0].String(),
+			TokenAddress: tokenAddress,
+			SwapKeys: raydium_amm_type.SwapKeys{
+				AmmAddress:                  parsedInstruction.Accounts[4],
+				PoolCoinTokenAccountAddress: parsedInstruction.Accounts[10],
+				PoolPcTokenAccountAddress:   parsedInstruction.Accounts[11],
+				CoinMint:                    coinAddress,
+				PCMint:                      pcAddress,
+				Vaults: map[solana.PublicKey]solana.PublicKey{
+					pcAddress:   parsedInstruction.Accounts[11],
+					coinAddress: parsedInstruction.Accounts[10],
+				},
+			},
 			InitSOLAmountWithDecimals:   params.InitCoinAmount,
 			InitTokenAmountWithDecimals: params.InitPcAmount,
 			PairAddress:                 parsedInstruction.Accounts[4],

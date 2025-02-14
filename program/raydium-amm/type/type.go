@@ -25,9 +25,7 @@ type AddLiqTxDataType struct {
 	InitSOLAmountWithDecimals   uint64           `json:"init_sol_amount_with_decimals"`
 	InitTokenAmountWithDecimals uint64           `json:"init_token_amount_with_decimals"`
 
-	AMMAddress           solana.PublicKey `json:"amm_address"`
-	PoolCoinTokenAccount solana.PublicKey `json:"pool_coin_token_account"`
-	PoolPcTokenAccount   solana.PublicKey `json:"pool_pc_token_account"`
+	SwapKeys
 
 	PairAddress solana.PublicKey `json:"pair_address"`
 	SOLVault    solana.PublicKey `json:"sol_vault"`

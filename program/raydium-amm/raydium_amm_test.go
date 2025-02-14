@@ -109,6 +109,7 @@ func TestGetSwapInstructions(t *testing.T) {
 }
 
 func TestParseAddLiqTxByParsedTx(t *testing.T) {
+	// return
 	getTransactionResult, err := client.GetParsedTransaction(
 		context.TODO(),
 		solana.MustSignatureFromBase58("44sEeJxeoZiZDoT4dakF6kKuynenFgWYevzwuzMqGsarvxd5bQKYcMzZWxh1kEnZxd8uiAKAjs8YfAXCoM2pAGm4"),
@@ -122,10 +123,19 @@ func TestParseAddLiqTxByParsedTx(t *testing.T) {
 	go_test_.Equal(t, nil, err)
 	go_test_.Equal(t, false, r == nil)
 	fmt.Printf(
-		"[AddLiq] <%s> <AMMAddress: %s> <PoolCoinTokenAccount: %s> <PoolPcTokenAccount: %s>\n",
+		`
+<TokenAddress: %s>
+<AMMAddress: %s>
+<PoolCoinTokenAccount: %s>
+<PoolPcTokenAccount: %s>
+<CoinMint: %s>
+<PCMint: %s>
+		`,
 		r.TokenAddress,
-		r.AMMAddress.String(),
-		r.PoolCoinTokenAccount.String(),
-		r.PoolPcTokenAccount.String(),
+		r.AmmAddress.String(),
+		r.PoolCoinTokenAccountAddress.String(),
+		r.PoolPcTokenAccountAddress.String(),
+		r.CoinMint.String(),
+		r.PCMint.String(),
 	)
 }
