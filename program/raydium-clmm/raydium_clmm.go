@@ -196,7 +196,7 @@ func ParseSwapTxByParsedTx(
 	}
 
 	for index, instruction := range allInstructions {
-		if !instruction.ProgramId.Equals(raydium_clmm_constant.Raydium_Concentrated_Liquidity[network]) {
+		if !instruction.ProgramId.Equals(raydium_clmm_constant.Raydium_CLMM_Program[network]) {
 			continue
 		}
 		methodId := hex.EncodeToString(instruction.Data)[:16]
@@ -292,7 +292,7 @@ func ParseSwapTxByParsedTx(
 			ParsedKeys:               parsedKeys,
 			Keys:                     instruction.Accounts,
 			MethodId:                 methodId,
-			Program:                  raydium_clmm_constant.Raydium_Concentrated_Liquidity[network],
+			Program:                  raydium_clmm_constant.Raydium_CLMM_Program[network],
 		})
 	}
 

@@ -59,7 +59,7 @@ func TestParseSwapByLogs(t *testing.T) {
 		},
 	)
 	go_test_.Equal(t, nil, err)
-	swaps := ParseSwapByLogs(getTransactionResult.Meta.LogMessages)
+	swaps := ParseSwapByLogs(rpc.MainNetBeta, getTransactionResult.Meta.LogMessages)
 	for _, swap := range swaps {
 		extraDatas := swap.ExtraDatas.(*type_.ExtraDatasType)
 		fmt.Printf(

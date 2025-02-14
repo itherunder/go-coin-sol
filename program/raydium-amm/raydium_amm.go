@@ -185,7 +185,7 @@ func ParseSwapTxByParsedTx(
 	}
 
 	for index, instruction := range allInstructions {
-		if !instruction.ProgramId.Equals(raydium_amm_constant.Raydium_Liquidity_Pool_V4[network]) {
+		if !instruction.ProgramId.Equals(raydium_amm_constant.Raydium_AMM_Program[network]) {
 			continue
 		}
 		methodId := hex.EncodeToString(instruction.Data)[:2]
@@ -302,7 +302,7 @@ func ParseAddLiqTxByParsedTx(
 		return nil, nil
 	}
 	for _, parsedInstruction := range parsedTransaction.Message.Instructions {
-		if !parsedInstruction.ProgramId.Equals(raydium_amm_constant.Raydium_Liquidity_Pool_V4[network]) {
+		if !parsedInstruction.ProgramId.Equals(raydium_amm_constant.Raydium_AMM_Program[network]) {
 			continue
 		}
 		if hex.EncodeToString(parsedInstruction.Data)[:2] != "01" {

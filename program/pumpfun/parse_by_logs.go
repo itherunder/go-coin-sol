@@ -16,7 +16,7 @@ import (
 	util "github.com/pefish/go-coin-sol/util"
 )
 
-func ParseSwapByLogs(logs []string) []*type_.SwapDataType {
+func ParseSwapByLogs(network rpc.Cluster, logs []string) []*type_.SwapDataType {
 	if strings.Contains(strings.Join(logs, ""), "failed") {
 		return nil
 	}
@@ -103,7 +103,7 @@ func ParseSwapByLogs(logs []string) []*type_.SwapDataType {
 					Timestamp:                      uint64(logObj.Timestamp * 1000),
 				},
 
-				Program:  pumpfun_constant.Pumpfun_Program,
+				Program:  pumpfun_constant.Pumpfun_Program[network],
 				Keys:     nil,
 				MethodId: "",
 			}
@@ -128,7 +128,7 @@ func ParseSwapByLogs(logs []string) []*type_.SwapDataType {
 					Timestamp:                      uint64(logObj.Timestamp * 1000),
 				},
 
-				Program:  pumpfun_constant.Pumpfun_Program,
+				Program:  pumpfun_constant.Pumpfun_Program[network],
 				Keys:     nil,
 				MethodId: "",
 			}
@@ -244,8 +244,8 @@ func IsAddLiqByLogs(network rpc.Cluster, logs []string) bool {
 	stack := util.NewStack()
 	for _, log := range logs {
 
-		pushPrefix := fmt.Sprintf("Program %s invoke", raydium_amm_constant.Raydium_Liquidity_Pool_V4[network])
-		popLog := fmt.Sprintf("Program %s success", raydium_amm_constant.Raydium_Liquidity_Pool_V4[network])
+		pushPrefix := fmt.Sprintf("Program %s invoke", raydium_amm_constant.Raydium_AMM_Program[network])
+		popLog := fmt.Sprintf("Program %s success", raydium_amm_constant.Raydium_AMM_Program[network])
 		if strings.HasPrefix(log, pushPrefix) {
 			stack.Push(log)
 			continue

@@ -108,13 +108,13 @@ func NewSellBaseInInstruction(
 				IsWritable: false,
 			},
 			{
-				PublicKey:  pumpfun_constant.Pumpfun_Program,
+				PublicKey:  pumpfun_constant.Pumpfun_Program[network],
 				IsSigner:   false,
 				IsWritable: false,
 			},
 		},
 		data:      append(methodBytes, params.Bytes()...),
-		programID: pumpfun_constant.Pumpfun_Program,
+		programID: pumpfun_constant.Pumpfun_Program[network],
 	}, nil
 }
 

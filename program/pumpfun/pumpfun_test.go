@@ -37,7 +37,7 @@ func TestParseSwapTxByParsedTx(t *testing.T) {
 		},
 	)
 	go_test_.Equal(t, nil, err)
-	r, err := ParseSwapTxByParsedTx(getTransactionResult.Meta, getTransactionResult.Transaction)
+	r, err := ParseSwapTxByParsedTx(rpc.MainNetBeta, getTransactionResult.Meta, getTransactionResult.Transaction)
 	go_test_.Equal(t, nil, err)
 	for _, swap := range r.Swaps {
 		extraDatas := swap.ExtraDatas.(*type_.ExtraDatasType)
@@ -72,7 +72,7 @@ func TestURIInfo(t *testing.T) {
 
 func TestGetBondingCurveData(t *testing.T) {
 	tokenAddressObj := solana.MustPublicKeyFromBase58("7PAaQ8UxYYPksnyxcKFP44Pm4FwFCix4ammGf5P3bK79")
-	r, err := GetBondingCurveData(client, &tokenAddressObj, nil)
+	r, err := GetBondingCurveData(rpc.MainNetBeta, client, &tokenAddressObj, nil)
 	go_test_.Equal(t, nil, err)
 	fmt.Println(r)
 }
@@ -110,7 +110,7 @@ func TestParseRemoveLiqTxByParsedTx(t *testing.T) {
 		},
 	)
 	go_test_.Equal(t, nil, err)
-	r, err := ParseRemoveLiqTxByParsedTx(getTransactionResult.Meta, getTransactionResult.Transaction)
+	r, err := ParseRemoveLiqTxByParsedTx(rpc.MainNetBeta, getTransactionResult.Meta, getTransactionResult.Transaction)
 	go_test_.Equal(t, nil, err)
 	go_test_.Equal(t, false, r == nil)
 	fmt.Printf(

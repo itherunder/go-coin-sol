@@ -43,7 +43,7 @@ func ParseSwapTxByParsedTx(
 	}
 
 	for index, instruction := range allInstructions {
-		if !instruction.ProgramId.Equals(meteora_dlmm_constant.Meteora_DLMM[network]) {
+		if !instruction.ProgramId.Equals(meteora_dlmm_constant.Meteora_DLMM_Program[network]) {
 			continue
 		}
 		methodId := hex.EncodeToString(instruction.Data)[:16]
@@ -102,7 +102,7 @@ func ParseSwapTxByParsedTx(
 			ParsedKeys:               parsedKeys,
 			Keys:                     instruction.Accounts,
 			MethodId:                 methodId,
-			Program:                  meteora_dlmm_constant.Meteora_DLMM[network],
+			Program:                  meteora_dlmm_constant.Meteora_DLMM_Program[network],
 		})
 	}
 

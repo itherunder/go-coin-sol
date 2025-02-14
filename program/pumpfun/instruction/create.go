@@ -6,6 +6,7 @@ import (
 
 	bin "github.com/gagliardetto/binary"
 	"github.com/gagliardetto/solana-go"
+	"github.com/gagliardetto/solana-go/rpc"
 	pumpfun_constant "github.com/pefish/go-coin-sol/program/pumpfun/constant"
 	"github.com/pkg/errors"
 )
@@ -17,6 +18,7 @@ type CreateInstruction struct {
 }
 
 func NewCreateInstruction(
+	network rpc.Cluster,
 	userAddress solana.PublicKey,
 	tokenAddress solana.PublicKey,
 	bondingCurveAddress solana.PublicKey,
@@ -129,13 +131,13 @@ func NewCreateInstruction(
 				IsWritable: false,
 			},
 			{
-				PublicKey:  pumpfun_constant.Pumpfun_Program,
+				PublicKey:  pumpfun_constant.Pumpfun_Program[network],
 				IsSigner:   false,
 				IsWritable: false,
 			},
 		},
 		data:      append(methodBytes, params.Bytes()...),
-		programID: pumpfun_constant.Pumpfun_Program,
+		programID: pumpfun_constant.Pumpfun_Program[network],
 	}, nil
 }
 

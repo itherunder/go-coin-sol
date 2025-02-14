@@ -6,6 +6,7 @@ import (
 
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
+	"github.com/pkg/errors"
 )
 
 type AssociatedTokenAccountDataType struct {
@@ -43,13 +44,13 @@ func GetAssociatedTokenAccountData(
 		Commitment: rpc.CommitmentConfirmed,
 	})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "")
 	}
 
 	var data AssociatedTokenAccountDataType
 	err = json.Unmarshal(info.Value.Data.GetRawJSON(), &data)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "")
 	}
 	return &data, nil
 }
@@ -68,7 +69,7 @@ func GetAssociatedTokenAccountDatas(
 		},
 	)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "")
 	}
 
 	for _, account := range result.Value {
@@ -79,7 +80,7 @@ func GetAssociatedTokenAccountDatas(
 		var data AssociatedTokenAccountDataType
 		err = json.Unmarshal(account.Data.GetRawJSON(), &data)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "")
 		}
 		results = append(results, &data)
 	}

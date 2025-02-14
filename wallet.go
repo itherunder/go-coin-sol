@@ -12,6 +12,7 @@ import (
 	"github.com/gagliardetto/solana-go"
 	computebudget "github.com/gagliardetto/solana-go/programs/compute-budget"
 	"github.com/gagliardetto/solana-go/programs/system"
+	"github.com/gagliardetto/solana-go/programs/token"
 	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/gagliardetto/solana-go/rpc/ws"
 	jitorpc "github.com/jito-labs/jito-go-rpc"
@@ -533,4 +534,42 @@ func (t *Wallet) GetTokenData(
 		return nil, errors.Wrap(err, "")
 	}
 	return &data, nil
+}
+
+func (t *Wallet) GetDestroyTokenAccountInstructions(
+	userAddress solana.PublicKey,
+	tokenAccounts []solana.PublicKey,
+) ([]solana.Instruction, error) {
+	instructions := make([]solana.Instruction, 0)
+	datas, err := associated_token_account.GetAssociatedTokenAccountDatas(t.rpcClient, tokenAccounts)
+	if err != nil {
+		return nil, err
+	}
+	for i, data := range datas {
+		if data.Parsed.Info.TokenAmount.UIAmount > 0.01 {
+			continue
+		}
+		if data.Parsed.Info.TokenAmount.UIAmount > 0 {
+			// 将余额 burn
+			amountWithDecimals, err := strconv.ParseUint(data.Parsed.Info.TokenAmount.Amount, 10, 64)
+			if err != nil {
+				return nil, err
+			}
+			instructions = append(instructions, token.NewBurnInstruction(
+				amountWithDecimals,
+				tokenAccounts[i],
+				solana.MustPublicKeyFromBase58(data.Parsed.Info.Mint),
+				userAddress,
+				nil,
+			).Build())
+		}
+		instructions = append(instructions, token.NewCloseAccountInstruction(
+			tokenAccounts[i],
+			userAddress,
+			userAddress,
+			nil,
+		).Build())
+	}
+
+	return instructions, nil
 }

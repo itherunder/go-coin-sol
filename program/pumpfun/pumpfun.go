@@ -28,7 +28,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func ParseSwapTxByParsedTx(meta *rpc.ParsedTransactionMeta, transaction *rpc.ParsedTransaction) (*type_.SwapTxDataType, error) {
+func ParseSwapTxByParsedTx(network rpc.Cluster, meta *rpc.ParsedTransactionMeta, transaction *rpc.ParsedTransaction) (*type_.SwapTxDataType, error) {
 	swaps := make([]*type_.SwapDataType, 0)
 
 	allInstructions := make([]*rpc.ParsedInstruction, 0)
@@ -42,7 +42,7 @@ func ParseSwapTxByParsedTx(meta *rpc.ParsedTransactionMeta, transaction *rpc.Par
 	}
 
 	for _, instruction := range allInstructions {
-		if !instruction.ProgramId.Equals(pumpfun_constant.Pumpfun_Program) {
+		if !instruction.ProgramId.Equals(pumpfun_constant.Pumpfun_Program[network]) {
 			continue
 		}
 		if len(instruction.Accounts) != 1 || !instruction.Accounts[0].Equals(pumpfun_constant.Pumpfun_Event_Authority) {
@@ -100,7 +100,7 @@ func ParseSwapTxByParsedTx(meta *rpc.ParsedTransactionMeta, transaction *rpc.Par
 					Timestamp:                      uint64(logObj.Timestamp * 1000),
 				},
 
-				Program:  pumpfun_constant.Pumpfun_Program,
+				Program:  pumpfun_constant.Pumpfun_Program[network],
 				Keys:     instruction.Accounts,
 				MethodId: methodId,
 			}
@@ -125,7 +125,7 @@ func ParseSwapTxByParsedTx(meta *rpc.ParsedTransactionMeta, transaction *rpc.Par
 					Timestamp:                      uint64(logObj.Timestamp * 1000),
 				},
 
-				Program:  pumpfun_constant.Pumpfun_Program,
+				Program:  pumpfun_constant.Pumpfun_Program[network],
 				Keys:     instruction.Accounts,
 				MethodId: methodId,
 			}
@@ -144,7 +144,7 @@ func ParseSwapTxByParsedTx(meta *rpc.ParsedTransactionMeta, transaction *rpc.Par
 	}, nil
 }
 
-func ParseCreateTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*pumpfun_type.CreateTxDataType, error) {
+func ParseCreateTx(network rpc.Cluster, meta *rpc.TransactionMeta, transaction *solana.Transaction) (*pumpfun_type.CreateTxDataType, error) {
 	accountKeys := transaction.Message.AccountKeys
 	if meta.LoadedAddresses.Writable != nil {
 		accountKeys = append(accountKeys, meta.LoadedAddresses.Writable...)
@@ -154,7 +154,7 @@ func ParseCreateTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (
 	}
 	for _, instruction := range transaction.Message.Instructions {
 		programPKey := accountKeys[instruction.ProgramIDIndex]
-		if !programPKey.Equals(pumpfun_constant.Pumpfun_Program) {
+		if !programPKey.Equals(pumpfun_constant.Pumpfun_Program[network]) {
 			continue
 		}
 		if hex.EncodeToString(instruction.Data)[:16] != "181ec828051c0777" {
@@ -193,7 +193,7 @@ func ParseCreateTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (
 }
 
 // 上岸
-func ParseRemoveLiqTx(meta *rpc.TransactionMeta, transaction *solana.Transaction) (*pumpfun_type.RemoveLiqTxDataType, error) {
+func ParseRemoveLiqTx(network rpc.Cluster, meta *rpc.TransactionMeta, transaction *solana.Transaction) (*pumpfun_type.RemoveLiqTxDataType, error) {
 	accountKeys := transaction.Message.AccountKeys
 	if meta.LoadedAddresses.Writable != nil {
 		accountKeys = append(accountKeys, meta.LoadedAddresses.Writable...)
@@ -206,7 +206,7 @@ func ParseRemoveLiqTx(meta *rpc.TransactionMeta, transaction *solana.Transaction
 	}
 	for _, instruction := range transaction.Message.Instructions {
 		programPKey := accountKeys[instruction.ProgramIDIndex]
-		if !programPKey.Equals(pumpfun_constant.Pumpfun_Program) {
+		if !programPKey.Equals(pumpfun_constant.Pumpfun_Program[network]) {
 			continue
 		}
 		if hex.EncodeToString(instruction.Data)[:16] != "b712469c946da122" {
@@ -228,12 +228,12 @@ func ParseRemoveLiqTx(meta *rpc.TransactionMeta, transaction *solana.Transaction
 	return nil, nil
 }
 
-func ParseRemoveLiqTxByParsedTx(meta *rpc.ParsedTransactionMeta, parsedTransaction *rpc.ParsedTransaction) (*pumpfun_type.RemoveLiqTxDataType, error) {
+func ParseRemoveLiqTxByParsedTx(network rpc.Cluster, meta *rpc.ParsedTransactionMeta, parsedTransaction *rpc.ParsedTransaction) (*pumpfun_type.RemoveLiqTxDataType, error) {
 	if !parsedTransaction.Message.AccountKeys[0].PublicKey.Equals(pumpfun_constant.Pumpfun_Raydium_Migration) {
 		return nil, nil
 	}
 	for _, parsedInstruction := range parsedTransaction.Message.Instructions {
-		if !parsedInstruction.ProgramId.Equals(pumpfun_constant.Pumpfun_Program) {
+		if !parsedInstruction.ProgramId.Equals(pumpfun_constant.Pumpfun_Program[network]) {
 			continue
 		}
 		if hex.EncodeToString(parsedInstruction.Data)[:16] != "b712469c946da122" {
@@ -293,6 +293,7 @@ type BondingCurveDataType struct {
 }
 
 func GetBondingCurveData(
+	network rpc.Cluster,
 	rpcClient *rpc.Client,
 	tokenAddress *solana.PublicKey,
 	bondingCurveAddress *solana.PublicKey,
@@ -304,7 +305,7 @@ func GetBondingCurveData(
 		bondingCurveAddress_, _, err := solana.FindProgramAddress([][]byte{
 			[]byte("bonding-curve"),
 			tokenAddress.Bytes(),
-		}, pumpfun_constant.Pumpfun_Program)
+		}, pumpfun_constant.Pumpfun_Program[network])
 		if err != nil {
 			return nil, errors.Wrapf(err, "<tokenAddress: %s>", tokenAddress.String())
 		}
@@ -364,7 +365,7 @@ func GetSwapInstructions(
 	bondingCurveAddress, _, err := solana.FindProgramAddress([][]byte{
 		[]byte("bonding-curve"),
 		tokenAddress.Bytes(),
-	}, pumpfun_constant.Pumpfun_Program)
+	}, pumpfun_constant.Pumpfun_Program[network])
 	if err != nil {
 		return nil, errors.Wrapf(err, "<tokenAddress: %s>", tokenAddress)
 	}
@@ -428,11 +429,11 @@ func GetSwapInstructions(
 	return instructions, nil
 }
 
-func DeriveBondingCurveAddress(tokenAddress solana.PublicKey) (solana.PublicKey, error) {
+func DeriveBondingCurveAddress(network rpc.Cluster, tokenAddress solana.PublicKey) (solana.PublicKey, error) {
 	bondingCurveAddress, _, err := solana.FindProgramAddress([][]byte{
 		[]byte("bonding-curve"),
 		tokenAddress.Bytes(),
-	}, pumpfun_constant.Pumpfun_Program)
+	}, pumpfun_constant.Pumpfun_Program[network])
 	if err != nil {
 		return solana.PublicKey{}, errors.Wrapf(err, "<tokenAddress: %s>", tokenAddress)
 	}

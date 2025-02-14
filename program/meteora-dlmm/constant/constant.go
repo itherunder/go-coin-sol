@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	Meteora_DLMM = map[rpc.Cluster]solana.PublicKey{
+	Meteora_DLMM_Program = map[rpc.Cluster]solana.PublicKey{
 		rpc.MainNetBeta: solana.MustPublicKeyFromBase58("LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo"),
 		rpc.DevNet:      solana.MustPublicKeyFromBase58("devi51mZmdwUJGU9hjN27vEz64Gps7uUefqxg27EAtH"),
 	}

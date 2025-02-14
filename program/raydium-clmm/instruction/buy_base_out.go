@@ -132,7 +132,7 @@ func NewBuyBaseOutInstruction(
 	return &BuyInstruction{
 		accounts:  accounts,
 		data:      append(methodBytes, params.Bytes()...),
-		programID: raydium_constant.Raydium_Concentrated_Liquidity[network],
+		programID: raydium_constant.Raydium_CLMM_Program[network],
 	}, nil
 }
 

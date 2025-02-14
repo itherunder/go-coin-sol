@@ -48,7 +48,7 @@ func TestWallet_SwapPumpfun(t *testing.T) {
 	privObj, err := solana.PrivateKeyFromBase58(os.Getenv("PRIV"))
 	go_test_.Equal(t, nil, err)
 	tokenAddress := solana.MustPublicKeyFromBase58("CcZJFmUJ95vX4Ae4g2SCjQzT8hGqFsQdPi5WeD9Qpump")
-	data, err := pumpfun.GetBondingCurveData(WalletInstance.rpcClient, &tokenAddress, nil)
+	data, err := pumpfun.GetBondingCurveData(rpc.MainNetBeta, WalletInstance.rpcClient, &tokenAddress, nil)
 	go_test_.Equal(t, nil, err)
 
 	swapInstructions, err := pumpfun.GetSwapInstructions(
@@ -75,7 +75,7 @@ func TestWallet_SwapPumpfun(t *testing.T) {
 		nil,
 	)
 	go_test_.Equal(t, nil, err)
-	swapResult, err := pumpfun.ParseSwapTxByParsedTx(r.Meta, r.Transaction)
+	swapResult, err := pumpfun.ParseSwapTxByParsedTx(rpc.MainNetBeta, r.Meta, r.Transaction)
 	go_test_.Equal(t, nil, err)
 	fmt.Println(swapResult)
 }
@@ -406,9 +406,10 @@ func TestCreatePumpfunToken(t *testing.T) {
 	go_test_.Equal(t, nil, err)
 	tokenAddressWallet := solana.NewWallet()
 
-	bondingCurveAddress, err := pumpfun.DeriveBondingCurveAddress(tokenAddressWallet.PublicKey())
+	bondingCurveAddress, err := pumpfun.DeriveBondingCurveAddress(rpc.MainNetBeta, tokenAddressWallet.PublicKey())
 	go_test_.Equal(t, nil, err)
 	createInstruction, err := pumpfun_instruction.NewCreateInstruction(
+		rpc.MainNetBeta,
 		privObj.PublicKey(),
 		tokenAddressWallet.PublicKey(),
 		bondingCurveAddress,
@@ -449,6 +450,42 @@ func TestCreatePumpfunToken(t *testing.T) {
 		0,
 		true,
 		nil,
+	)
+	go_test_.Equal(t, nil, err)
+}
+
+func TestGetDestroyTokenAccountInstructions(t *testing.T) {
+	// return
+	privObj, err := solana.PrivateKeyFromBase58(os.Getenv("PRIV"))
+	go_test_.Equal(t, nil, err)
+	instructions, err := WalletInstance.GetDestroyTokenAccountInstructions(
+		solana.MustPublicKeyFromBase58("CkvFJefgLGMAtFeCRU7cbZJgrwj5vBUGtDv3mcfnanzK"),
+		[]solana.PublicKey{
+			solana.MustPublicKeyFromBase58("66TSDhxGEBxqkc4sNAxiVGiCTxtdJVxidQa3PxuSAZA1"),
+			solana.MustPublicKeyFromBase58("6D2D5bMwrk2ayuCi66Prgob3q7KGZYVy6q2UEqqgcuQh"),
+			solana.MustPublicKeyFromBase58("HTdEJzCjkpULdZysPVm7wU9VJqfA6N4ZqntM5Lf1qVXU"),
+			solana.MustPublicKeyFromBase58("2PCaMNLBKTj7jg9fXQmk4tCam1uGLJFwnCYRK47gGRDb"),
+			solana.MustPublicKeyFromBase58("5qADJuYPwNqgR1DWUwMM479iZe5Vq7P4RyMqkR93kLtj"),
+			solana.MustPublicKeyFromBase58("211HHjYaPicnwkxPb64ypPJrNXv75fApZaXzddSwSFTs"),
+			solana.MustPublicKeyFromBase58("j9RMNNZxze8noZi3oayfhxfQwxLfDsCPyhcMcqamDZq"),
+			solana.MustPublicKeyFromBase58("E4MC9kjz8zVDK5Xo7S5RLETzh3SKX7PhaqJxh9Xoxgqd"),
+		},
+	)
+	go_test_.Equal(t, nil, err)
+	_, err = WalletInstance.SendTxByJito(
+		context.Background(),
+		privObj,
+		nil,
+		nil,
+		instructions,
+		0,
+		0,
+		[]string{
+			"https://tokyo.mainnet.block-engine.jito.wtf",
+			"https://mainnet.block-engine.jito.wtf",
+		},
+		uint64(0.00002*math.Pow(10, constant.SOL_Decimals)),
+		solana.MustPublicKeyFromBase58("DttWaMuVvTiduZRnguLF7jNxTgiMBZ1hyAumKUiL2KRL"),
 	)
 	go_test_.Equal(t, nil, err)
 }

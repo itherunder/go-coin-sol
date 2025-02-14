@@ -139,7 +139,7 @@ func NewBuyBaseOutInstruction(
 			},
 		},
 		data:      append(methodBytes, params.Bytes()...),
-		programID: raydium_constant.Raydium_Liquidity_Pool_V4[network],
+		programID: raydium_constant.Raydium_AMM_Program[network],
 	}, nil
 }
 
