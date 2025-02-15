@@ -22,11 +22,9 @@ func NewBuyBaseOutInstruction(
 	network rpc.Cluster,
 	userAddress solana.PublicKey,
 	tokenAddress solana.PublicKey,
-	userWSOLAssociatedAccount solana.PublicKey,
-	userTokenAssociatedAccount solana.PublicKey,
 	tokenAmountWithDecimals uint64,
 	maxCostSolAmountWithDecimals uint64,
-	raydiumSwapKeys raydium_type.SwapKeys,
+	swapKeys raydium_type.SwapKeys,
 ) (*BuyInstruction, error) {
 	methodBytes, err := hex.DecodeString("0b")
 	if err != nil {
@@ -43,101 +41,17 @@ func NewBuyBaseOutInstruction(
 	if err != nil {
 		return nil, errors.Wrap(err, "")
 	}
+	accounts, err := swapKeys.ToAccounts(
+		network,
+		userAddress,
+		solana.SolMint,
+		tokenAddress,
+	)
+	if err != nil {
+		return nil, err
+	}
 	return &BuyInstruction{
-		accounts: []*solana.AccountMeta{
-			{
-				PublicKey:  solana.TokenProgramID,
-				IsSigner:   false,
-				IsWritable: false,
-			},
-			{
-				PublicKey:  raydiumSwapKeys.AmmAddress,
-				IsSigner:   false,
-				IsWritable: true,
-			},
-			{
-				PublicKey:  raydium_constant.Raydium_Authority_V4[network],
-				IsSigner:   false,
-				IsWritable: false,
-			},
-			{
-				PublicKey:  solana.SolMint,
-				IsSigner:   false,
-				IsWritable: true,
-			},
-			{
-				PublicKey:  solana.SolMint,
-				IsSigner:   false,
-				IsWritable: true,
-			},
-
-			{
-				PublicKey:  raydiumSwapKeys.Vaults[raydiumSwapKeys.CoinMint],
-				IsSigner:   false,
-				IsWritable: true,
-			},
-			{
-				PublicKey:  raydiumSwapKeys.Vaults[raydiumSwapKeys.PCMint],
-				IsSigner:   false,
-				IsWritable: true,
-			},
-
-			{
-				PublicKey:  solana.SolMint,
-				IsSigner:   false,
-				IsWritable: false,
-			},
-			{
-				PublicKey:  solana.SolMint,
-				IsSigner:   false,
-				IsWritable: true,
-			},
-			{
-				PublicKey:  solana.SolMint,
-				IsSigner:   false,
-				IsWritable: true,
-			},
-			{
-				PublicKey:  solana.SolMint,
-				IsSigner:   false,
-				IsWritable: true,
-			},
-			{
-				PublicKey:  solana.SolMint,
-				IsSigner:   false,
-				IsWritable: true,
-			},
-			{
-				PublicKey:  solana.SolMint,
-				IsSigner:   false,
-				IsWritable: true,
-			},
-			{
-				PublicKey:  solana.SolMint,
-				IsSigner:   false,
-				IsWritable: true,
-			},
-			{
-				PublicKey:  solana.SolMint,
-				IsSigner:   false,
-				IsWritable: false,
-			},
-			{
-				PublicKey:  userWSOLAssociatedAccount,
-				IsSigner:   false,
-				IsWritable: true,
-			},
-			{
-				PublicKey:  userTokenAssociatedAccount,
-				IsSigner:   false,
-				IsWritable: true,
-			},
-			{
-				PublicKey:  userAddress,
-				IsSigner:   true,
-				IsWritable: false,
-			},
-		},
+		accounts:  accounts,
 		data:      append(methodBytes, params.Bytes()...),
 		programID: raydium_constant.Raydium_AMM_Program[network],
 	}, nil

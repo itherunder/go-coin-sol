@@ -3,6 +3,7 @@ package type_
 import (
 	bin "github.com/gagliardetto/binary"
 	"github.com/gagliardetto/solana-go"
+	"github.com/pkg/errors"
 )
 
 type SwapV2Keys struct {
@@ -14,6 +15,111 @@ type SwapV2Keys struct {
 	RemainAccounts   []solana.PublicKey
 }
 
+func (t *SwapV2Keys) ToAccounts(
+	userAddress solana.PublicKey,
+	inputToken solana.PublicKey,
+	outputToken solana.PublicKey,
+) ([]*solana.AccountMeta, error) {
+	userInputAssociatedAccount, _, err := solana.FindAssociatedTokenAddress(
+		userAddress,
+		inputToken,
+	)
+	if err != nil {
+		return nil, errors.Wrapf(err, "<userAddress: %s> <tokenAddress: %s>", userAddress, inputToken)
+	}
+
+	userOutputAssociatedAccount, _, err := solana.FindAssociatedTokenAddress(
+		userAddress,
+		outputToken,
+	)
+	if err != nil {
+		return nil, errors.Wrapf(err, "<userAddress: %s> <tokenAddress: %s>", userAddress, outputToken)
+	}
+
+	accounts := []*solana.AccountMeta{
+		{
+			PublicKey:  userAddress,
+			IsSigner:   true,
+			IsWritable: true,
+		},
+		{
+			PublicKey:  t.AmmConfig,
+			IsSigner:   false,
+			IsWritable: false,
+		},
+		{
+			PublicKey:  t.PairAddress,
+			IsSigner:   false,
+			IsWritable: true,
+		},
+		{
+			PublicKey:  userInputAssociatedAccount,
+			IsSigner:   false,
+			IsWritable: true,
+		},
+		{
+			PublicKey:  userOutputAssociatedAccount,
+			IsSigner:   false,
+			IsWritable: true,
+		},
+		{
+			PublicKey:  t.Vaults[inputToken],
+			IsSigner:   false,
+			IsWritable: true,
+		},
+		{
+			PublicKey:  t.Vaults[outputToken],
+			IsSigner:   false,
+			IsWritable: true,
+		},
+		{
+			PublicKey:  t.ObservationState,
+			IsSigner:   false,
+			IsWritable: true,
+		},
+		{
+			PublicKey:  solana.TokenProgramID,
+			IsSigner:   false,
+			IsWritable: false,
+		},
+		{
+			PublicKey:  solana.Token2022ProgramID,
+			IsSigner:   false,
+			IsWritable: false,
+		},
+		{
+			PublicKey:  solana.MemoProgramID,
+			IsSigner:   false,
+			IsWritable: false,
+		},
+		{
+			PublicKey:  inputToken,
+			IsSigner:   false,
+			IsWritable: false,
+		},
+		{
+			PublicKey:  outputToken,
+			IsSigner:   false,
+			IsWritable: false,
+		},
+		{
+			PublicKey:  t.ExBitmapAccount,
+			IsSigner:   false,
+			IsWritable: true,
+		},
+	}
+
+	for _, remainAccount := range t.RemainAccounts {
+		accounts = append(accounts, &solana.AccountMeta{
+			PublicKey:  remainAccount,
+			IsSigner:   false,
+			IsWritable: true,
+		})
+	}
+
+	return accounts, nil
+}
+
 type SwapKeys struct {
 	AmmConfig        solana.PublicKey
 	PairAddress      solana.PublicKey
@@ -21,6 +127,91 @@ type SwapKeys struct {
 	ObservationState solana.PublicKey
 	TickArrayAccount solana.PublicKey
 	RemainAccounts   []solana.PublicKey
+}
+
+func (t *SwapKeys) ToAccounts(
+	userAddress solana.PublicKey,
+	inputToken solana.PublicKey,
+	outputToken solana.PublicKey,
+) ([]*solana.AccountMeta, error) {
+	userInputAssociatedAccount, _, err := solana.FindAssociatedTokenAddress(
+		userAddress,
+		inputToken,
+	)
+	if err != nil {
+		return nil, errors.Wrapf(err, "<userAddress: %s> <tokenAddress: %s>", userAddress, inputToken)
+	}
+
+	userOutputAssociatedAccount, _, err := solana.FindAssociatedTokenAddress(
+		userAddress,
+		outputToken,
+	)
+	if err != nil {
+		return nil, errors.Wrapf(err, "<userAddress: %s> <tokenAddress: %s>", userAddress, outputToken)
+	}
+
+	accounts := []*solana.AccountMeta{
+		{
+			PublicKey:  userAddress,
+			IsSigner:   true,
+			IsWritable: true,
+		},
+		{
+			PublicKey:  t.AmmConfig,
+			IsSigner:   false,
+			IsWritable: false,
+		},
+		{
+			PublicKey:  t.PairAddress,
+			IsSigner:   false,
+			IsWritable: true,
+		},
+		{
+			PublicKey:  userInputAssociatedAccount,
+			IsSigner:   false,
+			IsWritable: true,
+		},
+		{
+			PublicKey:  userOutputAssociatedAccount,
+			IsSigner:   false,
+			IsWritable: true,
+		},
+		{
+			PublicKey:  t.Vaults[inputToken],
+			IsSigner:   false,
+			IsWritable: true,
+		},
+		{
+			PublicKey:  t.Vaults[outputToken],
+			IsSigner:   false,
+			IsWritable: true,
+		},
+		{
+			PublicKey:  t.ObservationState,
+			IsSigner:   false,
+			IsWritable: true,
+		},
+		{
+			PublicKey:  solana.TokenProgramID,
+			IsSigner:   false,
+			IsWritable: false,
+		},
+		{
+			PublicKey:  t.TickArrayAccount,
+			IsSigner:   false,
+			IsWritable: true,
+		},
+	}
+
+	for _, remainAccount := range t.RemainAccounts {
+		accounts = append(accounts, &solana.AccountMeta{
+			PublicKey:  remainAccount,
+			IsSigner:   false,
+			IsWritable: true,
+		})
+	}
+
+	return accounts, nil
 }
 
 type PoolInfo struct {

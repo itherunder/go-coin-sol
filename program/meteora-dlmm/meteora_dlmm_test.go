@@ -9,6 +9,7 @@ import (
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/pefish/go-coin-sol/constant"
+	go_format "github.com/pefish/go-format"
 	go_test_ "github.com/pefish/go-test"
 )
 
@@ -39,6 +40,16 @@ func TestParseSwapTxByParsedTx(t *testing.T) {
 	r, err := ParseSwapTxByParsedTx(rpc.MainNetBeta, getTransactionResult.Meta, getTransactionResult.Transaction)
 	go_test_.Equal(t, nil, err)
 	for _, swap := range r.Swaps {
+		parsedKeys := make([]rpc.ParsedMessageAccount, 0)
+		for _, a := range swap.Keys {
+			for _, b := range swap.AllKeys {
+				if a.Equals(b.PublicKey) {
+					parsedKeys = append(parsedKeys, b)
+					break
+				}
+			}
+		}
+
 		fmt.Printf(
 			`
 <UserAddress: %s>
@@ -48,6 +59,7 @@ func TestParseSwapTxByParsedTx(t *testing.T) {
 <OutputAmountWithDecimals: %d>
 <InputVault: %s>
 <OutputVault: %s>
+<Keys: %s>
 `,
 			swap.UserAddress,
 			swap.InputAddress,
@@ -56,6 +68,7 @@ func TestParseSwapTxByParsedTx(t *testing.T) {
 			swap.OutputAmountWithDecimals,
 			swap.InputVault,
 			swap.OutputVault,
+			go_format.ToString(parsedKeys),
 		)
 	}
 }
