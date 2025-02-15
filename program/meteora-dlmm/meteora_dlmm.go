@@ -58,11 +58,9 @@ func ParseSwapTxByParsedTx(
 
 		parsedKeys = &meteora_dlmm_type.SwapKeys{
 			PairAddress:    pairAddress,
-			VaultX:         instruction.Accounts[2],
-			VaultY:         instruction.Accounts[3],
 			Oracle:         instruction.Accounts[8],
-			XMint:          instruction.Accounts[6],
-			YMint:          instruction.Accounts[7],
+			MintX:          instruction.Accounts[6],
+			MintY:          instruction.Accounts[7],
 			RemainAccounts: instruction.Accounts[15:],
 			Vaults: map[solana.PublicKey]solana.PublicKey{
 				instruction.Accounts[6]: instruction.Accounts[2],
