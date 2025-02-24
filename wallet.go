@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -120,6 +121,10 @@ func (t *Wallet) SendTx(
 	skipPreflight bool,
 	urls []string,
 ) (*rpc.GetParsedTransactionResult, error) {
+	if len(instructions) == 0 {
+		return nil, errors.Errorf("指令集为空")
+	}
+
 	tx, err := t.BuildTx(
 		privObj,
 		signers,
@@ -148,6 +153,9 @@ func (t *Wallet) SendTxByJito(
 	jitoTipAmountWithDecimals uint64,
 	jitoAccount solana.PublicKey,
 ) (*rpc.GetParsedTransactionResult, error) {
+	if len(instructions) == 0 {
+		return nil, errors.Errorf("指令集为空")
+	}
 
 	instructions = append(
 		instructions,
@@ -364,6 +372,10 @@ func (t *Wallet) BuildTx(
 	unitPrice uint64,
 	unitLimit uint64, // 0 则使用默认
 ) (*solana.Transaction, error) {
+	if len(instructions) == 0 {
+		return nil, errors.Errorf("指令集为空")
+	}
+
 	userAddress := privObj.PublicKey()
 
 	feeInstructions := make([]solana.Instruction, 0)
@@ -536,40 +548,119 @@ func (t *Wallet) GetTokenData(
 	return &data, nil
 }
 
-func (t *Wallet) GetDestroyTokenAccountInstructions(
-	userAddress solana.PublicKey,
-	tokenAccounts []solana.PublicKey,
+func (t *Wallet) TransferSOL(
+	from solana.PublicKey,
+	to solana.PublicKey,
+	amountWithDecimals uint64,
 ) ([]solana.Instruction, error) {
 	instructions := make([]solana.Instruction, 0)
-	datas, err := associated_token_account.GetAssociatedTokenAccountDatas(t.rpcClient, tokenAccounts)
+
+	instructions = append(instructions,
+		system.NewTransferInstruction(
+			amountWithDecimals,
+			from,
+			to,
+		).Build(),
+	)
+
+	return instructions, nil
+
+}
+
+func (t *Wallet) Balance(address solana.PublicKey) (uint64, error) {
+	getAccountInfoResult, err := t.rpcClient.GetAccountInfo(context.Background(), address)
 	if err != nil {
-		return nil, err
+		return 0, errors.Wrap(err, "GetAccountInfo")
 	}
-	for i, data := range datas {
-		if data.Parsed.Info.TokenAmount.UIAmount > 0.01 {
+
+	return getAccountInfoResult.Value.Lamports, nil
+
+}
+
+func (t *Wallet) DestroyTokenAccounts(
+	userAddress solana.PublicKey,
+	isForce bool, // 如果是 false，则跳过有余额的；如果是 true，则不管有多少余额，都直接销毁
+	excludeTokenAddresses []solana.PublicKey, // isForce 为 true 时生效
+) (
+	instructions_ []solana.Instruction,
+	closedTokenAccounts_ []solana.PublicKey, // 所有被关闭的 token account
+	remainTokenAccounts_ []solana.PublicKey, // 所有剩下的没有被关闭的
+	err_ error,
+) {
+	instructions := make([]solana.Instruction, 0)
+	closedTokenAccounts := make([]solana.PublicKey, 0)
+	remainTokenAccounts := make([]solana.PublicKey, 0)
+
+	getTokenAccountsResult, err := t.rpcClient.GetTokenAccountsByOwner(
+		context.Background(),
+		userAddress,
+		&rpc.GetTokenAccountsConfig{
+			ProgramId: &solana.TokenProgramID,
+		},
+		&rpc.GetTokenAccountsOpts{
+			Commitment: rpc.CommitmentConfirmed,
+			Encoding:   solana.EncodingJSONParsed,
+		},
+	)
+	if err != nil {
+		return nil, nil, nil, errors.Wrap(err, "")
+	}
+	if getTokenAccountsResult == nil {
+		return nil, nil, nil, errors.Errorf("GetTokenAccountsByOwner failed.")
+	}
+	for _, tokenAccountInfo := range getTokenAccountsResult.Value {
+		if len(closedTokenAccounts) > 30 {
+			remainTokenAccounts = append(remainTokenAccounts, tokenAccountInfo.Pubkey)
 			continue
 		}
-		if data.Parsed.Info.TokenAmount.UIAmount > 0 {
-			// 将余额 burn
-			amountWithDecimals, err := strconv.ParseUint(data.Parsed.Info.TokenAmount.Amount, 10, 64)
-			if err != nil {
-				return nil, err
-			}
-			instructions = append(instructions, token.NewBurnInstruction(
-				amountWithDecimals,
-				tokenAccounts[i],
-				solana.MustPublicKeyFromBase58(data.Parsed.Info.Mint),
+
+		var data associated_token_account.AssociatedTokenAccountDataType
+		err = json.Unmarshal(tokenAccountInfo.Account.Data.GetRawJSON(), &data)
+		if err != nil {
+			return nil, nil, nil, errors.Wrap(err, "")
+		}
+		// fmt.Printf("<%s> <tokenAddress: %s> <%s>\n", tokenAccountInfo.Pubkey.String(), data.Parsed.Info.Mint, data.Parsed.Info.TokenAmount.UIAmountString)
+
+		if data.Parsed.Info.TokenAmount.UIAmount == 0 {
+			instructions = append(instructions, token.NewCloseAccountInstruction(
+				tokenAccountInfo.Pubkey,
+				userAddress,
 				userAddress,
 				nil,
 			).Build())
+			closedTokenAccounts = append(closedTokenAccounts, tokenAccountInfo.Pubkey)
+			continue
 		}
-		instructions = append(instructions, token.NewCloseAccountInstruction(
-			tokenAccounts[i],
-			userAddress,
-			userAddress,
-			nil,
-		).Build())
+		if !isForce {
+			remainTokenAccounts = append(remainTokenAccounts, tokenAccountInfo.Pubkey)
+			continue
+		}
+		if slices.Contains(excludeTokenAddresses, solana.MustPublicKeyFromBase58(data.Parsed.Info.Mint)) {
+			remainTokenAccounts = append(remainTokenAccounts, tokenAccountInfo.Pubkey)
+			continue
+		}
+		// 将余额 burn
+		amountWithDecimals, err := strconv.ParseUint(data.Parsed.Info.TokenAmount.Amount, 10, 64)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		instructions = append(instructions,
+			token.NewBurnInstruction(
+				amountWithDecimals,
+				tokenAccountInfo.Pubkey,
+				solana.MustPublicKeyFromBase58(data.Parsed.Info.Mint),
+				userAddress,
+				nil,
+			).Build(),
+			token.NewCloseAccountInstruction(
+				tokenAccountInfo.Pubkey,
+				userAddress,
+				userAddress,
+				nil,
+			).Build(),
+		)
+		closedTokenAccounts = append(closedTokenAccounts, tokenAccountInfo.Pubkey)
 	}
 
-	return instructions, nil
+	return instructions, closedTokenAccounts, remainTokenAccounts, nil
 }

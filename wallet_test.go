@@ -454,24 +454,61 @@ func TestCreatePumpfunToken(t *testing.T) {
 	go_test_.Equal(t, nil, err)
 }
 
-func TestGetDestroyTokenAccountInstructions(t *testing.T) {
+func TestDestroyTokenAccounts(t *testing.T) {
 	// return
+
 	privObj, err := solana.PrivateKeyFromBase58(os.Getenv("PRIV"))
 	go_test_.Equal(t, nil, err)
-	instructions, err := WalletInstance.GetDestroyTokenAccountInstructions(
-		solana.MustPublicKeyFromBase58("CkvFJefgLGMAtFeCRU7cbZJgrwj5vBUGtDv3mcfnanzK"),
-		[]solana.PublicKey{
-			solana.MustPublicKeyFromBase58("66TSDhxGEBxqkc4sNAxiVGiCTxtdJVxidQa3PxuSAZA1"),
-			solana.MustPublicKeyFromBase58("6D2D5bMwrk2ayuCi66Prgob3q7KGZYVy6q2UEqqgcuQh"),
-			solana.MustPublicKeyFromBase58("HTdEJzCjkpULdZysPVm7wU9VJqfA6N4ZqntM5Lf1qVXU"),
-			solana.MustPublicKeyFromBase58("2PCaMNLBKTj7jg9fXQmk4tCam1uGLJFwnCYRK47gGRDb"),
-			solana.MustPublicKeyFromBase58("5qADJuYPwNqgR1DWUwMM479iZe5Vq7P4RyMqkR93kLtj"),
-			solana.MustPublicKeyFromBase58("211HHjYaPicnwkxPb64ypPJrNXv75fApZaXzddSwSFTs"),
-			solana.MustPublicKeyFromBase58("j9RMNNZxze8noZi3oayfhxfQwxLfDsCPyhcMcqamDZq"),
-			solana.MustPublicKeyFromBase58("E4MC9kjz8zVDK5Xo7S5RLETzh3SKX7PhaqJxh9Xoxgqd"),
-		},
+
+	instructions, accounts, remainTokenAccounts, err := WalletInstance.DestroyTokenAccounts(
+		privObj.PublicKey(),
+		true,
+		nil,
 	)
 	go_test_.Equal(t, nil, err)
+	fmt.Println("closed length: ", len(accounts))
+	for _, a := range accounts {
+		fmt.Println("closed: ", a.String())
+	}
+	fmt.Println("remain length: ", len(remainTokenAccounts))
+	for _, a := range remainTokenAccounts {
+		fmt.Println("remain: ", a.String())
+	}
+	// return
+	_, err = WalletInstance.SendTxByJito(
+		context.Background(),
+		privObj,
+		nil,
+		nil,
+		instructions,
+		0,
+		0,
+		[]string{
+			"https://tokyo.mainnet.block-engine.jito.wtf",
+			"https://mainnet.block-engine.jito.wtf",
+		},
+		uint64(0.00002*math.Pow(10, constant.SOL_Decimals)),
+		solana.MustPublicKeyFromBase58("DttWaMuVvTiduZRnguLF7jNxTgiMBZ1hyAumKUiL2KRL"),
+	)
+	go_test_.Equal(t, nil, err)
+}
+
+func TestTransferSOL(t *testing.T) {
+	// return
+
+	privObj, err := solana.PrivateKeyFromBase58(os.Getenv("PRIV"))
+	go_test_.Equal(t, nil, err)
+	fmt.Println("user address: ", privObj.PublicKey().String())
+	amountWithDecimals, err := WalletInstance.Balance(privObj.PublicKey())
+	go_test_.Equal(t, nil, err)
+	fmt.Println("balance: ", amountWithDecimals)
+	instructions, err := WalletInstance.TransferSOL(
+		privObj.PublicKey(),
+		solana.MustPublicKeyFromBase58("5BnsHy3CV2SjefwMPQ4pwQPVmigxA8R7gUZypRNsZqxp"),
+		amountWithDecimals-5000-20000,
+	)
+	go_test_.Equal(t, nil, err)
+	// return
 	_, err = WalletInstance.SendTxByJito(
 		context.Background(),
 		privObj,
