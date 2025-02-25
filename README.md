@@ -2,7 +2,7 @@
 
 [![view examples](https://img.shields.io/badge/learn%20by-examples-0C8EC5.svg?style=for-the-badge&logo=go)](https://github.com/pefish/go-coin-sol)
 
-go-coin-sol
+go-coin-sol1
 
 ## Quick start
 
