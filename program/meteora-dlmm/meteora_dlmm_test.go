@@ -9,6 +9,7 @@ import (
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/pefish/go-coin-sol/constant"
+	meteora_dlmm_type "github.com/pefish/go-coin-sol/program/meteora-dlmm/type"
 	go_format "github.com/pefish/go-format"
 	go_test_ "github.com/pefish/go-test"
 )
@@ -50,6 +51,7 @@ func TestParseSwapTxByParsedTx(t *testing.T) {
 			}
 		}
 
+		extraDatas := swap.ExtraDatas.(*meteora_dlmm_type.ExtraDatasType)
 		fmt.Printf(
 			`
 <UserAddress: %s>
@@ -60,6 +62,8 @@ func TestParseSwapTxByParsedTx(t *testing.T) {
 <InputVault: %s>
 <OutputVault: %s>
 <Keys: %s>
+<ReserveInputWithDecimals: %d>
+<ReserveOutputWithDecimals: %d>
 `,
 			swap.UserAddress,
 			swap.InputAddress,
@@ -69,6 +73,8 @@ func TestParseSwapTxByParsedTx(t *testing.T) {
 			swap.InputVault,
 			swap.OutputVault,
 			go_format.ToString(parsedKeys),
+			extraDatas.ReserveInputWithDecimals,
+			extraDatas.ReserveOutputWithDecimals,
 		)
 	}
 }

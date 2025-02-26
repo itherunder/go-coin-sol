@@ -5,6 +5,7 @@ package raydium_clmm
 import (
 	"context"
 	"encoding/hex"
+	"strconv"
 
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/programs/system"
@@ -278,6 +279,17 @@ func ParseSwapTxByParsedTx(
 
 		userAddress := transaction.Message.AccountKeys[0].PublicKey
 
+		var reserveInputWithDecimals uint64
+		var reserveOutputWithDecimals uint64
+		for _, tokenBalanceInfo_ := range meta.PostTokenBalances {
+			if transaction.Message.AccountKeys[tokenBalanceInfo_.AccountIndex].PublicKey.Equals(inputVault) {
+				reserveInputWithDecimals, _ = strconv.ParseUint(tokenBalanceInfo_.UiTokenAmount.Amount, 10, 64)
+			}
+			if transaction.Message.AccountKeys[tokenBalanceInfo_.AccountIndex].PublicKey.Equals(outputVault) {
+				reserveOutputWithDecimals, _ = strconv.ParseUint(tokenBalanceInfo_.UiTokenAmount.Amount, 10, 64)
+			}
+		}
+
 		swaps = append(swaps, &type_.SwapDataType{
 			InputAddress:             inputAddress,
 			OutputAddress:            outputAddress,
@@ -290,10 +302,14 @@ func ParseSwapTxByParsedTx(
 			InputVault:               inputVault,
 			OutputVault:              outputVault,
 			ParsedKeys:               parsedKeys,
-			Keys:                     instruction.Accounts,
-			AllKeys:                  transaction.Message.AccountKeys,
-			MethodId:                 methodId,
-			Program:                  raydium_clmm_constant.Raydium_CLMM_Program[network],
+			ExtraDatas: &raydium_clmm_type.ExtraDatasType{
+				ReserveInputWithDecimals:  reserveInputWithDecimals,
+				ReserveOutputWithDecimals: reserveOutputWithDecimals,
+			},
+			Keys:     instruction.Accounts,
+			AllKeys:  transaction.Message.AccountKeys,
+			MethodId: methodId,
+			Program:  raydium_clmm_constant.Raydium_CLMM_Program[network],
 		})
 	}
 

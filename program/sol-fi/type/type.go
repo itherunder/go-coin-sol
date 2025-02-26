@@ -74,3 +74,8 @@ func (t *SwapKeys) ToAccounts(
 		},
 	}, nil
 }
+
+type ExtraDatasType struct {
+	ReserveInputWithDecimals  uint64 `json:"reserve_input_with_decimals"`
+	ReserveOutputWithDecimals uint64 `json:"reserve_output_with_decimals"`
+}

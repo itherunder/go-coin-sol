@@ -241,3 +241,8 @@ type PoolInfo struct {
 	SwapInAmountToken1  bin.Uint128
 	SwapOutAmountToken0 bin.Uint128
 }
+
+type ExtraDatasType struct {
+	ReserveInputWithDecimals  uint64 `json:"reserve_input_with_decimals"`
+	ReserveOutputWithDecimals uint64 `json:"reserve_output_with_decimals"`
+}

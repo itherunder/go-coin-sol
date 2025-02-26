@@ -89,7 +89,7 @@ func TestParseSwapTxByParsedTx(t *testing.T) {
 	// 4Joi4gD36KPcsHoqPjXhQWPKSrmTdJTNvQbtbJJbbbY8RwAjtLmpXFVS4s4WbRDtbD6fjs8LQMUKk6xbmvcfBoVp
 	getTransactionResult, err := client.GetParsedTransaction(
 		context.TODO(),
-		solana.MustSignatureFromBase58("3taStGmx6XQpnbxqoHGqz2urgqHdHYXufuJ95gj4aVfruqshcYuAEJvAkPxeJZShEY2GdKKPPcKHXR4rbKzwXEY3"),
+		solana.MustSignatureFromBase58("4Joi4gD36KPcsHoqPjXhQWPKSrmTdJTNvQbtbJJbbbY8RwAjtLmpXFVS4s4WbRDtbD6fjs8LQMUKk6xbmvcfBoVp"),
 		&rpc.GetParsedTransactionOpts{
 			Commitment:                     rpc.CommitmentConfirmed,
 			MaxSupportedTransactionVersion: constant.MaxSupportedTransactionVersion_0,
@@ -99,6 +99,7 @@ func TestParseSwapTxByParsedTx(t *testing.T) {
 	r, err := ParseSwapTxByParsedTx(rpc.MainNetBeta, getTransactionResult.Meta, getTransactionResult.Transaction)
 	go_test_.Equal(t, nil, err)
 	for _, swap := range r.Swaps {
+		extraDatas := swap.ExtraDatas.(*raydium_clmm_type.ExtraDatasType)
 		fmt.Printf(
 			`
 <UserAddress: %s>
@@ -109,6 +110,8 @@ func TestParseSwapTxByParsedTx(t *testing.T) {
 <InputVault: %s>
 <OutputVault: %s>
 <RemainAccounts: %s>	
+<ReserveInputWithDecimals: %d>
+<ReserveOutputWithDecimals: %d>
 `,
 			swap.UserAddress,
 			swap.InputAddress,
@@ -118,6 +121,8 @@ func TestParseSwapTxByParsedTx(t *testing.T) {
 			swap.InputVault,
 			swap.OutputVault,
 			go_format.ToString(swap.ParsedKeys.(*raydium_clmm_type.SwapKeys).RemainAccounts),
+			extraDatas.ReserveInputWithDecimals,
+			extraDatas.ReserveOutputWithDecimals,
 		)
 	}
 }
