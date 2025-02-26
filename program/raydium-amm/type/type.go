@@ -58,11 +58,6 @@ func (t *SwapKeys) ToAccounts(
 			IsSigner:   false,
 			IsWritable: true,
 		},
-		{
-			PublicKey:  solana.SolMint,
-			IsSigner:   false,
-			IsWritable: true,
-		},
 
 		{
 			PublicKey:  t.Vaults[t.CoinMint],

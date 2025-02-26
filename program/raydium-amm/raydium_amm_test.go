@@ -32,7 +32,7 @@ func TestParseSwapTxByParsedTx(t *testing.T) {
 	// return
 	getTransactionResult, err := client.GetParsedTransaction(
 		context.TODO(),
-		solana.MustSignatureFromBase58("232jxvZPAdA4u8rhLgo2YjQtqh7rtkzVkhWyzJ97etDjpnyLBx1xt2DiRgC44yt1XmDqS2UEKk2yGh9dHWxYgja3"),
+		solana.MustSignatureFromBase58("3TEAsdxPBCwmLnT4ZfzgSHa3YqfzD1aRXb8vqCPG6AxtBzQVzjKT8uk4FHVUkry3GkLitEoZqjpQrnWNR4M5ptXq"),
 		&rpc.GetParsedTransactionOpts{
 			Commitment:                     rpc.CommitmentConfirmed,
 			MaxSupportedTransactionVersion: constant.MaxSupportedTransactionVersion_0,
@@ -116,7 +116,7 @@ func TestParseAddLiqTxByParsedTx(t *testing.T) {
 	// return
 	getTransactionResult, err := client.GetParsedTransaction(
 		context.TODO(),
-		solana.MustSignatureFromBase58("44sEeJxeoZiZDoT4dakF6kKuynenFgWYevzwuzMqGsarvxd5bQKYcMzZWxh1kEnZxd8uiAKAjs8YfAXCoM2pAGm4"),
+		solana.MustSignatureFromBase58("6eEwKoj8UdEDg2hcnhCACiaPsBfmu34fo7c2fs5F5xEmpUYakSQfiSR2kzbNNXfAhhXq5aBGmicsj5UscG3djhx"),
 		&rpc.GetParsedTransactionOpts{
 			Commitment:                     rpc.CommitmentConfirmed,
 			MaxSupportedTransactionVersion: constant.MaxSupportedTransactionVersion_0,

@@ -65,8 +65,8 @@ func TestGetReserves(t *testing.T) {
 	// return
 	r1, r2, err := GetReserves(
 		client,
-		solana.MustPublicKeyFromBase58("72SjUpm13yXFipjgppCcFz3fLof9gohscpGqFMus3eoG"),
-		solana.MustPublicKeyFromBase58("3BSbsfPXRQijoKmgS2qyGwjCS1XRN81ff9PRq4JwZZ9S"),
+		solana.MustPublicKeyFromBase58("8GQnRr8BpAq2ad1vsWtjVz3xwirg26pUQhWFQnm17eXT"),
+		solana.MustPublicKeyFromBase58("8xWMKfLguLv6TTZsQqvRq23G7rMwwxV5bE1BHJ9rrS4r"),
 	)
 	go_test_.Equal(t, nil, err)
 	fmt.Printf(
