@@ -41,7 +41,7 @@ func NewBuyBaseOutInstruction(
 	if err != nil {
 		return nil, errors.Wrap(err, "")
 	}
-	accounts, err := swapKeys.ToAccounts(
+	accounts, err := swapKeys.ToSwapAccounts(
 		network,
 		userAddress,
 		solana.SolMint,
