@@ -219,7 +219,7 @@ func (t *Wallet) SendTxByJito(
 					SkipPreflight: true,
 				})
 				// t.logger.InfoF("未确认...")
-				confirmTimer.Reset(2 * time.Second)
+				confirmTimer.Reset(time.Second)
 				continue
 			}
 
@@ -313,17 +313,17 @@ func (t *Wallet) SendTxByJitoBundle(
 		case <-confirmTimer.C:
 			statusResponse, err := jitoClient.GetBundleStatuses([]string{bundleId})
 			if err != nil {
-				confirmTimer.Reset(2 * time.Second)
+				confirmTimer.Reset(time.Second)
 				continue
 			}
 
 			if len(statusResponse.Value) == 0 {
-				confirmTimer.Reset(2 * time.Second)
+				confirmTimer.Reset(time.Second)
 				continue
 			}
 
 			if statusResponse.Value[0].ConfirmationStatus != "confirmed" {
-				confirmTimer.Reset(2 * time.Second)
+				confirmTimer.Reset(time.Second)
 				continue
 			}
 			getTransactionResult, err := t.rpcClient.GetTransaction(
@@ -491,11 +491,11 @@ func (t *Wallet) SendAndConfirmTransaction(
 			)
 			if err != nil {
 				t.logger.Debug(err)
-				confirmTimer.Reset(2 * time.Second)
+				confirmTimer.Reset(time.Second)
 				continue
 			}
 			if getTransactionResult == nil {
-				confirmTimer.Reset(2 * time.Second)
+				confirmTimer.Reset(time.Second)
 				continue
 			}
 
