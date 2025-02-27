@@ -7,7 +7,6 @@ import (
 	"slices"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/gagliardetto/solana-go"
@@ -178,13 +177,11 @@ func (t *Wallet) SendTxByJito(
 	if err != nil {
 		return nil, err
 	}
-	t.logger.InfoF("交易构建成功 <timestamp: %d> <txid: %s>", go_time.CurrentTimestamp(), tx.Signatures[0].String())
+	sendedTimestamp := go_time.CurrentTimestamp()
+	t.logger.InfoF("交易构建成功 <timestamp: %d> <txid: %s>", sendedTimestamp, tx.Signatures[0].String())
 
-	var wg sync.WaitGroup
 	for _, jitoUrl := range jitoUrls {
-		wg.Add(1)
 		go func(jitoUrl string) {
-			defer wg.Done()
 			rpcClient := rpc.New(fmt.Sprintf("%s/api/v1/transactions", jitoUrl))
 			_, err = rpcClient.SendTransactionWithOpts(ctx, tx, rpc.TransactionOpts{
 				SkipPreflight: true,
@@ -195,11 +192,7 @@ func (t *Wallet) SendTxByJito(
 			}
 			// t.logger.InfoF("交易发送成功 <txid: %s> <jitoUrl: %s>", tx.Signatures[0].String(), jitoUrl)
 		}(jitoUrl)
-
 	}
-	wg.Wait()
-	sendedTimestamp := go_time.CurrentTimestamp()
-	t.logger.InfoF("交易发送成功 <timestamp: %d> <txid: %s>", sendedTimestamp, tx.Signatures[0].String())
 
 	newCtx, _ := context.WithTimeout(ctx, 90*time.Second) // 150 个 slot 链上就会超时，每个 slot 是 400ms - 600ms，也就是 60-90s
 	confirmTimer := time.NewTimer(time.Second)
@@ -219,7 +212,7 @@ func (t *Wallet) SendTxByJito(
 					SkipPreflight: true,
 				})
 				// t.logger.InfoF("未确认...")
-				confirmTimer.Reset(time.Second)
+				confirmTimer.Reset(500 * time.Millisecond)
 				continue
 			}
 
