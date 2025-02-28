@@ -208,7 +208,7 @@ func (t *Wallet) SendTxByJito(
 				},
 			)
 			if err != nil || getTransactionResult == nil {
-				rpc.New(fmt.Sprintf("%s/api/v1/transactions", jitoUrls[0])).SendTransactionWithOpts(ctx, tx, rpc.TransactionOpts{
+				go rpc.New(fmt.Sprintf("%s/api/v1/transactions", jitoUrls[0])).SendTransactionWithOpts(ctx, tx, rpc.TransactionOpts{
 					SkipPreflight: true,
 				})
 				// t.logger.InfoF("未确认...")
