@@ -212,7 +212,7 @@ func (t *Wallet) SendTxByJito(
 					SkipPreflight: true,
 				})
 				// t.logger.InfoF("未确认...")
-				confirmTimer.Reset(500 * time.Millisecond)
+				confirmTimer.Reset(200 * time.Millisecond)
 				continue
 			}
 
