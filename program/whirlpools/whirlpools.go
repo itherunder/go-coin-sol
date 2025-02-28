@@ -63,7 +63,7 @@ func ParseSwapTxByParsedTx(
 		var mintBDecimals uint64
 
 		methodId := hex.EncodeToString(instruction.Data)[:16]
-		if methodId == discriminator.GetDiscriminator("global", "swap_v2") {
+		if methodId == hex.EncodeToString(discriminator.GetDiscriminator("global", "swap_v2")) {
 			userAddress = instruction.Accounts[3]
 			pairAddress = instruction.Accounts[4]
 
@@ -100,7 +100,7 @@ func ParseSwapTxByParsedTx(
 				inputVault = instruction.Accounts[10]
 				outputVault = instruction.Accounts[8]
 			}
-		} else if methodId == discriminator.GetDiscriminator("global", "swap") {
+		} else if methodId == hex.EncodeToString(discriminator.GetDiscriminator("global", "swap")) {
 			userAddress = instruction.Accounts[1]
 			pairAddress = instruction.Accounts[2]
 

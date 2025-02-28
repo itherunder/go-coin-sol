@@ -212,7 +212,7 @@ func ParseSwapTxByParsedTx(
 		var inputDecimals uint64
 		var outputDecimals uint64
 
-		if methodId == discriminator.GetDiscriminator("global", "swap_v2") {
+		if methodId == hex.EncodeToString(discriminator.GetDiscriminator("global", "swap_v2")) {
 			inputVault = instruction.Accounts[5]
 			outputVault = instruction.Accounts[6]
 			pairAddress = instruction.Accounts[2]
@@ -237,7 +237,7 @@ func ParseSwapTxByParsedTx(
 			outputAmountWithDecimals = transferDatas[1].AmountWithDecimals
 			inputDecimals = transferDatas[0].Decimals
 			outputDecimals = transferDatas[1].Decimals
-		} else if methodId == discriminator.GetDiscriminator("global", "swap") {
+		} else if methodId == hex.EncodeToString(discriminator.GetDiscriminator("global", "swap")) {
 			inputVault = instruction.Accounts[5]
 			outputVault = instruction.Accounts[6]
 			pairAddress = instruction.Accounts[2]

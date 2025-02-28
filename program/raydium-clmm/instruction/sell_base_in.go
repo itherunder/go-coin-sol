@@ -2,7 +2,6 @@ package instruction
 
 import (
 	"bytes"
-	"encoding/hex"
 
 	bin "github.com/gagliardetto/binary"
 	"github.com/gagliardetto/solana-go"
@@ -30,12 +29,9 @@ func NewSellBaseInInstruction(
 	swapKeys raydium_clmm_type.SwapV2Keys,
 ) (*SellInstruction, error) {
 	// 2b04ed0b1ac91e62
-	methodBytes, err := hex.DecodeString(discriminator.GetDiscriminator("global", "swap_v2"))
-	if err != nil {
-		return nil, errors.Wrap(err, "")
-	}
+	methodBytes := discriminator.GetDiscriminator("global", "swap_v2")
 	params := new(bytes.Buffer)
-	err = bin.NewBorshEncoder(params).Encode(struct {
+	err := bin.NewBorshEncoder(params).Encode(struct {
 		Amount               uint64
 		OtherAmountThreshold uint64
 		SqrtPriceLimitX64    bin.Uint128

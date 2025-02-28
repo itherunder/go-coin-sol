@@ -48,7 +48,7 @@ func ParseSwapTxByParsedTx(
 			continue
 		}
 		methodId := hex.EncodeToString(instruction.Data)[:16]
-		if methodId != discriminator.GetDiscriminator("global", "swap") {
+		if methodId != hex.EncodeToString(discriminator.GetDiscriminator("global", "swap")) {
 			continue
 		}
 
