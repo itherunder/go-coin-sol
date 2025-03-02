@@ -58,6 +58,10 @@ func (t *Wallet) RPCClient() *rpc.Client {
 	return t.rpcClient
 }
 
+func (t *Wallet) WSClient() *ws.Client {
+	return t.wsClient
+}
+
 func (t *Wallet) NewWSClient(ctx context.Context, opt *ws.Options) *ws.Client {
 	return ws.ConnectWithOptions(ctx, t.wssUrl, opt)
 }
