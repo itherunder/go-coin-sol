@@ -211,6 +211,7 @@ func (t *Wallet) SendTxByJito(
 			return
 		}
 		signatureSubscribeChan = sub.Response()
+		t.logger.InfoF("SignatureSubscribe success.")
 	}()
 	defer func() {
 		if sub != nil {
@@ -222,10 +223,8 @@ func (t *Wallet) SendTxByJito(
 confirm:
 	for {
 		select {
-		case _, ok := <-signatureSubscribeChan:
-			if !ok {
-				continue
-			}
+		case <-signatureSubscribeChan:
+			t.logger.InfoF("ws 已确认")
 			getTransactionResult_, err := t.rpcClient.GetParsedTransaction(
 				ctx,
 				tx.Signatures[0],
