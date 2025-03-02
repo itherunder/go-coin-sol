@@ -200,8 +200,9 @@ func (t *Wallet) SendTxByJito(
 	confirmTimer := time.NewTimer(time.Second)
 
 	var signatureSubscribeChan <-chan *ws.SignatureResult
+	var sub *ws.SignatureSubscription
 	go func() {
-		sub, err := t.wsClient.SignatureSubscribe(
+		sub, err = t.wsClient.SignatureSubscribe(
 			tx.Signatures[0],
 			rpc.CommitmentConfirmed,
 		)
@@ -209,8 +210,12 @@ func (t *Wallet) SendTxByJito(
 			t.logger.ErrorF("SignatureSubscribe failed. %s", err.Error())
 			return
 		}
-		defer sub.Unsubscribe()
 		signatureSubscribeChan = sub.Response()
+	}()
+	defer func() {
+		if sub != nil {
+			sub.Unsubscribe()
+		}
 	}()
 
 	var getTransactionResult *rpc.GetParsedTransactionResult
