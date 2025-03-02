@@ -30,6 +30,7 @@ import (
 type Wallet struct {
 	logger    i_logger.ILogger
 	rpcClient *rpc.Client
+	wsClient  *ws.Client
 	wssUrl    string
 }
 
@@ -44,10 +45,11 @@ func New(
 	if wssUrl == "" {
 		wssUrl = rpc.MainNetBeta_WS
 	}
-	rpcClient := rpc.New(httpsUrl)
+
 	return &Wallet{
 		logger:    logger,
-		rpcClient: rpcClient,
+		rpcClient: rpc.New(httpsUrl),
+		wsClient:  ws.Connect(context.Background(), wssUrl),
 		wssUrl:    wssUrl,
 	}
 }
@@ -56,12 +58,8 @@ func (t *Wallet) RPCClient() *rpc.Client {
 	return t.rpcClient
 }
 
-func (t *Wallet) NewWSClient(ctx context.Context, opt *ws.Options) (*ws.Client, error) {
-	wsClient, err := ws.ConnectWithOptions(ctx, t.wssUrl, opt)
-	if err != nil {
-		return nil, errors.Wrap(err, "")
-	}
-	return wsClient, nil
+func (t *Wallet) NewWSClient(ctx context.Context, opt *ws.Options) *ws.Client {
+	return ws.ConnectWithOptions(ctx, t.wssUrl, opt)
 }
 
 func (t *Wallet) NewAddress() (address_ string, priv_ string) {
@@ -196,10 +194,30 @@ func (t *Wallet) SendTxByJito(
 
 	newCtx, _ := context.WithTimeout(ctx, 90*time.Second) // 150 个 slot 链上就会超时，每个 slot 是 400ms - 600ms，也就是 60-90s
 	confirmTimer := time.NewTimer(time.Second)
+
+	var signatureSubscribeChan <-chan *ws.SignatureResult
+	go func() {
+		sub, err := t.wsClient.SignatureSubscribe(
+			tx.Signatures[0],
+			rpc.CommitmentConfirmed,
+		)
+		if err != nil {
+			t.logger.ErrorF("SignatureSubscribe failed. %s", err.Error())
+			return
+		}
+		defer sub.Unsubscribe()
+		signatureSubscribeChan = sub.Response()
+	}()
+
+	var getTransactionResult *rpc.GetParsedTransactionResult
+confirm:
 	for {
 		select {
-		case <-confirmTimer.C:
-			getTransactionResult, err := t.rpcClient.GetParsedTransaction(
+		case _, ok := <-signatureSubscribeChan:
+			if !ok {
+				continue
+			}
+			getTransactionResult_, err := t.rpcClient.GetParsedTransaction(
 				ctx,
 				tx.Signatures[0],
 				&rpc.GetParsedTransactionOpts{
@@ -207,7 +225,23 @@ func (t *Wallet) SendTxByJito(
 					MaxSupportedTransactionVersion: constant.MaxSupportedTransactionVersion_0,
 				},
 			)
-			if err != nil || getTransactionResult == nil {
+			if err != nil || getTransactionResult_ == nil {
+				continue
+			}
+			t.logger.InfoF("ws 检查到已确认")
+			confirmTimer.Stop()
+			getTransactionResult = getTransactionResult_
+			break confirm
+		case <-confirmTimer.C:
+			getTransactionResult_, err := t.rpcClient.GetParsedTransaction(
+				ctx,
+				tx.Signatures[0],
+				&rpc.GetParsedTransactionOpts{
+					Commitment:                     rpc.CommitmentConfirmed,
+					MaxSupportedTransactionVersion: constant.MaxSupportedTransactionVersion_0,
+				},
+			)
+			if err != nil || getTransactionResult_ == nil {
 				go rpc.New(fmt.Sprintf("%s/api/v1/transactions", jitoUrls[0])).SendTransactionWithOpts(ctx, tx, rpc.TransactionOpts{
 					SkipPreflight: true,
 				})
@@ -215,28 +249,31 @@ func (t *Wallet) SendTxByJito(
 				confirmTimer.Reset(200 * time.Millisecond)
 				continue
 			}
-
-			if getTransactionResult.Meta.Err != nil {
-				t.logger.InfoF(
-					"交易已确认[执行失败] <timestamp: %d> <txid: %s> <历时: %ds>. <%s>",
-					*getTransactionResult.BlockTime*1000,
-					tx.Signatures[0].String(),
-					(int64(*getTransactionResult.BlockTime*1000)-sendedTimestamp)/1000,
-					getTransactionResult.Meta.Err,
-				)
-				return getTransactionResult, errors.Errorf("<txid: %s> <err: %s>", tx.Signatures[0], go_format.ToString(getTransactionResult.Meta.Err))
-			}
-			t.logger.InfoF(
-				"交易已确认[执行成功] <timestamp: %d> <txid: %s> <历时: %ds>",
-				*getTransactionResult.BlockTime*1000,
-				tx.Signatures[0].String(),
-				(int64(*getTransactionResult.BlockTime*1000)-sendedTimestamp)/1000,
-			)
-			return getTransactionResult, nil
+			t.logger.InfoF("rpc 检查到已确认")
+			confirmTimer.Stop()
+			getTransactionResult = getTransactionResult_
+			break confirm
 		case <-newCtx.Done():
 			return nil, errors.New("确认超时")
 		}
 	}
+	if getTransactionResult.Meta.Err != nil {
+		t.logger.InfoF(
+			"交易已确认[执行失败] <timestamp: %d> <txid: %s> <历时: %ds>. <%s>",
+			*getTransactionResult.BlockTime*1000,
+			tx.Signatures[0].String(),
+			(int64(*getTransactionResult.BlockTime*1000)-sendedTimestamp)/1000,
+			getTransactionResult.Meta.Err,
+		)
+		return getTransactionResult, errors.Errorf("<txid: %s> <err: %s>", tx.Signatures[0], go_format.ToString(getTransactionResult.Meta.Err))
+	}
+	t.logger.InfoF(
+		"交易已确认[执行成功] <timestamp: %d> <txid: %s> <历时: %ds>",
+		*getTransactionResult.BlockTime*1000,
+		tx.Signatures[0].String(),
+		(int64(*getTransactionResult.BlockTime*1000)-sendedTimestamp)/1000,
+	)
+	return getTransactionResult, nil
 }
 
 func (t *Wallet) SendTxByJitoBundle(
