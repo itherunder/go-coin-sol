@@ -8,6 +8,7 @@ import (
 	"math"
 	"os"
 	"testing"
+	"time"
 
 	bin "github.com/gagliardetto/binary"
 	"github.com/gagliardetto/solana-go"
@@ -199,6 +200,7 @@ func TestWallet_SwapJupiter_Buy_Sell(t *testing.T) {
 		},
 		uint64(0.0001*math.Pow(10, constant.SOL_Decimals)),
 		solana.MustPublicKeyFromBase58("DttWaMuVvTiduZRnguLF7jNxTgiMBZ1hyAumKUiL2KRL"),
+		2*time.Second,
 	)
 	go_test_.Equal(t, nil, err)
 }
@@ -240,6 +242,7 @@ func TestWallet_SwapJupiter_Buy(t *testing.T) {
 		},
 		uint64(0.00002*math.Pow(10, constant.SOL_Decimals)),
 		solana.MustPublicKeyFromBase58("DttWaMuVvTiduZRnguLF7jNxTgiMBZ1hyAumKUiL2KRL"),
+		2*time.Second,
 	)
 	go_test_.Equal(t, nil, err)
 }
@@ -281,6 +284,7 @@ func TestWallet_SwapJupiter_Sell(t *testing.T) {
 		},
 		uint64(0.00002*math.Pow(10, constant.SOL_Decimals)),
 		solana.MustPublicKeyFromBase58("DttWaMuVvTiduZRnguLF7jNxTgiMBZ1hyAumKUiL2KRL"),
+		2*time.Second,
 	)
 	go_test_.Equal(t, nil, err)
 }
@@ -344,6 +348,7 @@ func TestWallet_SwapRaydiumClmm_Buy(t *testing.T) {
 		},
 		uint64(0.00002*math.Pow(10, constant.SOL_Decimals)),
 		solana.MustPublicKeyFromBase58("DttWaMuVvTiduZRnguLF7jNxTgiMBZ1hyAumKUiL2KRL"),
+		2*time.Second,
 	)
 	go_test_.Equal(t, nil, err)
 }
@@ -489,6 +494,7 @@ func TestDestroyTokenAccounts(t *testing.T) {
 		},
 		uint64(0.00002*math.Pow(10, constant.SOL_Decimals)),
 		solana.MustPublicKeyFromBase58("DttWaMuVvTiduZRnguLF7jNxTgiMBZ1hyAumKUiL2KRL"),
+		2*time.Second,
 	)
 	go_test_.Equal(t, nil, err)
 }
@@ -523,6 +529,7 @@ func TestTransferSOL(t *testing.T) {
 		},
 		uint64(0.00002*math.Pow(10, constant.SOL_Decimals)),
 		solana.MustPublicKeyFromBase58("DttWaMuVvTiduZRnguLF7jNxTgiMBZ1hyAumKUiL2KRL"),
+		2*time.Second,
 	)
 	go_test_.Equal(t, nil, err)
 }

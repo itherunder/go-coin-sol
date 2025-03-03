@@ -153,6 +153,7 @@ func (t *Wallet) SendTxByJito(
 	jitoUrls []string,
 	jitoTipAmountWithDecimals uint64,
 	jitoAccount solana.PublicKey,
+	checkInterval time.Duration,
 ) (*rpc.GetParsedTransactionResult, error) {
 	if len(instructions) == 0 {
 		return nil, errors.Errorf("指令集为空")
@@ -254,7 +255,7 @@ confirm:
 					SkipPreflight: true,
 				})
 				// t.logger.InfoF("未确认...")
-				confirmTimer.Reset(200 * time.Millisecond)
+				confirmTimer.Reset(checkInterval)
 				continue
 			}
 			t.logger.InfoF("rpc 检查到已确认")
@@ -282,6 +283,116 @@ confirm:
 		(int64(*getTransactionResult.BlockTime*1000)-sendedTimestamp)/1000,
 	)
 	return getTransactionResult, nil
+}
+
+func (t *Wallet) SendTxByJitoV2(
+	ctx context.Context,
+	privObj solana.PrivateKey,
+	signers map[solana.PublicKey]*solana.PrivateKey,
+	latestBlockhash *solana.Hash,
+	instructions []solana.Instruction,
+	unitPrice uint64,
+	unitLimit uint64,
+	jitoUrls []string,
+	jitoTipAmountWithDecimals uint64,
+	jitoAccount solana.PublicKey,
+) (*rpc.GetParsedTransactionResult, error) {
+	if len(instructions) == 0 {
+		return nil, errors.Errorf("指令集为空")
+	}
+
+	instructions = append(
+		instructions,
+		system.
+			NewTransferInstructionBuilder().
+			SetFundingAccount(privObj.PublicKey()).
+			SetRecipientAccount(jitoAccount).
+			SetLamports(jitoTipAmountWithDecimals).
+			Build(),
+	)
+
+	tx, err := t.BuildTx(
+		privObj,
+		signers,
+		latestBlockhash,
+		instructions,
+		unitPrice,
+		unitLimit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	sendedTimestamp := go_time.CurrentTimestamp()
+	t.logger.InfoF("交易构建成功 <timestamp: %d> <txid: %s>", sendedTimestamp, tx.Signatures[0].String())
+
+	for _, jitoUrl := range jitoUrls {
+		go func(jitoUrl string) {
+			rpcClient := rpc.New(fmt.Sprintf("%s/api/v1/transactions", jitoUrl))
+			_, err = rpcClient.SendTransactionWithOpts(ctx, tx, rpc.TransactionOpts{
+				SkipPreflight: true,
+			})
+			if err != nil {
+				// t.logger.ErrorF("交易发送失败 <txid: %s> <jitoUrl: %s>. <%s>", tx.Signatures[0].String(), jitoUrl, err.Error())
+				return
+			}
+			// t.logger.InfoF("交易发送成功 <txid: %s> <jitoUrl: %s>", tx.Signatures[0].String(), jitoUrl)
+		}(jitoUrl)
+	}
+
+	var signatureSubscribeChan <-chan *ws.SignatureResult
+	var sub *ws.SignatureSubscription
+	sub, err = t.wsClient.SignatureSubscribe(
+		tx.Signatures[0],
+		rpc.CommitmentConfirmed,
+	)
+	if err != nil {
+		t.logger.ErrorF("SignatureSubscribe failed. %s", err.Error())
+		return nil, err
+	}
+	signatureSubscribeChan = sub.Response()
+	t.logger.InfoF("SignatureSubscribe success.")
+
+	defer sub.Unsubscribe()
+
+	newCtx, _ := context.WithTimeout(ctx, 90*time.Second) // 150 个 slot 链上就会超时，每个 slot 是 400ms - 600ms，也就是 60-90s
+	for {
+		select {
+		case r := <-signatureSubscribeChan:
+			t.logger.InfoF("ws 检查到已确认 <timestamp: %d>", go_time.CurrentTimestamp())
+			if r.Value.Err != nil {
+				errMsg := go_format.ToString(r.Value.Err)
+				t.logger.InfoF(
+					"交易已确认[执行失败] <slot: %d> <txid: %s>. <%s>",
+					r.Context.Slot,
+					tx.Signatures[0].String(),
+					errMsg,
+				)
+				return nil, errors.Errorf("<txid: %s> <err: %s>", tx.Signatures[0], errMsg)
+			}
+			for {
+				getTransactionResult_, err := t.rpcClient.GetParsedTransaction(
+					ctx,
+					tx.Signatures[0],
+					&rpc.GetParsedTransactionOpts{
+						Commitment:                     rpc.CommitmentConfirmed,
+						MaxSupportedTransactionVersion: constant.MaxSupportedTransactionVersion_0,
+					},
+				)
+				if err != nil || getTransactionResult_ == nil {
+					time.Sleep(100 * time.Millisecond)
+					continue
+				}
+				t.logger.InfoF(
+					"交易已确认[执行成功] <slot: %d> <txid: %s>",
+					r.Context.Slot,
+					tx.Signatures[0].String(),
+				)
+				return getTransactionResult_, nil
+			}
+		case <-newCtx.Done():
+			return nil, errors.New("确认超时")
+		}
+	}
 }
 
 func (t *Wallet) SendTxByJitoBundle(
