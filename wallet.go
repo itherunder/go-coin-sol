@@ -350,7 +350,7 @@ func (t *Wallet) SendTxByJitoV2(
 		return nil, err
 	}
 	signatureSubscribeChan = sub.Response()
-	t.logger.InfoF("SignatureSubscribe success.")
+	// t.logger.InfoF("SignatureSubscribe success.")
 
 	defer sub.Unsubscribe()
 
@@ -358,7 +358,7 @@ func (t *Wallet) SendTxByJitoV2(
 	for {
 		select {
 		case r := <-signatureSubscribeChan:
-			t.logger.InfoF("ws 检查到已确认 <timestamp: %d>", go_time.CurrentTimestamp())
+			// t.logger.InfoF("ws 检查到已确认 <timestamp: %d>", go_time.CurrentTimestamp())
 			if r.Value.Err != nil {
 				errMsg := go_format.ToString(r.Value.Err)
 				t.logger.InfoF(
