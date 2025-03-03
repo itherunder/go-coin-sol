@@ -370,7 +370,7 @@ func (t *Wallet) SendTxByJitoV2(
 				return nil, errors.Errorf("<txid: %s> <err: %s>", tx.Signatures[0], errMsg)
 			}
 			for {
-				getTransactionResult_, err := t.rpcClient.GetParsedTransaction(
+				getTransactionResult, err := t.rpcClient.GetParsedTransaction(
 					ctx,
 					tx.Signatures[0],
 					&rpc.GetParsedTransactionOpts{
@@ -378,16 +378,16 @@ func (t *Wallet) SendTxByJitoV2(
 						MaxSupportedTransactionVersion: constant.MaxSupportedTransactionVersion_0,
 					},
 				)
-				if err != nil || getTransactionResult_ == nil {
+				if err != nil || getTransactionResult == nil {
 					time.Sleep(100 * time.Millisecond)
 					continue
 				}
 				t.logger.InfoF(
-					"交易已确认[执行成功] <slot: %d> <txid: %s>",
-					r.Context.Slot,
+					"交易已确认[执行成功] <timestamp: %d> <txid: %s>",
+					*getTransactionResult.BlockTime*1000,
 					tx.Signatures[0].String(),
 				)
-				return getTransactionResult_, nil
+				return getTransactionResult, nil
 			}
 		case <-newCtx.Done():
 			return nil, errors.New("确认超时")
