@@ -225,25 +225,9 @@ confirm:
 	for {
 		select {
 		case <-signatureSubscribeChan:
-			// t.logger.InfoF("ws 已确认")
-			for {
-				getTransactionResult_, err := t.rpcClient.GetParsedTransaction(
-					ctx,
-					tx.Signatures[0],
-					&rpc.GetParsedTransactionOpts{
-						Commitment:                     rpc.CommitmentConfirmed,
-						MaxSupportedTransactionVersion: constant.MaxSupportedTransactionVersion_0,
-					},
-				)
-				if err != nil || getTransactionResult_ == nil {
-					time.Sleep(100 * time.Millisecond)
-					continue
-				}
-				t.logger.InfoF("ws 检查到已确认")
-				confirmTimer.Stop()
-				getTransactionResult = getTransactionResult_
-				break confirm
-			}
+			t.logger.InfoF("ws 已确认")
+			confirmTimer.Reset(0)
+			continue
 		case <-confirmTimer.C:
 			getTransactionResult_, err := t.rpcClient.GetParsedTransaction(
 				ctx,
