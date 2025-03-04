@@ -200,34 +200,34 @@ func (t *Wallet) SendTxByJito(
 	newCtx, _ := context.WithTimeout(ctx, 90*time.Second) // 150 个 slot 链上就会超时，每个 slot 是 400ms - 600ms，也就是 60-90s
 	confirmTimer := time.NewTimer(time.Second)
 
-	var signatureSubscribeChan <-chan *ws.SignatureResult
-	var sub *ws.SignatureSubscription
-	go func() {
-		sub, err = t.wsClient.SignatureSubscribe(
-			tx.Signatures[0],
-			rpc.CommitmentConfirmed,
-		)
-		if err != nil {
-			t.logger.ErrorF("SignatureSubscribe failed. %s", err.Error())
-			return
-		}
-		signatureSubscribeChan = sub.Response()
-		// t.logger.InfoF("SignatureSubscribe success.")
-	}()
-	defer func() {
-		if sub != nil {
-			sub.Unsubscribe()
-		}
-	}()
+	// var signatureSubscribeChan <-chan *ws.SignatureResult
+	// var sub *ws.SignatureSubscription
+	// go func() {
+	// 	sub, err = t.wsClient.SignatureSubscribe(
+	// 		tx.Signatures[0],
+	// 		rpc.CommitmentConfirmed,
+	// 	)
+	// 	if err != nil {
+	// 		t.logger.ErrorF("SignatureSubscribe failed. %s", err.Error())
+	// 		return
+	// 	}
+	// 	signatureSubscribeChan = sub.Response()
+	// 	// t.logger.InfoF("SignatureSubscribe success.")
+	// }()
+	// defer func() {
+	// 	if sub != nil {
+	// 		sub.Unsubscribe()
+	// 	}
+	// }()
 
 	var getTransactionResult *rpc.GetParsedTransactionResult
 confirm:
 	for {
 		select {
-		case <-signatureSubscribeChan:
-			t.logger.InfoF("ws 已确认")
-			confirmTimer.Reset(0)
-			continue
+		// case <-signatureSubscribeChan:
+		// 	t.logger.InfoF("ws 已确认")
+		// 	confirmTimer.Reset(0)
+		// 	continue
 		case <-confirmTimer.C:
 			getTransactionResult_, err := t.rpcClient.GetParsedTransaction(
 				ctx,
@@ -238,6 +238,9 @@ confirm:
 				},
 			)
 			if err != nil || getTransactionResult_ == nil {
+				if err != nil {
+					t.logger.Error(err)
+				}
 				go rpc.New(fmt.Sprintf("%s/api/v1/transactions", jitoUrls[0])).SendTransactionWithOpts(ctx, tx, rpc.TransactionOpts{
 					SkipPreflight: true,
 				})
