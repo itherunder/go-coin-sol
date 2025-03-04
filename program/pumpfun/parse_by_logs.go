@@ -26,8 +26,8 @@ func ParseSwapByLogs(network rpc.Cluster, logs []string) []*type_.SwapDataType {
 	isSwap := false
 	stack := util.NewStack()
 	for _, log := range logs {
-		pushPrefix := fmt.Sprintf("Program %s invoke", pumpfun_constant.Pumpfun_Program)
-		popLog := fmt.Sprintf("Program %s success", pumpfun_constant.Pumpfun_Program)
+		pushPrefix := fmt.Sprintf("Program %s invoke", pumpfun_constant.Pumpfun_Program[network])
+		popLog := fmt.Sprintf("Program %s success", pumpfun_constant.Pumpfun_Program[network])
 		if strings.HasPrefix(log, pushPrefix) {
 			stack.Push(log)
 			continue
@@ -140,7 +140,7 @@ func ParseSwapByLogs(network rpc.Cluster, logs []string) []*type_.SwapDataType {
 	return swaps
 }
 
-func ParseCreateByLogs(logs []string) *pumpfun_type.CreateDataType {
+func ParseCreateByLogs(network rpc.Cluster, logs []string) *pumpfun_type.CreateDataType {
 	if strings.Contains(strings.Join(logs, ""), "failed") {
 		return nil
 	}
@@ -148,8 +148,8 @@ func ParseCreateByLogs(logs []string) *pumpfun_type.CreateDataType {
 	isCreate := false
 	stack := util.NewStack()
 	for _, log := range logs {
-		pushPrefix := fmt.Sprintf("Program %s invoke", pumpfun_constant.Pumpfun_Program)
-		popLog := fmt.Sprintf("Program %s success", pumpfun_constant.Pumpfun_Program)
+		pushPrefix := fmt.Sprintf("Program %s invoke", pumpfun_constant.Pumpfun_Program[network])
+		popLog := fmt.Sprintf("Program %s success", pumpfun_constant.Pumpfun_Program[network])
 		if strings.HasPrefix(log, pushPrefix) {
 			stack.Push(log)
 			continue
@@ -207,15 +207,15 @@ func ParseCreateByLogs(logs []string) *pumpfun_type.CreateDataType {
 	return nil
 }
 
-func IsRemoveLiqByLogs(logs []string) bool {
+func IsRemoveLiqByLogs(network rpc.Cluster, logs []string) bool {
 	if strings.Contains(strings.Join(logs, ""), "failed") {
 		return false
 	}
 
 	stack := util.NewStack()
 	for _, log := range logs {
-		pushPrefix := fmt.Sprintf("Program %s invoke", pumpfun_constant.Pumpfun_Program)
-		popLog := fmt.Sprintf("Program %s success", pumpfun_constant.Pumpfun_Program)
+		pushPrefix := fmt.Sprintf("Program %s invoke", pumpfun_constant.Pumpfun_Program[network])
+		popLog := fmt.Sprintf("Program %s success", pumpfun_constant.Pumpfun_Program[network])
 		if strings.HasPrefix(log, pushPrefix) {
 			stack.Push(log)
 			continue

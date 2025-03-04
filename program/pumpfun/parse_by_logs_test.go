@@ -52,7 +52,7 @@ func TestParseSwapByLogs(t *testing.T) {
 	client := rpc.New(url)
 	getTransactionResult, err := client.GetTransaction(
 		context.TODO(),
-		solana.MustSignatureFromBase58("3FhAfwZts7di6LwtTY86rVGprB1hvsMtNrpfmt95UxfvH4LSZsn2fjMxuekmm7sx6ZKvxuwzWQhYc7yZdrb2r2f9"),
+		solana.MustSignatureFromBase58("218RrZLfpDACipCLebwEmHUtNpkp8xvtTZ241Z5ywqbdFzo1V9HyVf3i85mdQNSDYSLkF38mL3VbVETdCy15cYsZ"),
 		&rpc.GetTransactionOpts{
 			Commitment:                     rpc.CommitmentConfirmed,
 			MaxSupportedTransactionVersion: constant.MaxSupportedTransactionVersion_0,
