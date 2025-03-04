@@ -47,7 +47,7 @@ func do() error {
 			return err
 		}
 		// return
-		_, err = wallet.SendTxByJitoV2(
+		_, err = wallet.SendTxByJito(
 			context.Background(),
 			privObj,
 			nil,
@@ -61,6 +61,7 @@ func do() error {
 			},
 			uint64(0.00002*math.Pow(10, constant.SOL_Decimals)),
 			solana.MustPublicKeyFromBase58("DttWaMuVvTiduZRnguLF7jNxTgiMBZ1hyAumKUiL2KRL"),
+			time.Second,
 		)
 		if err != nil {
 			return err
