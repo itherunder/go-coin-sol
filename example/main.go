@@ -65,7 +65,8 @@ func do() error {
 		if err != nil {
 			return err
 		}
-		time.Sleep(30 * time.Second)
+		// wallet.WSClient().Close()
+		time.Sleep(40 * time.Second)
 	}
 	return nil
 }
