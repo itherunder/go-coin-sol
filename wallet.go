@@ -87,7 +87,7 @@ func (t *Wallet) TokenBalance(
 		userTokenAssociatedAccount,
 	)
 	if err != nil {
-		if err.Error() == "not found" {
+		if strings.Contains(err.Error(), "not found") {
 			return &type_.TokenAmountInfo{
 				AmountWithDecimals: 0,
 				Decimals:           0,

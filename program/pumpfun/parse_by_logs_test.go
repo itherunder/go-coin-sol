@@ -30,7 +30,7 @@ func TestParseCreateByLogs(t *testing.T) {
 		},
 	)
 	go_test_.Equal(t, nil, err)
-	d := ParseCreateByLogs(getTransactionResult.Meta.LogMessages)
+	d := ParseCreateByLogs(rpc.MainNetBeta, getTransactionResult.Meta.LogMessages)
 	if d != nil {
 		fmt.Printf(
 			"<%s> <TokenAddress: %s> <UserAddress: %s> <URI: %s>\n",
@@ -52,7 +52,7 @@ func TestParseSwapByLogs(t *testing.T) {
 	client := rpc.New(url)
 	getTransactionResult, err := client.GetTransaction(
 		context.TODO(),
-		solana.MustSignatureFromBase58("218RrZLfpDACipCLebwEmHUtNpkp8xvtTZ241Z5ywqbdFzo1V9HyVf3i85mdQNSDYSLkF38mL3VbVETdCy15cYsZ"),
+		solana.MustSignatureFromBase58("22yrnjBaqiXSFJcaovcR5zfNQw2WtuDZ1kBfiTDj6uog67Fbc85bTxcD67F7QpNG1oefWCgZi7NeY57N4JHf19Wq"),
 		&rpc.GetTransactionOpts{
 			Commitment:                     rpc.CommitmentConfirmed,
 			MaxSupportedTransactionVersion: constant.MaxSupportedTransactionVersion_0,
@@ -102,7 +102,7 @@ func TestIsRemoveLiqByLogs(t *testing.T) {
 		},
 	)
 	go_test_.Equal(t, nil, err)
-	is := IsRemoveLiqByLogs(getTransactionResult.Meta.LogMessages)
+	is := IsRemoveLiqByLogs(rpc.MainNetBeta, getTransactionResult.Meta.LogMessages)
 	fmt.Println(is)
 }
 
