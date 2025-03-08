@@ -308,7 +308,7 @@ func GetReserves(
 		return nil, nil, errors.Wrapf(err, "<vault1: %s> <vault2: %s>", vault1, vault2)
 	}
 	if datas[0] == nil || datas[1] == nil {
-		return nil, nil, errors.New("账户没查到信息")
+		return nil, nil, nil
 	}
 	reserve1WithDecimals, err := strconv.ParseUint(datas[0].Parsed.Info.TokenAmount.Amount, 10, 64)
 	if err != nil {
