@@ -238,9 +238,9 @@ confirm:
 				},
 			)
 			if err != nil || getTransactionResult_ == nil {
-				if err != nil {
-					t.logger.Error(err)
-				}
+				// if err != nil {
+				// 	t.logger.Error(err)
+				// }
 				go rpc.New(fmt.Sprintf("%s/api/v1/transactions", jitoUrls[0])).SendTransactionWithOpts(ctx, tx, rpc.TransactionOpts{
 					SkipPreflight: true,
 				})
