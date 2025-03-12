@@ -275,6 +275,7 @@ confirm:
 	return getTransactionResult, nil
 }
 
+// 每个 bundle 最大 5 笔交易，排除 transfer fee 的交易后，真正最大只有 4 笔交易
 func (t *Wallet) SendTxByJitoBundle(
 	ctx context.Context,
 	payFeePrivObj solana.PrivateKey,

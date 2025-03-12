@@ -510,8 +510,8 @@ func TestTransferSOL(t *testing.T) {
 	fmt.Println("balance: ", amountWithDecimals)
 	instructions, err := WalletInstance.TransferSOL(
 		privObj.PublicKey(),
-		solana.MustPublicKeyFromBase58("5BnsHy3CV2SjefwMPQ4pwQPVmigxA8R7gUZypRNsZqxp"),
-		amountWithDecimals-5000-20000,
+		solana.MustPublicKeyFromBase58("ETC4pK7oM1aDpnYYUm1L9wqXhLdSVpzuU8xsHKBFwMMY"),
+		amountWithDecimals-5000-2000,
 	)
 	go_test_.Equal(t, nil, err)
 	// return
@@ -527,7 +527,7 @@ func TestTransferSOL(t *testing.T) {
 			"https://tokyo.mainnet.block-engine.jito.wtf",
 			"https://mainnet.block-engine.jito.wtf",
 		},
-		uint64(0.00002*math.Pow(10, constant.SOL_Decimals)),
+		uint64(0.000002*math.Pow(10, constant.SOL_Decimals)),
 		solana.MustPublicKeyFromBase58("DttWaMuVvTiduZRnguLF7jNxTgiMBZ1hyAumKUiL2KRL"),
 		2*time.Second,
 	)

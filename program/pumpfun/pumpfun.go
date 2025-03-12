@@ -345,8 +345,8 @@ func GetSwapInstructions(
 	tokenAddress solana.PublicKey,
 	tokenAmountWithDecimals uint64,
 	isCloseUserAssociatedTokenAddress bool,
-	virtualSolReserveWithDecimals uint64,
-	virtualTokenReserveWithDecimals uint64,
+	virtualSolReserveWithDecimals uint64, // 如果不设置滑点，传 0 即可
+	virtualTokenReserveWithDecimals uint64, // 如果不设置滑点，传 0 即可
 	slippage uint64, // 0 代表不设置滑点
 ) ([]solana.Instruction, error) {
 	instructions := make([]solana.Instruction, 0)
@@ -426,6 +426,55 @@ func GetSwapInstructions(
 				nil,
 			).Build(),
 		)
+	}
+
+	return instructions, nil
+}
+
+func GetCreateInstructions(
+	network rpc.Cluster,
+	userAddress solana.PublicKey,
+	tokenAddress solana.PublicKey,
+	tokenAmountWithDecimals uint64, // 创建时购买的数量
+	name string,
+	symbol string,
+	uri string,
+) ([]solana.Instruction, error) {
+	instructions := make([]solana.Instruction, 0)
+
+	bondingCurveAddress, err := DeriveBondingCurveAddress(network, tokenAddress)
+	if err != nil {
+		return nil, err
+	}
+	createInstruction, err := pumpfun_instruction.NewCreateInstruction(
+		network,
+		userAddress,
+		tokenAddress,
+		bondingCurveAddress,
+		name,
+		symbol,
+		uri,
+	)
+	if err != nil {
+		return nil, err
+	}
+	instructions = append(instructions, createInstruction)
+	if tokenAmountWithDecimals > 0 {
+		swapInstructions, err := GetSwapInstructions(
+			rpc.MainNetBeta,
+			userAddress,
+			type_.SwapType_Buy,
+			tokenAddress,
+			tokenAmountWithDecimals,
+			false,
+			30000000000,
+			1000000000000000,
+			5000,
+		)
+		if err != nil {
+			return nil, err
+		}
+		instructions = append(instructions, swapInstructions...)
 	}
 
 	return instructions, nil
