@@ -2,6 +2,7 @@ package go_coin_sol
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"slices"
@@ -693,4 +694,22 @@ func (t *Wallet) DestroyTokenAccounts(
 	}
 
 	return instructions, closedTokenAccounts, remainTokenAccounts, nil
+}
+
+// 获取使用 anchor idl init 将 idl 内容上传到链上的地址
+func (t *Wallet) IDLAddress(programID solana.PublicKey) (solana.PublicKey, error) {
+	base, _, err := solana.FindProgramAddress(
+		[][]byte{},
+		programID,
+	)
+	if err != nil {
+		return solana.PublicKey{}, err
+	}
+	b := make([]byte, 0)
+	b = append(b, base.Bytes()...)
+	b = append(b, []byte("anchor:idl")...)
+	b = append(b, programID.Bytes()...)
+
+	sha256 := sha256.Sum256(b)
+	return solana.PublicKeyFromBytes(sha256[:]), nil
 }

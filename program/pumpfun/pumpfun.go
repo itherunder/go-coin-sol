@@ -163,10 +163,11 @@ func ParseCreateTx(network rpc.Cluster, meta *rpc.TransactionMeta, transaction *
 			continue
 		}
 		var params struct {
-			Id     uint64 `json:"id"`
-			Name   string `json:"name"`
-			Symbol string `json:"symbol"`
-			URI    string `json:"uri"`
+			Id      uint64           `json:"id"`
+			Name    string           `json:"name"`
+			Symbol  string           `json:"symbol"`
+			URI     string           `json:"uri"`
+			Creator solana.PublicKey `json:"creator"`
 		}
 		err := bin.NewBorshDecoder(instruction.Data).Decode(&params)
 		if err != nil {
@@ -223,6 +224,47 @@ func ParseRemoveLiqTx(network rpc.Cluster, meta *rpc.TransactionMeta, transactio
 			BondingCurveAddress: accountKeys[instruction.Accounts[3]],
 			TokenAddress:        accountKeys[instruction.Accounts[2]],
 			FeeInfo:             feeInfo,
+		}, nil
+
+	}
+
+	return nil, nil
+}
+
+func ParseCreateTxByParsedTx(network rpc.Cluster, meta *rpc.ParsedTransactionMeta, parsedTransaction *rpc.ParsedTransaction) (*pumpfun_type.CreateTxDataType, error) {
+	for _, parsedInstruction := range parsedTransaction.Message.Instructions {
+		if !parsedInstruction.ProgramId.Equals(pumpfun_constant.Pumpfun_Program[network]) {
+			continue
+		}
+		if hex.EncodeToString(parsedInstruction.Data)[:16] != "181ec828051c0777" {
+			continue
+		}
+		var params struct {
+			Id      uint64           `json:"id"`
+			Name    string           `json:"name"`
+			Symbol  string           `json:"symbol"`
+			URI     string           `json:"uri"`
+			Creator solana.PublicKey `json:"creator"`
+		}
+		err := bin.NewBorshDecoder(parsedInstruction.Data).Decode(&params)
+		if err != nil {
+			return nil, errors.Wrap(err, "")
+		}
+		feeInfo, err := util.GetFeeInfoFromParsedTx(meta, parsedTransaction)
+		if err != nil {
+			return nil, err
+		}
+		return &pumpfun_type.CreateTxDataType{
+			TxId: parsedTransaction.Signatures[0].String(),
+			CreateDataType: pumpfun_type.CreateDataType{
+				Name:                params.Name,
+				Symbol:              params.Symbol,
+				URI:                 params.URI,
+				UserAddress:         parsedInstruction.Accounts[7],
+				BondingCurveAddress: parsedInstruction.Accounts[2],
+				TokenAddress:        parsedInstruction.Accounts[0],
+			},
+			FeeInfo: feeInfo,
 		}, nil
 
 	}

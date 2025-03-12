@@ -533,3 +533,9 @@ func TestTransferSOL(t *testing.T) {
 	)
 	go_test_.Equal(t, nil, err)
 }
+
+func TestWallet_IDLAddress(t *testing.T) {
+	idlAddress, err := WalletInstance.IDLAddress(solana.MustPublicKeyFromBase58("E3BYUBj2HXnYc12vnCPj7NcWAxPdfEscXV6NT3maC4up"))
+	go_test_.Equal(t, nil, err)
+	fmt.Println("idlAddress: ", idlAddress)
+}

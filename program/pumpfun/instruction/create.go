@@ -39,13 +39,15 @@ func NewCreateInstruction(
 	}
 	params := new(bytes.Buffer)
 	err = bin.NewBorshEncoder(params).Encode(struct {
-		Name   string
-		Symbol string
-		URI    string
+		Name    string           `json:"name"`
+		Symbol  string           `json:"symbol"`
+		URI     string           `json:"uri"`
+		Creator solana.PublicKey `json:"creator"`
 	}{
-		Name:   name,
-		Symbol: symbol,
-		URI:    uri,
+		Name:    name,
+		Symbol:  symbol,
+		URI:     uri,
+		Creator: userAddress,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "")
