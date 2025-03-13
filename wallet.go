@@ -2,9 +2,12 @@ package go_coin_sol
 
 import (
 	"context"
+	"crypto/ed25519"
 	"crypto/sha256"
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"github.com/pefish/go-random"
 	"slices"
 	"strconv"
 	"strings"
@@ -22,6 +25,7 @@ import (
 	associated_token_account "github.com/pefish/go-coin-sol/program/associated-token-account"
 	type_ "github.com/pefish/go-coin-sol/type"
 	go_format "github.com/pefish/go-format"
+	go_format_string "github.com/pefish/go-format/string"
 	go_http "github.com/pefish/go-http"
 	i_logger "github.com/pefish/go-interface/i-logger"
 	go_time "github.com/pefish/go-time"
@@ -67,9 +71,33 @@ func (t *Wallet) NewWSClient(ctx context.Context, opt *ws.Options) *ws.Client {
 	return ws.ConnectWithOptions(ctx, t.wssUrl, opt)
 }
 
-func (t *Wallet) NewAddress() (address_ string, priv_ string) {
-	account := solana.NewWallet()
-	return account.PublicKey().String(), account.PrivateKey.String()
+func (t *Wallet) NewAddress() solana.PrivateKey {
+	return solana.NewWallet().PrivateKey
+}
+
+func (t *Wallet) NewSeed() string {
+	return go_random.MustRandomString(24)
+}
+
+func (t *Wallet) DeriveAddress(seedStr string, index uint64) (
+	priv_ solana.PrivateKey,
+	err_ error,
+) {
+	if len(seedStr) != 24 {
+		return solana.PrivateKey{}, errors.Errorf("seed length<%d> must be 24", len(seedStr))
+	}
+
+	realSeedB := []byte(go_format_string.MustSpanLeft(seedStr, 24, "0"))
+
+	seed := make([]byte, ed25519.SeedSize) // seed(24) + index(8)
+	copy(seed, realSeedB)
+
+	b := make([]byte, 8)
+	binary.BigEndian.PutUint64(b, index)
+	copy(seed[24:], b[:])
+
+	priv := solana.PrivateKey(ed25519.NewKeyFromSeed(seed))
+	return priv, nil
 }
 
 func (t *Wallet) TokenBalance(

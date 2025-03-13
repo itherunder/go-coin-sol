@@ -82,8 +82,8 @@ func TestWallet_SwapPumpfun(t *testing.T) {
 }
 
 func TestWallet_NewAddress(t *testing.T) {
-	address, priv := WalletInstance.NewAddress()
-	fmt.Println(address, priv)
+	priv := WalletInstance.NewAddress()
+	fmt.Println(priv.PublicKey(), priv)
 }
 
 func TestWallet_SwapRaydiumAmm(t *testing.T) {
@@ -538,4 +538,13 @@ func TestWallet_IDLAddress(t *testing.T) {
 	idlAddress, err := WalletInstance.IDLAddress(solana.MustPublicKeyFromBase58("E3BYUBj2HXnYc12vnCPj7NcWAxPdfEscXV6NT3maC4up"))
 	go_test_.Equal(t, nil, err)
 	fmt.Println("idlAddress: ", idlAddress)
+}
+
+func TestWallet_DeriveAddress(t *testing.T) {
+	// seed := WalletInstance.NewSeed()
+	// fmt.Println("seed: ", seed)
+	priv, err := WalletInstance.DeriveAddress("0Req5Ynx2vK2Skt2g1m3_LNT", 1)
+	go_test_.Equal(t, nil, err)
+	fmt.Println("address: ", priv.PublicKey())
+	fmt.Println("priv: ", priv.String())
 }
