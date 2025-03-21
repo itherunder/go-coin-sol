@@ -116,7 +116,7 @@ func TestIsAddLiqByLogs(t *testing.T) {
 	client := rpc.New(url)
 	getTransactionResult, err := client.GetTransaction(
 		context.TODO(),
-		solana.MustSignatureFromBase58("2yP7DNDVMRP9VeGLQKKp6RNnc8XJxaRisv1ViXuawK4XkeVjvpW3gkN5XdMimhMJmE12PCEGBvDLHqKBq1CeFybJ"),
+		solana.MustSignatureFromBase58("3wMndc1qNoxiQYDSThuWcNUnFdUw46kpNsVmS2siePbRpVoXWhKZHbuUBQT789jxdvfg4HAigJKqarSxN53wgE5F"),
 		&rpc.GetTransactionOpts{
 			Commitment:                     rpc.CommitmentConfirmed,
 			MaxSupportedTransactionVersion: constant.MaxSupportedTransactionVersion_0,

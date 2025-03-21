@@ -9,9 +9,9 @@ import (
 	solana "github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/pefish/go-coin-sol/constant"
+	pumpfun_amm_constant "github.com/pefish/go-coin-sol/program/pumpfun-amm/constant"
 	pumpfun_constant "github.com/pefish/go-coin-sol/program/pumpfun/constant"
 	pumpfun_type "github.com/pefish/go-coin-sol/program/pumpfun/type"
-	raydium_amm_constant "github.com/pefish/go-coin-sol/program/raydium-amm/constant"
 	type_ "github.com/pefish/go-coin-sol/type"
 	util "github.com/pefish/go-coin-sol/util"
 )
@@ -244,8 +244,8 @@ func IsAddLiqByLogs(network rpc.Cluster, logs []string) bool {
 	stack := util.NewStack()
 	for _, log := range logs {
 
-		pushPrefix := fmt.Sprintf("Program %s invoke", raydium_amm_constant.Raydium_AMM_Program[network])
-		popLog := fmt.Sprintf("Program %s success", raydium_amm_constant.Raydium_AMM_Program[network])
+		pushPrefix := fmt.Sprintf("Program %s invoke", pumpfun_amm_constant.Pumpfun_AMM_Program[network])
+		popLog := fmt.Sprintf("Program %s success", pumpfun_amm_constant.Pumpfun_AMM_Program[network])
 		if strings.HasPrefix(log, pushPrefix) {
 			stack.Push(log)
 			continue
@@ -258,7 +258,7 @@ func IsAddLiqByLogs(network rpc.Cluster, logs []string) bool {
 			continue
 		}
 
-		if log == "Program log: Instruction: MintTo" {
+		if log == "Program log: Instruction: CreatePool" {
 			return true
 		}
 	}
