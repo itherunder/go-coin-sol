@@ -174,3 +174,17 @@ type AddLiqTxDataType struct {
 
 	FeeInfo *type_.FeeInfo `json:"fee_info"`
 }
+
+func (t *AddLiqTxDataType) TokenAddressInfo() (
+	tokenAddress_ solana.PublicKey,
+	tokenAddressDecimals_ uint64,
+	err_ error,
+) {
+	if t.BaseTokenAddress.Equals(solana.SolMint) {
+		return t.QuoteTokenAddress, t.QuoteTokenDecimals, nil
+	} else if t.QuoteTokenAddress.Equals(solana.SolMint) {
+		return t.BaseTokenAddress, t.BaseTokenDecimals, nil
+	} else {
+		return solana.PublicKey{}, 0, errors.New("base or quote both not wsol")
+	}
+}

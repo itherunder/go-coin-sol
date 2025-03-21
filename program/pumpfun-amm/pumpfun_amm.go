@@ -52,9 +52,11 @@ func GetSwapInstructions(
 	if userBaseTokenAccount.Equals(solana.SolMint) {
 		userWSOLTokenAccount = userBaseTokenAccount
 		userTokenTokenAccount = userQuoteTokenAccount
-	} else {
+	} else if userQuoteTokenAccount.Equals(solana.SolMint) {
 		userWSOLTokenAccount = userQuoteTokenAccount
 		userTokenTokenAccount = userBaseTokenAccount
+	} else {
+		return nil, errors.New("base or quote both not wsol")
 	}
 
 	if swapType == type_.SwapType_Buy {
