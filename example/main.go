@@ -23,8 +23,8 @@ func do() error {
 	}
 
 	userSOLTokenAccount, _, err := solana.FindAssociatedTokenAddress(
-		solana.MustPublicKeyFromBase58("4iucvyLyWumRqkL1WQXvcu1RyzPboczkKFjmEeR9WAN1"),
-		solana.MustPublicKeyFromBase58("DP4MXhEhe9USfRr1pdDazEdqVftSVH95X7fAXG2epump"),
+		solana.MustPublicKeyFromBase58("4AZRPNEfCJ7iw28rJu5aUyeQhYcvdcNm8cswyL51AY9i"),
+		solana.SolMint,
 	)
 	if err != nil {
 		return err

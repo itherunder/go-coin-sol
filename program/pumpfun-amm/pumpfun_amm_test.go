@@ -92,8 +92,8 @@ func TestGetSwapInstructions(t *testing.T) {
 	quoteVault, _ := swapKeys.QuoteVault()
 	solAmount, tokenAmount, err := util.GetReserves(
 		client,
-		baseVault,
 		quoteVault,
+		baseVault,
 	)
 	go_test_.Equal(t, nil, err)
 

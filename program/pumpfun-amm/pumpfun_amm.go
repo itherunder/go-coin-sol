@@ -49,10 +49,10 @@ func GetSwapInstructions(
 
 	var userWSOLTokenAccount solana.PublicKey
 	var userTokenTokenAccount solana.PublicKey
-	if userBaseTokenAccount.Equals(solana.SolMint) {
+	if swapKeys.BaseTokenAddress.Equals(solana.SolMint) {
 		userWSOLTokenAccount = userBaseTokenAccount
 		userTokenTokenAccount = userQuoteTokenAccount
-	} else if userQuoteTokenAccount.Equals(solana.SolMint) {
+	} else if swapKeys.QuoteTokenAddress.Equals(solana.SolMint) {
 		userWSOLTokenAccount = userQuoteTokenAccount
 		userTokenTokenAccount = userBaseTokenAccount
 	} else {
