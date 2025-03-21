@@ -409,6 +409,7 @@ func ParseAddLiqTxByParsedTx(
 			InitBaseAmountWithDecimals:  logObj.PoolBaseAmount,
 			InitQuoteAmountWithDecimals: logObj.PoolQuoteAmount,
 			FeeInfo:                     feeInfo,
+			Timestamp:                   uint64(logObj.Timestamp * 1000),
 		}, nil
 
 	}

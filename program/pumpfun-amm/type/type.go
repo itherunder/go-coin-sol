@@ -172,7 +172,8 @@ type AddLiqTxDataType struct {
 
 	SwapKeys
 
-	FeeInfo *type_.FeeInfo `json:"fee_info"`
+	FeeInfo   *type_.FeeInfo `json:"fee_info"`
+	Timestamp uint64         `json:"timestamp"`
 }
 
 func (t *AddLiqTxDataType) TokenAddressInfo() (
