@@ -16,6 +16,9 @@ import (
 	constant "github.com/pefish/go-coin-sol/constant"
 	"github.com/pefish/go-coin-sol/program/jupiter"
 	"github.com/pefish/go-coin-sol/program/pumpfun"
+	pumpfun_amm "github.com/pefish/go-coin-sol/program/pumpfun-amm"
+	pumpfun_amm_constant "github.com/pefish/go-coin-sol/program/pumpfun-amm/constant"
+	pumpfun_amm_type "github.com/pefish/go-coin-sol/program/pumpfun-amm/type"
 	pumpfun_constant "github.com/pefish/go-coin-sol/program/pumpfun/constant"
 	pumpfun_instruction "github.com/pefish/go-coin-sol/program/pumpfun/instruction"
 	raydium_amm "github.com/pefish/go-coin-sol/program/raydium-amm"
@@ -42,6 +45,118 @@ func init() {
 		url,
 		"",
 	)
+}
+
+func TestWallet_PumpfunAmm_Buy(t *testing.T) {
+	// return
+	privObj, err := solana.PrivateKeyFromBase58(os.Getenv("PRIV"))
+	go_test_.Equal(t, nil, err)
+	tokenDecimals := pumpfun_constant.Pumpfun_Token_Decimals
+	tokenAmountWithDecimals := uint64(1000 * math.Pow(10, float64(tokenDecimals)))
+	tokenAddress := solana.MustPublicKeyFromBase58("DP4MXhEhe9USfRr1pdDazEdqVftSVH95X7fAXG2epump")
+	swapKeys := pumpfun_amm_type.SwapKeys{
+		AmmAddress:        solana.MustPublicKeyFromBase58("4iucvyLyWumRqkL1WQXvcu1RyzPboczkKFjmEeR9WAN1"),
+		BaseTokenAddress:  tokenAddress,
+		QuoteTokenAddress: solana.SolMint,
+	}
+	baseVault, _ := swapKeys.BaseVault()
+	quoteVault, _ := swapKeys.QuoteVault()
+	solAmount, tokenAmount, err := util.GetReserves(
+		WalletInstance.rpcClient,
+		quoteVault,
+		baseVault,
+	)
+	go_test_.Equal(t, nil, err)
+
+	swapInstructions, err := pumpfun_amm.GetSwapInstructions(
+		rpc.MainNetBeta,
+		privObj.PublicKey(),
+		type_.SwapType_Buy,
+		tokenAmountWithDecimals,
+		swapKeys,
+		false,
+		solAmount.AmountWithDecimals,
+		tokenAmount.AmountWithDecimals,
+		1000,
+	)
+	go_test_.Equal(t, nil, err)
+	r, err := WalletInstance.SendTxByJito(
+		context.Background(),
+		privObj,
+		nil,
+		nil,
+		swapInstructions,
+		0,
+		pumpfun_amm_constant.Pumpfun_Amm_Buy_Unit_Limit,
+		[]string{
+			"https://tokyo.mainnet.block-engine.jito.wtf",
+			"https://mainnet.block-engine.jito.wtf",
+		},
+		uint64(0.00002*math.Pow(10, constant.SOL_Decimals)),
+		solana.MustPublicKeyFromBase58("DttWaMuVvTiduZRnguLF7jNxTgiMBZ1hyAumKUiL2KRL"),
+		2*time.Second,
+	)
+	go_test_.Equal(t, nil, err)
+	fmt.Println(r)
+	// swapResult, err := pumpfun.ParseSwapTxByParsedTx(rpc.MainNetBeta, r.Meta, r.Transaction)
+	// go_test_.Equal(t, nil, err)
+	// fmt.Println(swapResult)
+}
+
+func TestWallet_PumpfunAmm_Sell(t *testing.T) {
+	// return
+	privObj, err := solana.PrivateKeyFromBase58(os.Getenv("PRIV"))
+	go_test_.Equal(t, nil, err)
+	tokenDecimals := pumpfun_constant.Pumpfun_Token_Decimals
+	tokenAmountWithDecimals := uint64(1000 * math.Pow(10, float64(tokenDecimals)))
+	tokenAddress := solana.MustPublicKeyFromBase58("DP4MXhEhe9USfRr1pdDazEdqVftSVH95X7fAXG2epump")
+	swapKeys := pumpfun_amm_type.SwapKeys{
+		AmmAddress:        solana.MustPublicKeyFromBase58("4iucvyLyWumRqkL1WQXvcu1RyzPboczkKFjmEeR9WAN1"),
+		BaseTokenAddress:  tokenAddress,
+		QuoteTokenAddress: solana.SolMint,
+	}
+	baseVault, _ := swapKeys.BaseVault()
+	quoteVault, _ := swapKeys.QuoteVault()
+	solAmount, tokenAmount, err := util.GetReserves(
+		WalletInstance.rpcClient,
+		quoteVault,
+		baseVault,
+	)
+	go_test_.Equal(t, nil, err)
+
+	swapInstructions, err := pumpfun_amm.GetSwapInstructions(
+		rpc.MainNetBeta,
+		privObj.PublicKey(),
+		type_.SwapType_Sell,
+		tokenAmountWithDecimals,
+		swapKeys,
+		true,
+		solAmount.AmountWithDecimals,
+		tokenAmount.AmountWithDecimals,
+		1000,
+	)
+	go_test_.Equal(t, nil, err)
+	r, err := WalletInstance.SendTxByJito(
+		context.Background(),
+		privObj,
+		nil,
+		nil,
+		swapInstructions,
+		0,
+		pumpfun_amm_constant.Pumpfun_Amm_Sell_Unit_Limit,
+		[]string{
+			"https://tokyo.mainnet.block-engine.jito.wtf",
+			"https://mainnet.block-engine.jito.wtf",
+		},
+		uint64(0.00002*math.Pow(10, constant.SOL_Decimals)),
+		solana.MustPublicKeyFromBase58("DttWaMuVvTiduZRnguLF7jNxTgiMBZ1hyAumKUiL2KRL"),
+		2*time.Second,
+	)
+	go_test_.Equal(t, nil, err)
+	fmt.Println(r)
+	// swapResult, err := pumpfun.ParseSwapTxByParsedTx(rpc.MainNetBeta, r.Meta, r.Transaction)
+	// go_test_.Equal(t, nil, err)
+	// fmt.Println(swapResult)
 }
 
 func TestWallet_SwapPumpfun(t *testing.T) {
@@ -510,8 +625,8 @@ func TestTransferSOL(t *testing.T) {
 	fmt.Println("balance: ", amountWithDecimals)
 	instructions, err := WalletInstance.TransferSOL(
 		privObj.PublicKey(),
-		solana.MustPublicKeyFromBase58("ETC4pK7oM1aDpnYYUm1L9wqXhLdSVpzuU8xsHKBFwMMY"),
-		amountWithDecimals-5000-2000,
+		solana.MustPublicKeyFromBase58(os.Getenv("TARGET")),
+		amountWithDecimals-5000-2000, // 减去 jito fee 以及网络费
 	)
 	go_test_.Equal(t, nil, err)
 	// return

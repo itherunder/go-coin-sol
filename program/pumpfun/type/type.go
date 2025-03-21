@@ -9,6 +9,8 @@ type ExtraDatasType struct {
 	ReserveSOLAmountWithDecimals   uint64 `json:"reserve_sol_amount_with_decimals"`
 	ReserveTokenAmountWithDecimals uint64 `json:"reserve_token_amount_with_decimals"`
 	Timestamp                      uint64 `json:"timestamp"`
+	ActualSolReserves              uint64 `json:"actual_sol_reserves"`
+	RemainTokenAmountToLaunch      uint64 `json:"remain_token_amount_to_launch"`
 }
 
 type CreateTxDataType struct {

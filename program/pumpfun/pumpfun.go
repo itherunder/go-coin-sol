@@ -54,24 +54,30 @@ func ParseSwapTxByParsedTx(network rpc.Cluster, meta *rpc.ParsedTransactionMeta,
 		if methodId != "e445a52e51cb9a1d" {
 			continue
 		}
+		if dataHexString[16:32] != "bddb7fd34ee661ee" {
+			continue
+		}
 		if len(dataHexString) > 350 {
 			continue
 		}
+		// e445a52e51cb9a1d bddb7fd34ee661ee b7f2d03093b9cf37f49630eead69cb0d3723961d78a888cf10484044554ba17f 803dcd0b00000000 b1b3a37f88000000 01      0d87cc1f353dd51ba81ebef36486167b9b94be1916fb475a3459dc9cc827cc8d 84fddc6700000000 5e85bb4c18000000     93771f7184180100       5ed9975011000000 93df0c25f3190000
+		// <method id>          <event_id>       <Mint>															  <SOLAmount>      <TokenAmount>    <IsBuy> <User>															 <Timestamp>	  <VirtualSolReserves> <VirtualTokenReserves>
 		var logObj struct {
-			Id                   uint64           `json:"id"`
-			Mint                 solana.PublicKey `json:"mint"`
-			SOLAmount            uint64           `json:"solAmount"`
-			TokenAmount          uint64           `json:"tokenAmount"`
-			IsBuy                bool             `json:"isBuy"`
-			User                 solana.PublicKey `json:"user"`
-			Timestamp            int64            `json:"timestamp"`
-			VirtualSolReserves   uint64           `json:"virtualSolReserves"`
-			VirtualTokenReserves uint64           `json:"virtualTokenReserves"`
+			Mint                      solana.PublicKey
+			SOLAmount                 uint64
+			TokenAmount               uint64
+			IsBuy                     bool
+			User                      solana.PublicKey
+			Timestamp                 int64
+			VirtualSolReserves        uint64
+			VirtualTokenReserves      uint64
+			ActualSolReserves         uint64
+			RemainTokenAmountToLaunch uint64
 		}
-		err := bin.NewBorshDecoder(instruction.Data[8:]).Decode(&logObj)
+
+		err := bin.NewBorshDecoder(instruction.Data[16:]).Decode(&logObj)
 		if err != nil {
-			// 说明记录的不是 swap 信息
-			continue
+			return nil, errors.Wrap(err, "")
 		}
 		if logObj.VirtualSolReserves == 0 ||
 			logObj.VirtualTokenReserves == 0 ||
@@ -98,6 +104,8 @@ func ParseSwapTxByParsedTx(network rpc.Cluster, meta *rpc.ParsedTransactionMeta,
 					ReserveSOLAmountWithDecimals:   logObj.VirtualSolReserves,
 					ReserveTokenAmountWithDecimals: logObj.VirtualTokenReserves,
 					Timestamp:                      uint64(logObj.Timestamp * 1000),
+					ActualSolReserves:              logObj.ActualSolReserves,
+					RemainTokenAmountToLaunch:      logObj.RemainTokenAmountToLaunch,
 				},
 
 				Program:  pumpfun_constant.Pumpfun_Program[network],
@@ -124,6 +132,8 @@ func ParseSwapTxByParsedTx(network rpc.Cluster, meta *rpc.ParsedTransactionMeta,
 					ReserveSOLAmountWithDecimals:   logObj.VirtualSolReserves,
 					ReserveTokenAmountWithDecimals: logObj.VirtualTokenReserves,
 					Timestamp:                      uint64(logObj.Timestamp * 1000),
+					ActualSolReserves:              logObj.ActualSolReserves,
+					RemainTokenAmountToLaunch:      logObj.RemainTokenAmountToLaunch,
 				},
 
 				Program:  pumpfun_constant.Pumpfun_Program[network],

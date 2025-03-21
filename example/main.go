@@ -1,18 +1,12 @@
 package main
 
 import (
-	"context"
+	"fmt"
 	"log"
-	"math"
 	"os"
-	"time"
 
 	"github.com/gagliardetto/solana-go"
 	"github.com/joho/godotenv"
-	go_coin_sol "github.com/pefish/go-coin-sol"
-	"github.com/pefish/go-coin-sol/constant"
-	t_logger "github.com/pefish/go-interface/t-logger"
-	go_logger "github.com/pefish/go-logger"
 )
 
 func main() {
@@ -28,46 +22,13 @@ func do() error {
 		os.Setenv(k, v)
 	}
 
-	wallet := go_coin_sol.New(
-		go_logger.NewLogger(t_logger.Level_DEBUG),
-		os.Getenv("NODE_HTTPS"),
-		os.Getenv("NODE_WSS"),
+	userSOLTokenAccount, _, err := solana.FindAssociatedTokenAddress(
+		solana.MustPublicKeyFromBase58("4iucvyLyWumRqkL1WQXvcu1RyzPboczkKFjmEeR9WAN1"),
+		solana.MustPublicKeyFromBase58("DP4MXhEhe9USfRr1pdDazEdqVftSVH95X7fAXG2epump"),
 	)
-	privObj := solana.MustPrivateKeyFromBase58(os.Getenv("PRIV"))
-
-	for {
-		// time.Sleep(30 * time.Second)
-		// continue
-		instructions, err := wallet.TransferSOL(
-			privObj.PublicKey(),
-			solana.MustPublicKeyFromBase58("5BnsHy3CV2SjefwMPQ4pwQPVmigxA8R7gUZypRNsZqxp"),
-			10000,
-		)
-		if err != nil {
-			return err
-		}
-		// return
-		_, err = wallet.SendTxByJito(
-			context.Background(),
-			privObj,
-			nil,
-			nil,
-			instructions,
-			0,
-			0,
-			[]string{
-				"https://tokyo.mainnet.block-engine.jito.wtf",
-				"https://mainnet.block-engine.jito.wtf",
-			},
-			uint64(0.00002*math.Pow(10, constant.SOL_Decimals)),
-			solana.MustPublicKeyFromBase58("DttWaMuVvTiduZRnguLF7jNxTgiMBZ1hyAumKUiL2KRL"),
-			time.Second,
-		)
-		if err != nil {
-			return err
-		}
-		// wallet.WSClient().Close()
-		time.Sleep(40 * time.Second)
+	if err != nil {
+		return err
 	}
+	fmt.Println(userSOLTokenAccount.String())
 	return nil
 }
