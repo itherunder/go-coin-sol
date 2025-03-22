@@ -6,9 +6,9 @@ import (
 
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/programs/token"
-	type_ "github.com/pefish/go-coin-sol/type"
-	go_http "github.com/pefish/go-http"
-	i_logger "github.com/pefish/go-interface/i-logger"
+	type_ "github.com/itherunder/go-coin-sol/type"
+	go_http "github.com/itherunder/go-http"
+	i_logger "github.com/itherunder/go-interface/i-logger"
 	"github.com/pkg/errors"
 )
 

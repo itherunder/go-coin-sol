@@ -3,8 +3,8 @@ package type_
 import (
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
-	raydium_amm_constant "github.com/pefish/go-coin-sol/program/raydium-amm/constant"
-	type_ "github.com/pefish/go-coin-sol/type"
+	raydium_amm_constant "github.com/itherunder/go-coin-sol/program/raydium-amm/constant"
+	type_ "github.com/itherunder/go-coin-sol/type"
 	"github.com/pkg/errors"
 )
 

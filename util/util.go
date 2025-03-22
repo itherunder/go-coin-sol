@@ -11,10 +11,10 @@ import (
 	bin "github.com/gagliardetto/binary"
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
-	associated_token_account "github.com/pefish/go-coin-sol/program/associated-token-account"
-	type_ "github.com/pefish/go-coin-sol/type"
-	go_http "github.com/pefish/go-http"
-	i_logger "github.com/pefish/go-interface/i-logger"
+	associated_token_account "github.com/itherunder/go-coin-sol/program/associated-token-account"
+	type_ "github.com/itherunder/go-coin-sol/type"
+	go_http "github.com/itherunder/go-http"
+	i_logger "github.com/itherunder/go-interface/i-logger"
 	"github.com/pkg/errors"
 )
 

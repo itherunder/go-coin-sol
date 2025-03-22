@@ -9,12 +9,12 @@ import (
 
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
-	"github.com/pefish/go-coin-sol/constant"
-	raydium_amm_type "github.com/pefish/go-coin-sol/program/raydium-amm/type"
-	raydium_type_ "github.com/pefish/go-coin-sol/program/raydium-amm/type"
-	type_ "github.com/pefish/go-coin-sol/type"
-	"github.com/pefish/go-coin-sol/util"
-	go_test_ "github.com/pefish/go-test"
+	"github.com/itherunder/go-coin-sol/constant"
+	raydium_amm_type "github.com/itherunder/go-coin-sol/program/raydium-amm/type"
+	raydium_type_ "github.com/itherunder/go-coin-sol/program/raydium-amm/type"
+	type_ "github.com/itherunder/go-coin-sol/type"
+	"github.com/itherunder/go-coin-sol/util"
+	go_test_ "github.com/itherunder/go-test"
 )
 
 var client *rpc.Client
