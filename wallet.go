@@ -51,10 +51,12 @@ func New(
 		wssUrl = rpc.MainNetBeta_WS
 	}
 
+	wsCli, _ := ws.Connect(context.Background(), wssUrl)
+
 	return &Wallet{
 		logger:    logger,
 		rpcClient: rpc.New(httpsUrl),
-		wsClient:  ws.Connect(context.Background(), wssUrl),
+		wsClient:  wsCli,
 		wssUrl:    wssUrl,
 	}
 }
@@ -68,7 +70,8 @@ func (t *Wallet) WSClient() *ws.Client {
 }
 
 func (t *Wallet) NewWSClient(ctx context.Context, opt *ws.Options) *ws.Client {
-	return ws.ConnectWithOptions(ctx, t.wssUrl, opt)
+	wsCli, _ := ws.ConnectWithOptions(ctx, t.wssUrl, opt)
+	return wsCli
 }
 
 func (t *Wallet) NewAddress() solana.PrivateKey {
