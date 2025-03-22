@@ -3,13 +3,13 @@ package constant
 import (
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
-	meteora_dlmm_constant "github.com/pefish/go-coin-sol/program/meteora-dlmm/constant"
-	pumpfun_constant "github.com/pefish/go-coin-sol/program/pumpfun/constant"
-	raydium_amm_constant "github.com/pefish/go-coin-sol/program/raydium-amm/constant"
-	raydium_clmm_constant "github.com/pefish/go-coin-sol/program/raydium-clmm/constant"
-	sol_fi_constant "github.com/pefish/go-coin-sol/program/sol-fi/constant"
-	whirlpools_constant "github.com/pefish/go-coin-sol/program/whirlpools/constant"
-	type_ "github.com/pefish/go-coin-sol/type"
+	meteora_dlmm_constant "github.com/itherunder/go-coin-sol/program/meteora-dlmm/constant"
+	pumpfun_constant "github.com/itherunder/go-coin-sol/program/pumpfun/constant"
+	raydium_amm_constant "github.com/itherunder/go-coin-sol/program/raydium-amm/constant"
+	raydium_clmm_constant "github.com/itherunder/go-coin-sol/program/raydium-clmm/constant"
+	sol_fi_constant "github.com/itherunder/go-coin-sol/program/sol-fi/constant"
+	whirlpools_constant "github.com/itherunder/go-coin-sol/program/whirlpools/constant"
+	type_ "github.com/itherunder/go-coin-sol/type"
 )
 
 const (

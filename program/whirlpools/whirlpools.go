@@ -6,11 +6,11 @@ import (
 
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
-	"github.com/pefish/go-coin-sol/discriminator"
-	whirlpools_constant "github.com/pefish/go-coin-sol/program/whirlpools/constant"
-	whirlpools_type "github.com/pefish/go-coin-sol/program/whirlpools/type"
-	type_ "github.com/pefish/go-coin-sol/type"
-	"github.com/pefish/go-coin-sol/util"
+	"github.com/itherunder/go-coin-sol/discriminator"
+	whirlpools_constant "github.com/itherunder/go-coin-sol/program/whirlpools/constant"
+	whirlpools_type "github.com/itherunder/go-coin-sol/program/whirlpools/type"
+	type_ "github.com/itherunder/go-coin-sol/type"
+	"github.com/itherunder/go-coin-sol/util"
 	"github.com/pkg/errors"
 )
 

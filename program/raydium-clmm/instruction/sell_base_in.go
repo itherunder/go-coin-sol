@@ -6,9 +6,9 @@ import (
 	bin "github.com/gagliardetto/binary"
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
-	"github.com/pefish/go-coin-sol/discriminator"
-	raydium_constant "github.com/pefish/go-coin-sol/program/raydium-clmm/constant"
-	raydium_clmm_type "github.com/pefish/go-coin-sol/program/raydium-clmm/type"
+	"github.com/itherunder/go-coin-sol/discriminator"
+	raydium_constant "github.com/itherunder/go-coin-sol/program/raydium-clmm/constant"
+	raydium_clmm_type "github.com/itherunder/go-coin-sol/program/raydium-clmm/type"
 	"github.com/pkg/errors"
 )
 

@@ -9,9 +9,9 @@ import (
 
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
-	"github.com/pefish/go-coin-sol/constant"
-	raydium_clmm_type "github.com/pefish/go-coin-sol/program/raydium-clmm/type"
-	type_ "github.com/pefish/go-coin-sol/type"
+	"github.com/itherunder/go-coin-sol/constant"
+	raydium_clmm_type "github.com/itherunder/go-coin-sol/program/raydium-clmm/type"
+	type_ "github.com/itherunder/go-coin-sol/type"
 	go_format "github.com/pefish/go-format"
 	go_test_ "github.com/pefish/go-test"
 )

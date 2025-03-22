@@ -9,12 +9,12 @@ import (
 	"github.com/gagliardetto/solana-go/programs/system"
 	"github.com/gagliardetto/solana-go/programs/token"
 	"github.com/gagliardetto/solana-go/rpc"
-	associated_token_account_instruction "github.com/pefish/go-coin-sol/program/associated-token-account/instruction"
-	pumpfun_amm_constant "github.com/pefish/go-coin-sol/program/pumpfun-amm/constant"
-	"github.com/pefish/go-coin-sol/program/pumpfun-amm/instruction"
-	pumpfun_amm_type "github.com/pefish/go-coin-sol/program/pumpfun-amm/type"
-	type_ "github.com/pefish/go-coin-sol/type"
-	"github.com/pefish/go-coin-sol/util"
+	associated_token_account_instruction "github.com/itherunder/go-coin-sol/program/associated-token-account/instruction"
+	pumpfun_amm_constant "github.com/itherunder/go-coin-sol/program/pumpfun-amm/constant"
+	"github.com/itherunder/go-coin-sol/program/pumpfun-amm/instruction"
+	pumpfun_amm_type "github.com/itherunder/go-coin-sol/program/pumpfun-amm/type"
+	type_ "github.com/itherunder/go-coin-sol/type"
+	"github.com/itherunder/go-coin-sol/util"
 	"github.com/pkg/errors"
 )
 

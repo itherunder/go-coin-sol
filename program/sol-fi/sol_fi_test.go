@@ -10,8 +10,8 @@ import (
 	bin "github.com/gagliardetto/binary"
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
-	"github.com/pefish/go-coin-sol/constant"
-	sol_fi_type "github.com/pefish/go-coin-sol/program/sol-fi/type"
+	"github.com/itherunder/go-coin-sol/constant"
+	sol_fi_type "github.com/itherunder/go-coin-sol/program/sol-fi/type"
 	go_test_ "github.com/pefish/go-test"
 )
 

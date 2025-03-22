@@ -2,7 +2,7 @@ package type_
 
 import (
 	"github.com/gagliardetto/solana-go"
-	type_ "github.com/pefish/go-coin-sol/type"
+	type_ "github.com/itherunder/go-coin-sol/type"
 )
 
 type ExtraDatasType struct {
