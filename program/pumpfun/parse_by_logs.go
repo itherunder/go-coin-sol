@@ -8,12 +8,12 @@ import (
 	bin "github.com/gagliardetto/binary"
 	solana "github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
-	"github.com/itherunder/go-coin-sol/constant"
-	pumpfun_amm_constant "github.com/itherunder/go-coin-sol/program/pumpfun-amm/constant"
-	pumpfun_constant "github.com/itherunder/go-coin-sol/program/pumpfun/constant"
-	pumpfun_type "github.com/itherunder/go-coin-sol/program/pumpfun/type"
-	type_ "github.com/itherunder/go-coin-sol/type"
-	util "github.com/itherunder/go-coin-sol/util"
+	"github.com/pefish/go-coin-sol/constant"
+	pumpfun_amm_constant "github.com/pefish/go-coin-sol/program/pumpfun-amm/constant"
+	pumpfun_constant "github.com/pefish/go-coin-sol/program/pumpfun/constant"
+	pumpfun_type "github.com/pefish/go-coin-sol/program/pumpfun/type"
+	type_ "github.com/pefish/go-coin-sol/type"
+	util "github.com/pefish/go-coin-sol/util"
 )
 
 func ParseSwapByLogs(network rpc.Cluster, logs []string) []*type_.SwapDataType {

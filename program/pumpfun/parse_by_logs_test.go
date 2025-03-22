@@ -8,9 +8,9 @@ import (
 
 	solana "github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
-	constant "github.com/itherunder/go-coin-sol/constant"
-	type_ "github.com/itherunder/go-coin-sol/program/pumpfun/type"
-	go_test_ "github.com/itherunder/go-test"
+	constant "github.com/pefish/go-coin-sol/constant"
+	type_ "github.com/pefish/go-coin-sol/program/pumpfun/type"
+	go_test_ "github.com/pefish/go-test"
 )
 
 func TestParseCreateByLogs(t *testing.T) {

@@ -8,9 +8,9 @@ import (
 
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
-	constant "github.com/itherunder/go-coin-sol/constant"
-	i_logger "github.com/itherunder/go-interface/i-logger"
-	go_test_ "github.com/itherunder/go-test"
+	constant "github.com/pefish/go-coin-sol/constant"
+	i_logger "github.com/pefish/go-interface/i-logger"
+	go_test_ "github.com/pefish/go-test"
 )
 
 var client *rpc.Client

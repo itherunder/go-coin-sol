@@ -6,7 +6,7 @@ import (
 
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
-	go_test_ "github.com/itherunder/go-test"
+	go_test_ "github.com/pefish/go-test"
 )
 
 func TestGetAssociatedTokenAccountData(t *testing.T) {

@@ -7,7 +7,7 @@ import (
 	bin "github.com/gagliardetto/binary"
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
-	pumpfun_constant "github.com/itherunder/go-coin-sol/program/pumpfun/constant"
+	pumpfun_constant "github.com/pefish/go-coin-sol/program/pumpfun/constant"
 	"github.com/pkg/errors"
 )
 

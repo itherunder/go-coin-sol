@@ -3,7 +3,7 @@ package type_
 import (
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
-	meteora_dlmm_constant "github.com/itherunder/go-coin-sol/program/meteora-dlmm/constant"
+	meteora_dlmm_constant "github.com/pefish/go-coin-sol/program/meteora-dlmm/constant"
 	"github.com/pkg/errors"
 )
 

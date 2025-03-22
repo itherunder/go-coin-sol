@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	go_test_ "github.com/itherunder/go-test"
+	go_test_ "github.com/pefish/go-test"
 )
 
 func TestGetDiscriminator(t *testing.T) {

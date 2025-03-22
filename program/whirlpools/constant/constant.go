@@ -3,7 +3,7 @@ package constant
 import (
 	solana "github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
-	type_ "github.com/itherunder/go-coin-sol/type"
+	type_ "github.com/pefish/go-coin-sol/type"
 )
 
 var (

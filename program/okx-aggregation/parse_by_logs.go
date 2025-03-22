@@ -6,10 +6,10 @@ import (
 	"strings"
 
 	solana "github.com/gagliardetto/solana-go"
-	okx_aggregation_constant "github.com/itherunder/go-coin-sol/program/okx-aggregation/constant"
-	okx_aggregation_type "github.com/itherunder/go-coin-sol/program/okx-aggregation/type"
-	type_ "github.com/itherunder/go-coin-sol/type"
-	util "github.com/itherunder/go-coin-sol/util"
+	okx_aggregation_constant "github.com/pefish/go-coin-sol/program/okx-aggregation/constant"
+	okx_aggregation_type "github.com/pefish/go-coin-sol/program/okx-aggregation/type"
+	type_ "github.com/pefish/go-coin-sol/type"
+	util "github.com/pefish/go-coin-sol/util"
 )
 
 func ParseSwapByLogs(logs []string) *okx_aggregation_type.SwapDataType {

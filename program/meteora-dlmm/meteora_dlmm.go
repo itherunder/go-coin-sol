@@ -6,11 +6,11 @@ import (
 
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
-	"github.com/itherunder/go-coin-sol/discriminator"
-	meteora_dlmm_constant "github.com/itherunder/go-coin-sol/program/meteora-dlmm/constant"
-	meteora_dlmm_type "github.com/itherunder/go-coin-sol/program/meteora-dlmm/type"
-	type_ "github.com/itherunder/go-coin-sol/type"
-	"github.com/itherunder/go-coin-sol/util"
+	"github.com/pefish/go-coin-sol/discriminator"
+	meteora_dlmm_constant "github.com/pefish/go-coin-sol/program/meteora-dlmm/constant"
+	meteora_dlmm_type "github.com/pefish/go-coin-sol/program/meteora-dlmm/type"
+	type_ "github.com/pefish/go-coin-sol/type"
+	"github.com/pefish/go-coin-sol/util"
 	"github.com/pkg/errors"
 )
 

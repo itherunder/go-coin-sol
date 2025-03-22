@@ -7,8 +7,8 @@ import (
 	bin "github.com/gagliardetto/binary"
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
-	raydium_constant "github.com/itherunder/go-coin-sol/program/raydium-amm/constant"
-	raydium_type "github.com/itherunder/go-coin-sol/program/raydium-amm/type"
+	raydium_constant "github.com/pefish/go-coin-sol/program/raydium-amm/constant"
+	raydium_type "github.com/pefish/go-coin-sol/program/raydium-amm/type"
 	"github.com/pkg/errors"
 )
 
